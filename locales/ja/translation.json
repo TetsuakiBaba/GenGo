@@ -1,0 +1,110 @@
+{
+    "app": {
+        "name": "GenGo",
+        "description": "AIテキスト変換ツール"
+    },
+    "tray": {
+        "tooltip": "GenGo - AIテキスト変換ツール",
+        "about": "GenGoについて",
+        "settings": "設定",
+        "quit": "終了"
+    },
+    "popup": {
+        "title": "テキスト処理",
+        "processing": "翻訳処理中...",
+        "cancel": "キャンセル",
+        "apply": "適用",
+        "reject": "キャンセル",
+        "actions": {
+            "kana_kanji": "かな漢字変換",
+            "correction": "文章校正",
+            "translation": "翻訳"
+        },
+        "processing_messages": {
+            "kana_kanji": "かな漢字変換中...",
+            "correction": "文章校正中...",
+            "translation": "翻訳処理中..."
+        },
+        "result": {
+            "title": "処理結果",
+            "original_text": "元のテキスト",
+            "processed_text": "処理結果"
+        }
+    },
+    "settings": {
+        "title": "設定",
+        "ui_language": {
+            "title": "UI言語",
+            "label": "UI言語"
+        },
+        "translation": {
+            "title": "翻訳設定",
+            "language1": "言語1",
+            "language2": "言語2",
+            "description": "選択した2つの言語間で相互翻訳を行います。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳します。"
+        },
+        "processing_mode": {
+            "title": "処理モード"
+        },
+        "shortcuts": {
+            "title": "ショートカットキー",
+            "translation_shortcut": "翻訳ショートカット",
+            "shortcut_key": "ショートカットキー",
+            "description": "テキストを選択してこのキーを押すと翻訳を実行します",
+            "description_label": "説明",
+            "validation_error": "無効なショートカットキー形式です。'Cmd+;' や 'Ctrl+;' のような形式で入力してください",
+            "available_keys_html": "<strong>利用可能なキー表記（例）</strong><ul class=\"mb-0\"><li>修飾キー: Ctrl, Alt, Shift, Meta（Cmd）</li><li>特殊キー: Enter, Space（Spacebar）, Tab, Esc, Backspace, Delete, Home, End, PageUp, PageDown, ↑ ↓ ← →</li><li>ファンクションキー: F1〜F12</li><li>記号キー: ';', ',', '.', '/', '\\\\', '[', ']', '-', '=' など（そのまま記載）</li></ul><div class=\"mt-1\"><strong>表記ルール</strong><ul class=\"mb-0\"><li>修飾キーと組み合わせる場合は <code>+</code> で連結（例: <code>Ctrl+Shift+S</code>, <code>Cmd+;</code>）</li><li><code>Space</code> は <code>Space</code> または <code>Spacebar</code> と表記</li><li>記号はそのままの文字で記載（必要なら括弧で意味を補足）</li></ul></div>"
+        },
+        "llm": {
+            "title": "LLMエンジン設定",
+            "endpoint": "APIエンドポイント",
+            "endpoint_description": "LLM APIのエンドポイントURL（例: http://127.0.0.1:1234/v1）"
+        },
+        "other": {
+            "title": "その他の設定",
+            "auto_apply_and_close": "翻訳完了後に自動で結果を適用してウィンドウを閉じる",
+            "processing_mode": "処理モード",
+            "mode_translation": "翻訳モード",
+            "mode_custom": "カスタムプロンプトモード",
+            "custom_prompt": "カスタムプロンプト",
+            "custom_prompt_description": "LLM処理用のカスタム指示を入力してください"
+        },
+        "buttons": {
+            "save": "保存",
+            "cancel": "キャンセル",
+            "reset": "リセット"
+        },
+        "messages": {
+            "save_success": "設定を保存しました",
+            "save_error": "設定の保存に失敗しました",
+            "reset_confirm": "全ての設定をデフォルト値にリセットしますか？この操作は取り消せません。",
+            "reset_success": "設定をデフォルト値にリセットしました",
+            "reset_error": "設定のリセット中にエラーが発生しました"
+        }
+    },
+    "languages": {
+        "ja": "日本語",
+        "en": "英語",
+        "zh": "中国語",
+        "ko": "韓国語",
+        "fr": "フランス語",
+        "de": "ドイツ語",
+        "es": "スペイン語",
+        "it": "イタリア語",
+        "pt": "ポルトガル語",
+        "ru": "ロシア語"
+    },
+    "processing": {
+        "messages": {
+            "no_change": "変更の必要がありません。",
+            "error": "処理中にエラーが発生しました: {{error}}",
+            "invalid_selection": "有効なテキスト選択が見つかりません",
+            "processing": "既に処理中のため、リクエストを無視します"
+        }
+    },
+    "about": {
+        "title": "GenGoについて",
+        "message": "GenGo - AI-powered Text Translation Tool",
+        "detail": "GenGoはローカルLLMと連携したリアルタイムテキスト変換アプリケーションです。"
+    }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="popup.title">gengo - テキスト処理</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+
+        <!-- AI処理中画面 -->
+        <div id="processing"
+            style="position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:1rem; z-index:1050;">
+            <div class="text-center" style="-webkit-app-region: no-drag; min-width:220px;">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-3">
+                    <div id="processingAction" data-i18n="popup.processing">処理中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果表示画面 -->
+        <div id="resultDisplay" class="d-none">
+            <div class="mt-3 mb-3 drag-region">
+                <h6 class="text-center" data-i18n="popup.result.title">処理結果</h6>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6 col-md-6 mb-3">
+                    <label class="form-label small" data-i18n="popup.result.original_text">元のテキスト</label>
+                    <div class="form-control" id="originalText" readonly
+                        style="word-wrap: break-word; white-space: pre-wrap;"></div>
+                </div>
+
+                <div class="col-sm-6 col-md-6 mb-3">
+                    <label class="form-label small" data-i18n="popup.result.processed_text">処理結果</label>
+                    <div class="form-control" id="processedText" readonly
+                        style="word-wrap: break-word; white-space: pre-wrap;"></div>
+
+
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
+                <button class="btn btn-outline-dark" id="applyBtn" data-i18n="popup.apply">適用</button>
+                <button class="btn btn-secondary" id="rejectBtn" data-i18n="popup.reject">キャンセル</button>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 翻訳関数
+        async function t(key, options = {}) {
+            try {
+                return await window.electronAPI.getTranslation(key, options);
+            } catch (error) {
+                console.warn(`Translation not found for key: ${key}`);
+                return key;
+            }
+        }
+
+        // UIテキストを更新
+        async function updateUITexts() {
+            const elements = document.querySelectorAll('[data-i18n]');
+            for (const element of elements) {
+                const key = element.getAttribute('data-i18n');
+                const translation = await t(key);
+                element.textContent = translation;
+            }
+
+            // ドキュメントタイトルも更新
+            const title = document.querySelector('title[data-i18n]');
+            if (title) {
+                const titleTranslation = await t(title.getAttribute('data-i18n'));
+                document.title = titleTranslation;
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // UIテキストを初期化
+            await updateUITexts();
+
+            // 拒否・キャンセルボタン
+            document.getElementById('rejectBtn').addEventListener('click', () => {
+                window.electronAPI.closeWindow();
+            });
+
+            // 適用ボタン
+            document.getElementById('applyBtn').addEventListener('click', () => {
+                window.electronAPI.applyResult();
+            });
+
+            // ポップアップ表示と同時に翻訳を自動実行（main.jsで既に開始されている）
+            // メッセージ表示のみ
+            setTimeout(() => {
+                showProcessingScreen('translation');
+            }, 100);
+        });
+
+        // 処理中画面表示
+        async function showProcessingScreen(action) {
+            document.getElementById('processing').style.display = 'flex';
+
+            const processingMessage = await t(`popup.processing_messages.${action.replace('-', '_')}`) || await t('popup.processing');
+            document.getElementById('processingAction').textContent = processingMessage;
+        }
+
+        // 結果表示画面表示
+        function showResultScreen(originalText, resultText) {
+            document.getElementById('processing').style.display = 'none';
+            document.getElementById('resultDisplay').classList.remove('d-none');
+            document.getElementById('originalText').textContent = originalText;
+            document.getElementById('processedText').textContent = resultText;
+        }
+
+        // メインプロセスからの呼び出し
+        window.showProcessingResult = (originalText, resultText) => {
+            showResultScreen(originalText, resultText);
+        };
+
+        window.showProcessingMessage = (message, type = 'info') => {
+            document.getElementById('processing').style.display = 'none';
+            document.getElementById('resultDisplay').style.display = 'none';
+
+            // 簡単なアラート表示
+            const alertClass = type === 'error' ? 'alert-danger' : 'alert-info';
+            const alertElement = document.createElement('div');
+            alertElement.className = `alert ${alertClass} alert-dismissible fade show mt-2`;
+            alertElement.innerHTML = `${message} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+
+            document.body.appendChild(alertElement);
+
+            setTimeout(() => alertElement.remove(), 3000);
+        };
+    </script>
+</body>
+
+</html>

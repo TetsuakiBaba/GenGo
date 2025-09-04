@@ -1,0 +1,48 @@
+{
+    "name": "GenGo",
+    "version": "0.6.1",
+    "description": "GenGo - Popup LLM UI for Text Processing",
+    "main": "main.js",
+    "type": "module",
+    "scripts": {
+        "start": "electron-forge start",
+        "dev": "electron-forge start",
+        "package": "electron-forge package",
+        "make": "electron-forge make"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TetsuakiBaba/GenGo.git"
+    },
+    "author": "Tetsuaki BABA",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/TetsuakiBaba/GenGo/issues"
+    },
+    "homepage": "https://github.com/TetsuakiBaba/GenGo",
+    "devDependencies": {
+        "@electron-forge/cli": "^6.4.2",
+        "@electron-forge/maker-deb": "^6.4.2",
+        "@electron-forge/maker-dmg": "^6.4.2",
+        "@electron-forge/maker-rpm": "^6.4.2",
+        "@electron-forge/maker-squirrel": "^6.4.2",
+        "@electron-forge/maker-zip": "^6.4.2",
+        "electron": "^28.0.0"
+    },
+    "keywords": [
+        "japanese",
+        "ime",
+        "ai",
+        "text-correction",
+        "electron"
+    ],
+    "author": "Tetsuaki Baba",
+    "license": "MIT",
+    "dependencies": {
+        "electron-squirrel-startup": "^1.0.1",
+        "i18next": "^25.4.2",
+        "i18next-electron-fs-backend": "^3.0.3",
+        "i18next-fs-backend": "^2.6.0",
+        "update-electron-app": "^3.1.1"
+    }
+}

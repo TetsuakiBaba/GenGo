@@ -1,0 +1,110 @@
+{
+    "app": {
+        "name": "GenGo",
+        "description": "AI-powered Text Translation Tool"
+    },
+    "tray": {
+        "tooltip": "GenGo - AI Text Translation Tool",
+        "about": "About",
+        "settings": "Settings",
+        "quit": "Quit"
+    },
+    "popup": {
+        "title": "Text Processing",
+        "processing": "Translating...",
+        "cancel": "Cancel",
+        "apply": "Apply",
+        "reject": "Cancel",
+        "actions": {
+            "kana_kanji": "Kana-Kanji Conversion",
+            "correction": "Text Correction",
+            "translation": "Translation"
+        },
+        "processing_messages": {
+            "kana_kanji": "Converting Kana to Kanji...",
+            "correction": "Correcting text...",
+            "translation": "Translating..."
+        },
+        "result": {
+            "title": "Processing Result",
+            "original_text": "Original Text",
+            "processed_text": "Processed Text"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "ui_language": {
+            "title": "UI Language",
+            "label": "UI Language"
+        },
+        "translation": {
+            "title": "Translation Settings",
+            "language1": "Language 1",
+            "language2": "Language 2",
+            "description": "Performs mutual translation between the two selected languages. Automatically detects the language of input text and translates it to the other language."
+        },
+        "processing_mode": {
+            "title": "Processing Mode"
+        },
+        "shortcuts": {
+            "title": "Keyboard Shortcuts",
+            "translation_shortcut": "Translation Shortcut",
+            "shortcut_key": "Shortcut Key",
+            "description": "Select text and press this key to execute translation",
+            "description_label": "Description",
+            "validation_error": "Invalid shortcut key format. Please use format like 'Cmd+;' or 'Ctrl+;'",
+            "available_keys_html": "<strong>Available key notations (examples)</strong><ul class=\"mb-0\"><li>Modifier keys: Ctrl, Alt, Shift, Meta (Cmd)</li><li>Special keys: Enter, Space (Spacebar), Tab, Esc, Backspace, Delete, Home, End, PageUp, PageDown, ↑ ↓ ← →</li><li>Function keys: F1–F12</li><li>Symbol keys: ';', ',', '.', '/', \\\\ , '[', ']', '-', '=' etc. (use characters as-is)</li></ul><div class=\"mt-1\"><strong>Notation rules</strong><ul class=\"mb-0\"><li>Join modifier keys with <code>+</code> (e.g. <code>Ctrl+Shift+S</code>, <code>Cmd+;</code>)</li><li>Use <code>Space</code> or <code>Spacebar</code> for the space key</li><li>Write symbols as-is; add parentheses if needed</li></ul></div>"
+        },
+        "llm": {
+            "title": "LLM Engine Settings",
+            "endpoint": "API Endpoint",
+            "endpoint_description": "URL of the LLM API endpoint (e.g., http://127.0.0.1:1234/v1)"
+        },
+        "other": {
+            "title": "Other Settings",
+            "auto_apply_and_close": "Automatically apply result and close window after translation is complete",
+            "processing_mode": "Processing Mode",
+            "mode_translation": "Translation Mode",
+            "mode_custom": "Custom Prompt Mode",
+            "custom_prompt": "Custom Prompt",
+            "custom_prompt_description": "Enter your custom instruction for LLM processing"
+        },
+        "buttons": {
+            "save": "Save",
+            "cancel": "Cancel",
+            "reset": "Reset"
+        },
+        "messages": {
+            "save_success": "Settings saved successfully",
+            "save_error": "Failed to save settings",
+            "reset_confirm": "Are you sure you want to reset all settings to default values? This action cannot be undone.",
+            "reset_success": "Settings have been reset to default values",
+            "reset_error": "An error occurred while resetting settings"
+        }
+    },
+    "languages": {
+        "ja": "Japanese",
+        "en": "English",
+        "zh": "Chinese",
+        "ko": "Korean",
+        "fr": "French",
+        "de": "German",
+        "es": "Spanish",
+        "it": "Italian",
+        "pt": "Portuguese",
+        "ru": "Russian"
+    },
+    "processing": {
+        "messages": {
+            "no_change": "No changes needed.",
+            "error": "An error occurred during processing: {{error}}",
+            "invalid_selection": "No valid text selection found",
+            "processing": "Already processing, ignoring request"
+        }
+    },
+    "about": {
+        "title": "About GenGo",
+        "message": "GenGo - AI-powered Text Translation Tool",
+        "detail": "GenGo is a real-time text transformation application integrated with a local LLM."
+    }
+}

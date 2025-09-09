@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // ショートカットキー検証
     validateShortcutKey: (shortcut) => ipcRenderer.invoke('validate-shortcut-key', shortcut),
 
+    // デフォルトプロンプト取得
+    getDefaultPrompt: () => ipcRenderer.invoke('get-default-prompt'),
+
     // デフォルト設定を取得
     getDefaultSettings: () => ipcRenderer.invoke('get-default-settings'),
 

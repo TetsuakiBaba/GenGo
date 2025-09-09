@@ -29,6 +29,14 @@
             "title": "Processing Result",
             "original_text": "Original Text",
             "processed_text": "Processed Text"
+        },
+        "text_generation": {
+            "title": "Text Generation",
+            "placeholder": "Enter description of the text you want to generate...",
+            "generate_button": "Generate",
+            "cancel_button": "Cancel",
+            "processing": "Generating text...",
+            "insert_button": "Insert at cursor position"
         }
     },
     "settings": {
@@ -48,12 +56,24 @@
         },
         "shortcuts": {
             "title": "Keyboard Shortcuts",
-            "translation_shortcut": "Translation Shortcut",
+            "preset_prompt_shortcut": "Preset Prompt Shortcut",
+            "ondemand_shortcut": "On-demand Prompt Shortcut",
             "shortcut_key": "Shortcut Key",
-            "description": "Select text and press this key to execute translation",
+            "preset_description": "Select text and press this key to execute preset prompt processing",
+            "ondemand_description": "Select text and press this key to display custom prompt input screen",
             "description_label": "Description",
-            "validation_error": "Invalid shortcut key format. Please use format like 'Cmd+;' or 'Ctrl+;'",
-            "available_keys_html": "<strong>Available key notations (examples)</strong><ul class=\"mb-0\"><li>Modifier keys: Ctrl, Alt, Shift, Meta (Cmd)</li><li>Special keys: Enter, Space (Spacebar), Tab, Esc, Backspace, Delete, Home, End, PageUp, PageDown, ↑ ↓ ← →</li><li>Function keys: F1–F12</li><li>Symbol keys: ';', ',', '.', '/', \\\\ , '[', ']', '-', '=' etc. (use characters as-is)</li></ul><div class=\"mt-1\"><strong>Notation rules</strong><ul class=\"mb-0\"><li>Join modifier keys with <code>+</code> (e.g. <code>Ctrl+Shift+S</code>, <code>Cmd+;</code>)</li><li>Use <code>Space</code> or <code>Spacebar</code> for the space key</li><li>Write symbols as-is; add parentheses if needed</li></ul></div>"
+            "ondemand_description_label": "Description",
+            "notation_title": "Available Shortcut Key Notations",
+            "validation_error": "Invalid shortcut key format. Please enter in format like 'Cmd+;' or 'Ctrl+;'",
+            "available_keys_html": "<strong>Available Key Notations (Examples)</strong><ul class=\"mb-0\"><li>Modifier Keys: Ctrl, Alt, Shift, Meta (Cmd)</li><li>Special Keys: Enter, Space (Spacebar), Tab, Esc, Backspace, Delete, Home, End, PageUp, PageDown, ↑ ↓ ← →</li><li>Function Keys: F1~F12</li><li>Symbol Keys: ';', ',', '.', '/', '\\\\', '[', ']', '-', '=' etc. (write as-is)</li></ul><div class=\"mt-1\"><strong>Notation Rules</strong><ul class=\"mb-0\"><li>Connect with <code>+</code> when combining with modifier keys (e.g., <code>Ctrl+Shift+S</code>, <code>Cmd+;</code>)</li><li><code>Space</code> should be written as <code>Space</code> or <code>Spacebar</code></li><li>Write symbols as their literal characters (add brackets for clarification if needed)</li></ul></div>"
+        },
+        "prompt": {
+            "title": "Prompt Settings",
+            "preset_label": "Preset Prompt",
+            "preset_description": "Prompt executed with preset prompt shortcut. Default is mutual translation between Japanese and English.",
+            "reset_button": "Reset to Default",
+            "reset_success": "Reset prompt to default value",
+            "reset_error": "Error occurred while resetting prompt"
         },
         "llm": {
             "title": "LLM Engine Settings",
@@ -99,7 +119,8 @@
             "no_change": "No changes needed.",
             "error": "An error occurred during processing: {{error}}",
             "invalid_selection": "No valid text selection found",
-            "processing": "Already processing, ignoring request"
+            "processing": "Already processing, ignoring request",
+            "text_generation": "Generating text..."
         }
     },
     "about": {

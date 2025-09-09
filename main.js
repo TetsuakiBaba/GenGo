@@ -6,7 +6,7 @@ import { exec, execSync } from 'child_process';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { SimpleLLMEngine } from './simple-llm-engine.js';
-import { initI18n, t, changeLanguage, getCurrentLanguage, getPackageVersion } from './i18n.js';
+import { initI18n, t, changeLanguage, getCurrentLanguage, getPackageVersion, getI18nData } from './i18n.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,16 +42,12 @@ class GengoElectronMain {
         this.isApplying = false; // Apply処理中フラグを追加
         this.isShowingResult = false; // 結果表示中フラグを追加
         this.settings = {
-            translationLanguages: {
-                language1: 'ja',
-                language2: 'en'
-            },
             autoApplyAndClose: false,
             language: 'en', // UI言語設定
             llmEndpoint: 'http://127.0.0.1:1234/v1', // LLMエンドポイント設定
-            shortcutKey: 'Ctrl+Space', // ショートカットキー設定
-            processingMode: 'translation', // 'translation' または 'custom'
-            customPrompt: 'Please process the following text and provide an improved version:' // カスタムプロンプト
+            shortcutKey: 'Ctrl+1', // プロンプトのショートカットキー設定
+            onDemandShortcutKey: 'Ctrl+2', // オンデマンドプロンプトのショートカットキー設定
+            customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。' // プロンプト
         };
         this.settingsPath = join(app.getPath('userData'), 'settings.json');
     }
@@ -85,10 +81,17 @@ class GengoElectronMain {
     }
 
     /**
-     * システムトレイを作成
+     * システムトレイを作成または更新
      */
     createTray() {
         try {
+            // 既存のトレイがある場合は破棄
+            if (this.tray) {
+                this.tray.destroy();
+                this.tray = null;
+                console.log('既存のシステムトレイを破棄しました');
+            }
+
             // テキストベースの簡単なアイコンを作成
             this.tray = new Tray(path.join(__dirname, './icons/IconTemplate.png'))
             this.tray.setToolTip(t('tray.tooltip'));
@@ -164,10 +167,22 @@ class GengoElectronMain {
                 this.handleTextSelectionTrigger();
             });
 
+            // オンデマンドプロンプトモード用のショートカット（設定から取得）
+            const onDemandShortcut = this.settings.onDemandShortcutKey;
+            const onDemandRegistered = globalShortcut.register(onDemandShortcut, () => {
+                this.handleOnDemandPromptTrigger();
+            });
+
             if (registered) {
                 console.log(`グローバルショートカット ${shortcut} を登録しました`);
             } else {
                 console.error('グローバルショートカット登録に失敗しました');
+            }
+
+            if (onDemandRegistered) {
+                console.log(`オンデマンドプロンプトショートカット ${onDemandShortcut} を登録しました`);
+            } else {
+                console.error('オンデマンドプロンプトショートカット登録に失敗しました');
             }
         } catch (error) {
             console.error('グローバルショートカット登録エラー:', error);
@@ -236,6 +251,91 @@ class GengoElectronMain {
                         this.isProcessing = false; // フラグをリセット
                     }, 500);
                 } else {
+                    console.log('テキスト選択なし - テキスト生成モードに移行');
+                    console.log('- selectedText長:', selectedTextLength);
+                    console.log('- selectedText先頭100文字:', selectedText.substring(0, 100));
+                    console.log('- __GENGO_TEMP_MARKER__と同じか:', selectedText === '__GENGO_TEMP_MARKER__');
+                    console.log('- テキストが空か:', !selectedText || !selectedText.trim());
+
+                    // テキスト生成モードでポップアップを表示
+                    this.showTextGenerationPopup();
+
+                    // クリップボードを復元
+                    clipboard.writeText(originalClipboard);
+                    this.isProcessing = false; // フラグをリセット
+                }
+            }, 500); // 200ms → 500msに増加
+
+        } catch (error) {
+            console.error('テキスト選択処理エラー:', error);
+            this.isProcessing = false; // エラー時もフラグをリセット
+        }
+    }
+
+    /**
+     * オンデマンドプロンプトトリガー処理（Ctrl+2）
+     */
+    async handleOnDemandPromptTrigger() {
+        try {
+            // 結果表示中の場合は Apply を実行
+            if (this.isShowingResult && this.currentProcessingData) {
+                console.log('結果表示中のため、Apply処理を実行します');
+                await this.handleApplyResult();
+                return;
+            }
+
+            // 既に処理中の場合は無視
+            if (this.isProcessing) {
+                console.log(t('processing.messages.processing'));
+                return;
+            }
+
+            this.isProcessing = true;
+            console.log('オンデマンドプロンプトトリガー実行');
+
+            // 現在のアプリケーション情報を取得・記憶
+            await this.captureSelectionContext();
+
+            // 現在のクリップボードを保存
+            const originalClipboard = clipboard.readText();
+            console.log('元のクリップボード内容:', originalClipboard.substring(0, 50) + '...');
+
+            // アクティブアプリケーションを確認
+            const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+            console.log('アクティブアプリケーション:', activeApp);
+
+            // クリップボードを一時的にクリアして選択テキストの検出を確実にする
+            clipboard.writeText('__GENGO_TEMP_MARKER__');
+
+            // Cmd+Cでテキストをコピー
+            console.log('Cmd+C実行中...');
+            await this.simulateKeyPress('c', ['cmd']);
+            console.log('Cmd+C実行完了');
+
+            // 少し待ってからクリップボードを確認（長いテキストの場合は時間がかかる可能性がある）
+            setTimeout(() => {
+                const selectedText = clipboard.readText();
+                const selectedTextLength = selectedText ? selectedText.length : 0;
+                console.log('コピー後のクリップボード:', selectedText.substring(0, 100) + '...');
+                console.log('コピーされたテキストの長さ:', selectedTextLength);
+                console.log('テンポラリマーカーと同じか:', selectedText === '__GENGO_TEMP_MARKER__');
+                console.log('テキストが空か:', !selectedText || !selectedText.trim());
+
+                // テンポラリマーカーでなく、実際のテキストがコピーされた場合は有効
+                if (selectedText && selectedText.trim() && selectedText !== '__GENGO_TEMP_MARKER__') {
+                    console.log('選択されたテキスト長:', selectedTextLength, '文字');
+                    console.log('選択コンテキスト:', this.selectionContext);
+                    this.currentSelectedText = selectedText;
+
+                    // オンデマンドプロンプト入力画面を表示
+                    this.showOnDemandPromptInput(selectedText);
+
+                    // クリップボードを復元
+                    setTimeout(() => {
+                        clipboard.writeText(originalClipboard);
+                        this.isProcessing = false; // フラグをリセット
+                    }, 500);
+                } else {
                     console.log('テキスト選択に失敗:');
                     console.log('- selectedText長:', selectedTextLength);
                     console.log('- selectedText先頭100文字:', selectedText.substring(0, 100));
@@ -247,10 +347,10 @@ class GengoElectronMain {
                     clipboard.writeText(originalClipboard);
                     this.isProcessing = false; // フラグをリセット
                 }
-            }, 500); // 200ms → 500msに増加
+            }, 500);
 
         } catch (error) {
-            console.error('テキスト選択処理エラー:', error);
+            console.error('オンデマンドプロンプト処理エラー:', error);
             this.isProcessing = false; // エラー時もフラグをリセット
         }
     }
@@ -345,7 +445,7 @@ class GengoElectronMain {
     /**
      * HTMLベースのポップアップウィンドウを作成
      */
-    createPopupWindow() {
+    createPopupWindow(forceNormalSize = false) {
         // 既存のウィンドウが存在し、まだ破棄されていない場合は破棄
         if (this.popupWindow && !this.popupWindow.isDestroyed()) {
             console.log('既存のポップアップウィンドウを破棄します');
@@ -356,7 +456,8 @@ class GengoElectronMain {
         console.log('新しいポップアップウィンドウを作成します');
 
         // 自動適用モードかどうかでウィンドウサイズを決定
-        const isAutoMode = this.settings.autoApplyAndClose;
+        // ただし、forceNormalSizeがtrueの場合は常に通常サイズ（オンデマンドプロンプト用）
+        const isAutoMode = this.settings.autoApplyAndClose && !forceNormalSize;
         const windowConfig = isAutoMode
             ? {
                 width: 100,
@@ -452,15 +553,12 @@ class GengoElectronMain {
             this.popupWindow = null;
             this.isShowingResult = false; // 結果表示フラグをリセット
             this.currentProcessingData = null; // 処理データもリセット
-            
+
             // macOSでDockアイコンを再び非表示にする
             if (process.platform === 'darwin') {
                 app.dock.hide();
             }
         });
-
-        // デバッグ用（本番では削除）
-        // this.popupWindow.webContents.openDevTools();
 
         return this.popupWindow;
     }
@@ -499,6 +597,88 @@ class GengoElectronMain {
     }
 
     /**
+     * テキスト生成モード用のポップアップを表示
+     */
+    async showTextGenerationPopup() {
+        console.log('テキスト生成モードでポップアップを表示');
+
+        // macOSでポップアップ表示時にDockアイコンを一時的に表示
+        if (process.platform === 'darwin') {
+            app.dock.show();
+        }
+
+        // 既存のポップアップが開いている場合は閉じる
+        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+            this.popupWindow.close();
+            this.popupWindow = null;
+            // 少し待ってから新しいウィンドウを作成
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        this.createPopupWindow(true); // テキスト生成モードでは通常サイズを強制
+
+        // カーソル位置を取得
+        const cursorPos = await this.getCursorPosition();
+
+        // カーソル位置に最も近いディスプレイを取得
+        const display = screen.getDisplayNearestPoint({ x: cursorPos.x, y: cursorPos.y });
+        const { x: displayX, y: displayY, width: screenWidth, height: screenHeight } = display.workArea;
+
+        console.log(`ディスプレイ情報: bounds=(${displayX}, ${displayY}, ${screenWidth}, ${screenHeight})`);
+        console.log(`カーソル位置: (${cursorPos.x}, ${cursorPos.y})`);
+
+        // ウィンドウサイズ
+        const windowWidth = 400;
+        const windowHeight = 300;
+
+        // ウィンドウ位置を計算（カーソル近くに配置）
+        let windowX = cursorPos.x + 20;
+        let windowY = cursorPos.y + 20;
+
+        // 画面境界チェック
+        if (windowX + windowWidth > displayX + screenWidth) {
+            windowX = cursorPos.x - windowWidth - 20;
+        }
+        if (windowY + windowHeight > displayY + screenHeight) {
+            windowY = cursorPos.y - windowHeight - 20;
+        }
+
+        // 最小位置制限
+        windowX = Math.max(displayX, windowX);
+        windowY = Math.max(displayY, windowY);
+
+        this.popupWindow.setPosition(windowX, windowY);
+        this.popupWindow.setSize(windowWidth, windowHeight);
+        this.popupWindow.show();
+        this.popupWindow.focus();
+
+        // 新しい処理開始のため、結果表示フラグをリセット
+        this.isShowingResult = false;
+
+        // ウィンドウの読み込み完了を待ってからテキスト生成モードを設定
+        this.popupWindow.webContents.once('did-finish-load', () => {
+            console.log('ポップアップ読み込み完了 - テキスト生成モード設定中');
+
+            // テキスト生成モードであることを設定
+            this.popupWindow.webContents.executeJavaScript(`
+                window.isTextGenerationMode = true;
+                window.isOnDemandMode = false;
+            `);
+
+            // テキスト生成モードを表示
+            setTimeout(() => {
+                this.popupWindow.webContents.executeJavaScript(`
+                    if (typeof window.showTextGenerationMode === 'function') {
+                        window.showTextGenerationMode();
+                    } else {
+                        console.error('showTextGenerationMode function not found');
+                    }
+                `);
+            }, 100);
+        });
+    }
+
+    /**
      * HTMLベースのポップアップを表示
      */
     async showActionPopup(selectedText) {
@@ -506,7 +686,7 @@ class GengoElectronMain {
         if (process.platform === 'darwin') {
             app.dock.show();
         }
-        
+
         // 既存のポップアップが開いている場合は閉じる
         if (this.popupWindow && !this.popupWindow.isDestroyed()) {
             this.popupWindow.close();
@@ -562,7 +742,90 @@ class GengoElectronMain {
 
         // ポップアップ表示後、すぐに翻訳処理を開始
         console.log('翻訳処理を自動開始:', selectedText);
+
+        // 自動適用モードでも処理中画面を表示
+        if (this.settings.autoApplyAndClose) {
+            // ウィンドウサイズを一時的に拡大
+            console.log('自動適用モード: 処理中画面表示のためウィンドウサイズを拡大');
+            this.popupWindow.setSize(300, 150);
+            this.popupWindow.setResizable(false);
+            this.popupWindow.center();
+            
+            // 処理中画面を表示
+            this.popupWindow.webContents.executeJavaScript(`
+                showProcessingScreen('translation');
+            `);
+        }
+
+        // 通常の翻訳モードであることを設定
+        this.popupWindow.webContents.executeJavaScript(`
+            window.isOnDemandMode = false;
+        `);
+
         await this.processTextWithAction(selectedText, 'translation');
+    }
+
+    /**
+     * オンデマンドプロンプト入力画面を表示
+     */
+    async showOnDemandPromptInput(selectedText) {
+        // macOSでポップアップ表示時にDockアイコンを一時的に表示
+        if (process.platform === 'darwin') {
+            app.dock.show();
+        }
+
+        // 既存のポップアップが開いている場合は閉じる
+        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+            this.popupWindow.close();
+            this.popupWindow = null;
+            // 少し待ってから新しいウィンドウを作成
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // 新しいポップアップウィンドウを作成（オンデマンドプロンプトは常に通常サイズ）
+        this.createPopupWindow(true);
+
+        // カーソル位置を取得してポップアップ位置を調整
+        const { x, y } = await this.getCursorPosition();
+
+        // ウィンドウサイズと画面境界を考慮した位置調整
+        const displays = screen.getAllDisplays();
+        const cursorDisplay = displays.find(display => {
+            const { x: dx, y: dy, width, height } = display.bounds;
+            return x >= dx && x < dx + width && y >= dy && y < dy + height;
+        }) || screen.getPrimaryDisplay();
+
+        console.log('ディスプレイ情報:', cursorDisplay.bounds);
+        console.log('カーソル位置:', { x, y });
+
+        const windowWidth = 600;
+        const windowHeight = 400;
+
+        let adjustedX = x;
+        let adjustedY = y - windowHeight / 2;
+
+        // 画面境界内に収める
+        const workArea = cursorDisplay.workArea;
+        adjustedX = Math.max(workArea.x, Math.min(adjustedX, workArea.x + workArea.width - windowWidth));
+        adjustedY = Math.max(workArea.y, Math.min(adjustedY, workArea.y + workArea.height - windowHeight));
+
+        console.log('調整後ポップアップ位置:', { x: adjustedX, y: adjustedY }, 'カーソル位置:', { x, y });
+        console.log('ディスプレイ作業領域:', `(${workArea.x}, ${workArea.y}) - (${workArea.x + workArea.width}, ${workArea.y + workArea.height})`);
+
+        this.popupWindow.setPosition(adjustedX, adjustedY);
+
+        this.popupWindow.show();
+        this.popupWindow.focus();
+
+        // 新しい処理開始のため、結果表示フラグをリセット
+        this.isShowingResult = false;
+
+        // オンデマンドプロンプト入力モードで画面を初期化
+        console.log('オンデマンドプロンプト入力画面を表示:', selectedText);
+        this.popupWindow.webContents.executeJavaScript(`
+            window.isOnDemandMode = true;
+            window.showOnDemandPromptInput(${JSON.stringify(selectedText)});
+        `);
     }
 
     /**
@@ -581,6 +844,12 @@ class GengoElectronMain {
         // 結果適用
         ipcMain.handle('apply-result', async () => {
             return await this.handleApplyResult();
+        });
+
+        // オンデマンドプロンプト処理
+        ipcMain.handle('process-on-demand-prompt', async (event, userPrompt, selectedText) => {
+            console.log('オンデマンドプロンプト処理開始:', { selectedText, userPrompt });
+            return await this.processTextWithOnDemandPrompt(selectedText, userPrompt);
         });
 
         // 設定関連のIPCハンドラー
@@ -648,16 +917,12 @@ class GengoElectronMain {
         // 設定をリセット
         ipcMain.handle('reset-settings', async () => {
             const defaultSettings = {
-                translationLanguages: {
-                    language1: 'ja',
-                    language2: 'en'
-                },
                 autoApplyAndClose: false,
                 language: 'en',
                 llmEndpoint: 'http://127.0.0.1:1234/v1',
-                shortcutKey: 'Ctrl+Space',
-                processingMode: 'translation',
-                customPrompt: 'Please process the following text and provide an improved version:'
+                shortcutKey: 'Ctrl+1',
+                onDemandShortcutKey: 'Ctrl+2',
+                customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。'
             };
 
             const oldLanguage = this.settings.language;
@@ -698,6 +963,10 @@ class GengoElectronMain {
         });
 
         // i18n関連のIPCハンドラー
+        ipcMain.handle('get-i18n-data', () => {
+            return getI18nData();
+        });
+
         ipcMain.handle('get-translation', (event, key, options = {}) => {
             return t(key, options);
         });
@@ -722,7 +991,171 @@ class GengoElectronMain {
             return this.validateShortcutKey(shortcut);
         });
 
+        // デフォルトプロンプト取得のIPCハンドラー
+        ipcMain.handle('get-default-prompt', () => {
+            return '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
+        });
+
+        // テキスト生成処理のIPCハンドラー
+        ipcMain.handle('process-text-generation', async (event, userPrompt) => {
+            console.log('IPCハンドラー: テキスト生成処理開始:', userPrompt);
+            const result = await this.processTextGeneration(userPrompt);
+
+            if (result.success && this.popupWindow && !this.popupWindow.isDestroyed()) {
+                console.log('テキスト生成成功、結果を表示:', result.generatedText);
+                // 生成されたテキストを結果表示
+                this.popupWindow.webContents.executeJavaScript(`
+                    console.log('IPCからshowTextGenerationResult呼び出し:', ${JSON.stringify(result.generatedText)});
+                    window.showTextGenerationResult(${JSON.stringify(result.generatedText)});
+                `);
+            } else if (!result.success && this.popupWindow && !this.popupWindow.isDestroyed()) {
+                console.log('テキスト生成失敗:', result.error);
+                // エラーメッセージを表示
+                this.popupWindow.webContents.executeJavaScript(`
+                    document.getElementById('processing').style.display = 'none';
+                    alert('テキスト生成に失敗しました: ${result.error}');
+                    window.showTextGenerationMode();
+                `);
+            }
+
+            return result;
+        });
+
         console.log('IPC設定完了');
+    }
+
+    /**
+     * テキスト生成処理
+     */
+    async processTextGeneration(userPrompt) {
+        try {
+            console.log('テキスト生成処理開始:', { userPrompt });
+
+            // ユーザープロンプトをそのまま使ってLLMで処理
+            const result = await this.llmEngine.processCustomPrompt('', userPrompt);
+
+            if (result.success) {
+                const generatedText = result.processedText;
+
+                // 結果をポップアップウィンドウに表示用のデータとして保存
+                this.currentProcessingData = {
+                    original: '', // テキスト生成モードでは元テキストはなし
+                    result: generatedText,
+                    action: 'text-generation',
+                    mode: 'text-generation',
+                    userPrompt: userPrompt
+                };
+
+                return {
+                    success: true,
+                    generatedText: generatedText
+                };
+            } else {
+                console.error('テキスト生成失敗:', result.error);
+                return {
+                    success: false,
+                    error: result.error || 'テキスト生成に失敗しました'
+                };
+            }
+        } catch (error) {
+            console.error('テキスト生成処理エラー:', error);
+            return {
+                success: false,
+                error: error.message || 'テキスト生成処理中にエラーが発生しました'
+            };
+        }
+    }
+
+    /**
+     * オンデマンドプロンプトでテキストを処理
+     */
+    async processTextWithOnDemandPrompt(selectedText, userPrompt) {
+        try {
+            console.log('オンデマンドプロンプト処理開始:', { selectedText, userPrompt });
+
+            // カスタムプロンプトとしてユーザーの指示を使用
+            // inputText: 選択されたテキスト（処理対象）, customPrompt: ユーザープロンプト（処理指示）
+            const result = await this.llmEngine.processCustomPrompt(selectedText, userPrompt);
+
+            if (result.success) {
+                const processedText = result.processedText;
+
+                if (processedText && processedText !== selectedText) {
+                    // 結果をポップアップウィンドウに表示
+                    this.currentProcessingData = {
+                        original: selectedText,
+                        result: processedText,
+                        action: 'on-demand-prompt',
+                        mode: 'on-demand',
+                        userPrompt: userPrompt
+                    };
+
+                    // オンデマンドプロンプトモードでは自動適用を行わず、常に結果を表示
+                    // 自動適用は翻訳モード（通常処理）でのみ有効
+                    if (this.popupWindow) {
+                        this.popupWindow.webContents.executeJavaScript(`
+                            window.showProcessingResult(${JSON.stringify(selectedText)}, ${JSON.stringify(processedText)});
+                        `);
+
+                        // 結果表示中フラグを設定
+                        this.isShowingResult = true;
+                    }
+
+                    return {
+                        success: true,
+                        originalText: selectedText,
+                        processedText: processedText
+                    };
+                } else {
+                    console.log('変更なし:', selectedText);
+                    // オンデマンドプロンプトモードでは自動適用せず、変更なしメッセージを表示
+                    if (this.popupWindow) {
+                        this.popupWindow.webContents.executeJavaScript(`
+                            window.showProcessingMessage('${t('processing.messages.no_change')}', 'info');
+                        `);
+                    }
+
+                    return {
+                        success: true,
+                        originalText: selectedText,
+                        processedText: selectedText,
+                        noChange: true
+                    };
+                }
+            } else {
+                console.error('オンデマンドプロンプト処理エラー:', result.error);
+
+                // オンデマンドプロンプトモードでは自動適用せず、エラーメッセージを表示
+                if (this.popupWindow) {
+                    this.popupWindow.webContents.executeJavaScript(`
+                        window.showProcessingMessage('${t('processing.messages.error', { error: result.error })}', 'error');
+                    `);
+                }
+
+                return {
+                    success: false,
+                    error: result.error,
+                    originalText: selectedText,
+                    processedText: selectedText
+                };
+            }
+        } catch (error) {
+            console.error('オンデマンドプロンプト処理実行エラー:', error);
+
+            // オンデマンドプロンプトモードでは自動適用せず、エラーメッセージを表示
+            if (this.popupWindow) {
+                this.popupWindow.webContents.executeJavaScript(`
+                    window.showProcessingMessage('${t('processing.messages.error', { error: error.message })}', 'error');
+                `);
+            }
+
+            return {
+                success: false,
+                error: error.message,
+                originalText: selectedText,
+                processedText: selectedText
+            };
+        }
     }
 
     /**
@@ -740,10 +1173,18 @@ class GengoElectronMain {
 
             try {
                 console.log('Apply処理開始 - 結果:', this.currentProcessingData.result);
-                console.log('Apply処理開始 - 元テキスト:', this.currentProcessingData.originalText);
+                console.log('Apply処理開始 - 元テキスト:', this.currentProcessingData.original);
+                console.log('Apply処理開始 - モード:', this.currentProcessingData.mode);
 
-                await this.applyTextReplacement(this.currentProcessingData.result);
-                console.log('テキスト置換完了');
+                if (this.currentProcessingData.mode === 'text-generation') {
+                    // テキスト生成モードの場合は挿入処理
+                    await this.insertGeneratedText(this.currentProcessingData.result);
+                    console.log('テキスト挿入完了');
+                } else {
+                    // 通常モードの場合は置換処理
+                    await this.applyTextReplacement(this.currentProcessingData.result);
+                    console.log('テキスト置換完了');
+                }
 
                 // 少し待ってからウィンドウを閉じる
                 setTimeout(() => {
@@ -773,31 +1214,12 @@ class GengoElectronMain {
      */
     async processTextWithAction(text, action) {
         try {
-            console.log('LLM処理開始:', { text, action, mode: this.settings.processingMode });
+            console.log('LLM処理開始:', { text, action });
 
             let result;
 
-            // 処理モードに基づいて分岐
-            if (this.settings.processingMode === 'custom') {
-                // カスタムプロンプトモード
-                result = await this.llmEngine.processCustomPrompt(text, this.settings.customPrompt);
-            } else {
-                // 従来の翻訳モード
-                switch (action) {
-                    case 'kana-kanji':
-                        result = await this.llmEngine.processKanaKanjiConversion(text);
-                        break;
-                    case 'correction':
-                        result = await this.llmEngine.processTextCorrection(text);
-                        break;
-                    case 'translation':
-                        // 設定に基づいて相互翻訳を実行
-                        result = await this.processSmartTranslation(text);
-                        break;
-                    default:
-                        throw new Error('未対応の処理タイプ: ' + action);
-                }
-            }
+            // Ctrl+1で実行 - プロンプト処理
+            result = await this.llmEngine.processCustomPrompt(text, this.settings.customPrompt);
 
             if (result.success) {
                 const processedText = result.correctedText || result.translatedText || result.processedText;
@@ -807,8 +1229,7 @@ class GengoElectronMain {
                     this.currentProcessingData = {
                         original: text,
                         result: processedText,
-                        action: action,
-                        mode: this.settings.processingMode
+                        action: action
                     };
 
                     // 自動適用・閉じる設定が有効な場合は直接適用
@@ -884,6 +1305,64 @@ class GengoElectronMain {
                 }
             }
         }
+    }
+
+    /**
+     * 生成されたテキストを現在のカーソル位置に挿入
+     */
+    async insertGeneratedText(generatedText) {
+        return new Promise((resolve, reject) => {
+            try {
+                console.log('テキスト挿入実行:', generatedText);
+
+                // 現在のクリップボードを保存
+                const originalClipboard = clipboard.readText();
+                console.log('元クリップボード内容:', originalClipboard.substring(0, 50) + '...');
+
+                // 生成されたテキストをクリップボードに設定
+                clipboard.writeText(generatedText);
+
+                // クリップボードが正しく設定されたことを確認
+                const verifyClipboard = clipboard.readText();
+                console.log('設定後クリップボード:', verifyClipboard.substring(0, 50) + '...');
+
+                if (verifyClipboard !== generatedText) {
+                    console.error('クリップボード設定失敗:', verifyClipboard, '≠', generatedText);
+                    reject(new Error('クリップボード設定失敗'));
+                    return;
+                }
+
+                // 元のアプリケーションにフォーカスを戻してからテキストを挿入
+                const targetApp = this.selectionContext?.appName || 'System Events';
+                console.log('対象アプリに戻る:', targetApp);
+
+                const focusScript = `tell application "${targetApp}" to activate`;
+                exec(`osascript -e '${focusScript}'`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error('アプリケーションフォーカスエラー:', error);
+                        // エラーでも続行
+                    }
+
+                    // 少し待ってからCmd+Vを実行
+                    setTimeout(() => {
+                        this.simulateKeyPress('v', ['cmd']).then(() => {
+                            console.log('Cmd+V実行完了');
+
+                            // 少し待ってからクリップボードを復元
+                            setTimeout(() => {
+                                clipboard.writeText(originalClipboard);
+                                console.log('クリップボード復元完了');
+                                resolve();
+                            }, 200);
+                        }).catch(reject);
+                    }, 300); // フォーカス切り替え後の待機時間を延長
+                });
+
+            } catch (error) {
+                console.error('テキスト挿入エラー:', error);
+                reject(error);
+            }
+        });
     }
 
     /**
@@ -1198,13 +1677,13 @@ class GengoElectronMain {
                     loadedSettings.llmEndpoint = 'http://127.0.0.1:1234/v1';
                 }
                 if (!loadedSettings.shortcutKey) {
-                    loadedSettings.shortcutKey = 'Ctrl+Space';
+                    loadedSettings.shortcutKey = 'Ctrl+1';
                 }
-                if (!loadedSettings.processingMode) {
-                    loadedSettings.processingMode = 'translation';
+                if (!loadedSettings.onDemandShortcutKey) {
+                    loadedSettings.onDemandShortcutKey = 'Ctrl+2';
                 }
                 if (!loadedSettings.customPrompt) {
-                    loadedSettings.customPrompt = 'Please process the following text and provide an improved version:';
+                    loadedSettings.customPrompt = '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
                 }
 
                 this.settings = { ...this.settings, ...loadedSettings };
@@ -1278,7 +1757,7 @@ class GengoElectronMain {
 
         this.settingsWindow.on('closed', () => {
             this.settingsWindow = null;
-            
+
             // macOSで設定ウィンドウ閉じた時にDockアイコンを再び非表示にする
             if (process.platform === 'darwin') {
                 app.dock.hide();
@@ -1323,6 +1802,12 @@ class GengoElectronMain {
         // グローバルショートカットを解除
         globalShortcut.unregisterAll();
 
+        // システムトレイを破棄
+        if (this.tray) {
+            this.tray.destroy();
+            this.tray = null;
+        }
+
         // ポップアップウィンドウを閉じる
         if (this.popupWindow) {
             this.popupWindow.destroy();
@@ -1341,7 +1826,7 @@ app.whenReady().then(() => {
     if (process.platform === 'darwin') {
         app.dock.hide();
     }
-    
+
     mainApp = new GengoElectronMain();
     mainApp.init();
 });

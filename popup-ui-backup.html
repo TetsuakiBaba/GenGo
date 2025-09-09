@@ -19,7 +19,7 @@
 
         <!-- AI処理中画面 -->
         <div id="processing"
-            style="position:absolute; top:0; left:0; width:100%; height:100%; display:none; align-items:center; justify-content:center; padding:1rem; z-index:1050; background-color:rgba(255,255,255,0.9);">
+            style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:1rem; z-index:1050;">
             <div class="text-center" style="-webkit-app-region: no-drag; min-width:220px;">
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">Loading...</span>
@@ -108,8 +108,6 @@
     <script>
         // i18n初期化関数
         let i18nMap = {};
-        // 選択されたテキストを保存するグローバル変数
-        let currentSelectedText = '';
 
         async function initI18n() {
             try {
@@ -152,228 +150,87 @@
             console.log('popup-ui.html DOMContentLoaded');
             await initI18n();
 
-            // デバッグモード：URLパラメータからフェーズを取得
-            const urlParams = new URLSearchParams(window.location.search);
-            const debugPhase = urlParams.get('phase');
-            const sampleText = urlParams.get('text') || 'これはサンプルテキストです。デバッグ用の文章として使用されます。';
-            const sampleResult = urlParams.get('result') || 'This is a sample text. It is used as a debugging sentence.';
-
-            if (debugPhase) {
-                console.log('デバッグモード:', debugPhase);
-                setupDebugMode(debugPhase, sampleText, sampleResult);
-                return; // デバッグモードの場合は通常の初期化をスキップ
-            }
-
-            // 共通のキャンセル処理
-            function handleCancel() {
-                if (window.electronAPI) {
-                    window.electronAPI.closeWindow();
-                } else {
-                    console.log('デバッグモード: キャンセル処理');
-                }
-            }
-
-            // 共通の実行処理
-            function handleExecute() {
-                const resultDisplay = document.getElementById('resultDisplay');
-                const onDemandPromptInput = document.getElementById('onDemandPromptInput');
-                const textGenerationInput = document.getElementById('textGenerationInput');
-
-                if (!resultDisplay.classList.contains('d-none')) {
-                    // 結果表示画面の場合：適用処理
-                    if (window.electronAPI) {
-                        window.electronAPI.applyResult();
-                    } else {
-                        console.log('デバッグモード: 適用処理');
-                    }
-                } else if (!onDemandPromptInput.classList.contains('d-none')) {
-                    // オンデマンドプロンプト入力画面の場合：処理実行
-                    const userPrompt = document.getElementById('userPromptInput').value.trim();
-                    if (userPrompt) {
-                        showProcessingScreen('processing');
-                        if (window.electronAPI) {
-                            window.electronAPI.processOnDemandPrompt(userPrompt, currentSelectedText);
-                        } else {
-                            console.log('デバッグモード: オンデマンドプロンプト処理:', userPrompt);
-                            setTimeout(() => showResultScreen(currentSelectedText, sampleResult), 2000);
-                        }
-                    }
-                } else if (!textGenerationInput.classList.contains('d-none')) {
-                    // テキスト生成入力画面の場合：テキスト生成
-                    const generationPrompt = document.getElementById('generationPromptInput').value.trim();
-                    if (generationPrompt) {
-                        showProcessingScreen('generation');
-                        if (window.electronAPI) {
-                            window.electronAPI.processTextGeneration(generationPrompt);
-                        } else {
-                            setTimeout(() => showTextGenerationResult(sampleResult), 2000);
-                        }
-                    } else {
-                        alert('テキスト生成の指示を入力してください。');
-                    }
-                }
-            }
-
             // キーボードショートカット設定
             document.addEventListener('keydown', (event) => {
                 // ESCキーでキャンセル処理
                 if (event.key === 'Escape') {
                     event.preventDefault();
-                    handleCancel();
+                    window.electronAPI.closePopup();
                     return;
                 }
 
                 // Cmd+Enter (Mac) または Ctrl+Enter (Windows/Linux)で実行処理
                 if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
                     event.preventDefault();
-                    handleExecute();
-                    return;
-                }
-            });            // ボタンイベント設定
-            document.getElementById('applyBtn').addEventListener('click', () => {
-                window.electronAPI.applyResult();
-            });
 
-            document.getElementById('rejectBtn').addEventListener('click', handleCancel);
+                    // どの画面が表示されているかチェック
+                    const resultDisplay = document.getElementById('resultDisplay');
+                    const onDemandPromptInput = document.getElementById('onDemandPromptInput');
+                    const textGenerationInput = document.getElementById('textGenerationInput');
 
-            document.getElementById('processBtn').addEventListener('click', handleExecute);
-
-            document.getElementById('cancelPromptBtn').addEventListener('click', handleCancel);
-
-            document.getElementById('textGenerateBtn').addEventListener('click', () => {
-                console.log('テキスト生成ボタンがクリックされました');
-                handleExecute();
-            });
-
-            document.getElementById('cancelGenerationBtn').addEventListener('click', handleCancel);
-        });
-
-        // デバッグモード設定関数
-        function setupDebugMode(phase, sampleText, sampleResult) {
-            console.log('デバッグモード設定:', phase);
-            
-            // サンプル変数を設定
-            currentSelectedText = sampleText;
-            
-            // 共通のイベントハンドラー設定（デバッグ用）
-            setupDebugEventHandlers(sampleText, sampleResult);
-            
-            switch (phase) {
-                case 'ondemand':
-                    showOnDemandPromptScreen(sampleText);
-                    break;
-                case 'textgen':
-                    showTextGenerationMode();
-                    break;
-                case 'processing':
-                    showProcessingScreen('processing');
-                    break;
-                case 'result':
-                    showResultScreen(sampleText, sampleResult);
-                    break;
-                case 'textgen-result':
-                    showTextGenerationResult(sampleResult);
-                    break;
-                default:
-                    console.log('無効なデバッグフェーズ:', phase);
-                    console.log('利用可能なフェーズ: ondemand, textgen, processing, result, textgen-result');
-            }
-        }
-
-        // デバッグ用イベントハンドラー設定
-        function setupDebugEventHandlers(sampleText, sampleResult) {
-            // キーボードショートカット設定
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    console.log('デバッグモード: ESCキーでキャンセル');
-                    return;
-                }
-                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                    event.preventDefault();
-                    console.log('デバッグモード: Cmd+Enterで実行');
-                    handleDebugExecute(sampleText, sampleResult);
+                    if (!resultDisplay.classList.contains('d-none')) {
+                        // 結果表示画面の場合：適用ボタンをクリック
+                        document.getElementById('applyBtn').click();
+                    } else if (!onDemandPromptInput.classList.contains('d-none')) {
+                        // オンデマンドプロンプト入力画面の場合：処理実行ボタンをクリック
+                        document.getElementById('processBtn').click();
+                    } else if (!textGenerationInput.classList.contains('d-none')) {
+                        // テキスト生成入力画面の場合：テキスト生成ボタンをクリック
+                        document.getElementById('textGenerateBtn').click();
+                    }
                     return;
                 }
             });
 
             // ボタンイベント設定
             document.getElementById('applyBtn').addEventListener('click', () => {
-                console.log('デバッグモード: 適用ボタンクリック');
+                window.electronAPI.applyResult();
             });
 
             document.getElementById('rejectBtn').addEventListener('click', () => {
-                console.log('デバッグモード: キャンセルボタンクリック');
+                window.electronAPI.closePopup();
             });
 
             document.getElementById('processBtn').addEventListener('click', () => {
-                handleDebugExecute(sampleText, sampleResult);
+                const userPrompt = document.getElementById('userPromptInput').value.trim();
+                if (userPrompt) {
+                    showProcessingScreen('processing');
+                    window.electronAPI.processOnDemandPrompt(userPrompt);
+                }
             });
 
             document.getElementById('cancelPromptBtn').addEventListener('click', () => {
-                console.log('デバッグモード: プロンプトキャンセルボタンクリック');
+                window.electronAPI.closePopup();
             });
 
             document.getElementById('textGenerateBtn').addEventListener('click', () => {
-                handleDebugExecute(sampleText, sampleResult);
+                const generationPrompt = document.getElementById('generationPromptInput').value.trim();
+                if (generationPrompt) {
+                    showProcessingScreen('generation');
+                    window.electronAPI.generateText(generationPrompt);
+                }
             });
 
             document.getElementById('cancelGenerationBtn').addEventListener('click', () => {
-                console.log('デバッグモード: 生成キャンセルボタンクリック');
+                window.electronAPI.closePopup();
             });
-        }
-
-        // デバッグ用実行処理
-        function handleDebugExecute(sampleText, sampleResult) {
-            const resultDisplay = document.getElementById('resultDisplay');
-            const onDemandPromptInput = document.getElementById('onDemandPromptInput');
-            const textGenerationInput = document.getElementById('textGenerationInput');
-
-            if (!resultDisplay.classList.contains('d-none')) {
-                console.log('デバッグモード: 結果画面で適用処理');
-            } else if (!onDemandPromptInput.classList.contains('d-none')) {
-                const userPrompt = document.getElementById('userPromptInput').value.trim();
-                if (userPrompt) {
-                    console.log('デバッグモード: オンデマンドプロンプト処理開始:', userPrompt);
-                    showProcessingScreen('processing');
-                    setTimeout(() => showResultScreen(sampleText, sampleResult), 2000);
-                }
-            } else if (!textGenerationInput.classList.contains('d-none')) {
-                const generationPrompt = document.getElementById('generationPromptInput').value.trim();
-                if (generationPrompt) {
-                    console.log('デバッグモード: テキスト生成処理開始:', generationPrompt);
-                    showProcessingScreen('generation');
-                    setTimeout(() => showTextGenerationResult(sampleResult), 2000);
-                }
-            }
-        }
+        });
 
         // 処理中画面表示
         async function showProcessingScreen(action) {
-            // 他の全ての画面を非表示にする
-            document.getElementById('resultDisplay').classList.add('d-none');
-            document.getElementById('onDemandPromptInput').classList.add('d-none');
-            document.getElementById('textGenerationInput').classList.add('d-none');
-
-            // 処理中画面を表示
-            const processingElement = document.getElementById('processing');
-            processingElement.style.display = 'flex';
-            processingElement.style.visibility = 'visible';
+            document.getElementById('processing').style.display = 'flex';
 
             let processingMessage;
             if (action === 'generation') {
-                processingMessage = 'テキスト生成中...';
+                processingMessage = 'テキスト生成中... (MCPサーバと通信しています)';
             } else {
-                processingMessage = (window.electronAPI && await t(`popup.processing_messages.${action.replace('-', '_')}`)) || 
-                                   (window.electronAPI && await t('popup.processing')) || 
-                                   '処理中...';
+                processingMessage = await t(`popup.processing_messages.${action.replace('-', '_')}`) || await t('popup.processing');
             }
             document.getElementById('processingAction').textContent = processingMessage;
         }
 
         // 結果表示スタイルをリセット（テキスト生成モード用スタイルを元に戻す）
         function resetResultDisplayStyle() {
-            console.log('resetResultDisplayStyle開始');
             const originalTextSection = document.querySelector('#resultDisplay .row .col-sm-6:first-child');
             const processedTextSection = document.querySelector('#resultDisplay .row .col-sm-6:last-child');
 
@@ -384,20 +241,14 @@
                 processedTextSection.style.width = '';
                 processedTextSection.style.maxWidth = '';
                 processedTextSection.style.flex = '';
-                console.log('resetResultDisplayStyle完了');
-            } else {
-                console.log('resetResultDisplayStyle: セクションが見つかりません');
             }
         }
 
         // 結果表示画面表示
         async function showResultScreen(originalText, resultText) {
-            console.log('showResultScreen開始:', { originalText, resultText });
-            
             document.getElementById('processing').style.display = 'none';
             document.getElementById('resultDisplay').classList.remove('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
-            document.getElementById('textGenerationInput').classList.add('d-none');
 
             // テキスト生成モード用のスタイルをリセット
             resetResultDisplayStyle();
@@ -408,38 +259,24 @@
             // 「適用」ボタンをデフォルトに戻す
             const applyBtn = document.getElementById('applyBtn');
             if (applyBtn) {
-                const applyText = (window.electronAPI && await t('popup.apply')) || '適用';
-                applyBtn.textContent = applyText;
+                const applyText = await t('popup.apply');
+                applyBtn.textContent = applyText || '適用';
                 applyBtn.className = 'btn btn-outline-dark';
-                console.log('適用ボタン設定完了:', applyText);
             }
-            console.log('showResultScreen完了');
         }
 
         // オンデマンドプロンプト入力画面表示
         function showOnDemandPromptScreen(selectedText) {
-            console.log('showOnDemandPromptScreen開始:', selectedText);
-            
-            // 選択されたテキストを保存
-            currentSelectedText = selectedText;
-
             document.getElementById('processing').style.display = 'none';
             document.getElementById('resultDisplay').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.remove('d-none');
-            document.getElementById('textGenerationInput').classList.add('d-none');
-            
             document.getElementById('selectedTextDisplay').textContent = selectedText;
             document.getElementById('userPromptInput').value = '';
 
             // テキストエリアにフォーカス
             setTimeout(() => {
-                const textarea = document.getElementById('userPromptInput');
-                if (textarea) {
-                    textarea.focus();
-                    console.log('オンデマンドプロンプト入力フィールドにフォーカス設定完了');
-                }
+                document.getElementById('userPromptInput').focus();
             }, 100);
-            console.log('showOnDemandPromptScreen完了');
         }
 
         // メインプロセスからの呼び出し
@@ -464,10 +301,12 @@
 
         // テキスト生成モード表示
         function showTextGenerationMode() {
+            console.log('showTextGenerationMode実行開始');
+
             // 全ての他のセクションを強制的に非表示にする
             const processingElement = document.getElementById('processing');
             processingElement.style.display = 'none';
-            processingElement.style.visibility = 'hidden';
+            processingElement.style.visibility = 'hidden'; // 追加の保険
 
             document.getElementById('resultDisplay').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
@@ -475,7 +314,7 @@
             // テキスト生成入力セクションを表示
             const textGenElement = document.getElementById('textGenerationInput');
             textGenElement.classList.remove('d-none');
-            textGenElement.style.display = 'block';
+            textGenElement.style.display = 'block'; // 明示的に表示
 
             // フラグ設定
             window.isTextGenerationMode = true;
@@ -486,21 +325,18 @@
             if (textarea) {
                 setTimeout(() => {
                     textarea.focus();
+                    console.log('テキストエリアにフォーカス設定完了');
                 }, 150);
             }
-        }
 
-        // テキスト生成モード関数をwindowオブジェクトに公開
-        window.showTextGenerationMode = showTextGenerationMode;
+            console.log('テキスト生成モード表示完了');
+        }
 
         // テキスト生成結果表示
         window.showTextGenerationResult = (generatedText) => {
-            // 処理中画面を非表示
-            const processingElement = document.getElementById('processing');
-            processingElement.style.display = 'none';
-            processingElement.style.visibility = 'hidden';
-            
-            // 入力画面を非表示
+            console.log('showTextGenerationResult実行開始:', generatedText);
+
+            document.getElementById('processing').style.display = 'none';
             document.getElementById('textGenerationInput').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
 
@@ -509,12 +345,14 @@
             const processedTextSection = document.querySelector('#resultDisplay .row .col-sm-6:last-child');
 
             if (originalTextSection && processedTextSection) {
+                console.log('テキスト生成モード用スタイル適用開始');
                 // 元のテキストセクションを完全に非表示
                 originalTextSection.style.display = 'none';
                 // 処理結果セクションを全幅にして単独表示
                 processedTextSection.style.width = '100%';
                 processedTextSection.style.maxWidth = '100%';
                 processedTextSection.style.flex = '0 0 100%';
+                console.log('テキスト生成モード用スタイル適用完了');
             }
 
             // 結果表示
@@ -524,11 +362,11 @@
             const applyBtn = document.getElementById('applyBtn');
             if (applyBtn) {
                 applyBtn.textContent = 'カーソル位置に挿入';
-                applyBtn.className = 'btn btn-primary';
+                applyBtn.className = 'btn btn-primary'; // スタイルも変更
             }
 
-            // 結果表示画面を表示
             document.getElementById('resultDisplay').classList.remove('d-none');
+            console.log('showTextGenerationResult実行完了');
         };
     </script>
 </body>

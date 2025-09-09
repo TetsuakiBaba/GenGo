@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenGo Popup UI デバッグツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 5px;
+        }
+        .phase-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .phase-link {
+            display: block;
+            padding: 15px;
+            background: #007acc;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .phase-link:hover {
+            background: #005999;
+            color: white;
+        }
+        .phase-link:visited {
+            color: white;
+        }
+        .description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007acc;
+        }
+        .custom-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .btn {
+            background: #007acc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #005999;
+        }
+        .shortcuts {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .shortcuts h3 {
+            margin-top: 0;
+            color: #007acc;
+        }
+        .shortcut-item {
+            margin: 8px 0;
+        }
+        .key {
+            background: #333;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 GenGo Popup UI デバッグツール</h1>
+    
+    <div class="debug-container">
+        <div class="description">
+            <strong>このツールについて:</strong><br>
+            popup-ui.htmlの各処理フェーズを個別にブラウザで確認できます。
+            URLパラメータを使用してデバッグモードを有効にし、特定の状態を再現できます。
+        </div>
+
+        <h2>📋 標準フェーズテスト</h2>
+        <div class="phase-links">
+            <a href="popup-ui.html?phase=ondemand" class="phase-link" target="_blank">
+                📝 オンデマンドプロンプト入力
+            </a>
+            <a href="popup-ui.html?phase=textgen" class="phase-link" target="_blank">
+                ✨ テキスト生成入力
+            </a>
+            <a href="popup-ui.html?phase=processing" class="phase-link" target="_blank">
+                ⏳ 処理中画面
+            </a>
+            <a href="popup-ui.html?phase=result" class="phase-link" target="_blank">
+                📄 結果表示（通常）
+            </a>
+            <a href="popup-ui.html?phase=textgen-result" class="phase-link" target="_blank">
+                📝 結果表示（テキスト生成）
+            </a>
+        </div>
+
+        <h2>🎛️ カスタムテスト</h2>
+        <div class="custom-form">
+            <form id="customTestForm">
+                <div class="form-group">
+                    <label for="phase">フェーズ:</label>
+                    <select id="phase" name="phase">
+                        <option value="ondemand">オンデマンドプロンプト入力</option>
+                        <option value="textgen">テキスト生成入力</option>
+                        <option value="processing">処理中画面</option>
+                        <option value="result">結果表示（通常）</option>
+                        <option value="textgen-result">結果表示（テキスト生成）</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="text">サンプルテキスト:</label>
+                    <textarea id="text" name="text" placeholder="デバッグ用のサンプルテキストを入力...">これはサンプルテキストです。GenGoのデバッグ機能をテストするための文章として使用されています。日本語と英語の翻訳テストに適しています。</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="result">処理結果テキスト:</label>
+                    <textarea id="result" name="result" placeholder="処理結果として表示するテキストを入力...">This is a sample text. It is used as a sentence for testing GenGo's debugging functionality. It is suitable for Japanese and English translation tests.</textarea>
+                </div>
+                
+                <button type="submit" class="btn">🚀 カスタムテスト実行</button>
+            </form>
+        </div>
+
+        <div class="shortcuts">
+            <h3>⌨️ キーボードショートカット</h3>
+            <div class="shortcut-item">
+                <span class="key">ESC</span> : キャンセル処理
+            </div>
+            <div class="shortcut-item">
+                <span class="key">Cmd+Enter</span> / <span class="key">Ctrl+Enter</span> : 処理実行
+            </div>
+            <p><small>※ これらのショートカットはデバッグモードでもテストできます。ブラウザのコンソールでログを確認してください。</small></p>
+        </div>
+    </div>
+
+    <div class="debug-container">
+        <h2>🐛 デバッグ情報</h2>
+        <div class="description">
+            <strong>各フェーズの詳細:</strong>
+            <ul>
+                <li><strong>ondemand</strong>: ユーザーが独自のプロンプトを入力する画面</li>
+                <li><strong>textgen</strong>: テキスト生成モードの入力画面</li>
+                <li><strong>processing</strong>: AI処理中の読み込み画面</li>
+                <li><strong>result</strong>: 翻訳やプロンプト処理の結果表示画面</li>
+                <li><strong>textgen-result</strong>: テキスト生成の結果表示画面（元テキスト非表示）</li>
+            </ul>
+            
+            <strong>URLパラメータ:</strong>
+            <ul>
+                <li><code>phase</code>: 表示するフェーズ名</li>
+                <li><code>text</code>: サンプルの元テキスト</li>
+                <li><code>result</code>: サンプルの処理結果テキスト</li>
+            </ul>
+            
+            <strong>ブラウザデベロッパーツール:</strong><br>
+            F12またはCmd+Option+Iでデベロッパーツールを開き、Consoleタブでログメッセージを確認できます。
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('customTestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const phase = document.getElementById('phase').value;
+            const text = encodeURIComponent(document.getElementById('text').value);
+            const result = encodeURIComponent(document.getElementById('result').value);
+            
+            const url = `popup-ui.html?phase=${phase}&text=${text}&result=${result}`;
+            window.open(url, '_blank');
+        });
+    </script>
+</body>
+</html>

@@ -93,6 +93,20 @@ export function getCurrentLanguage() {
 }
 
 /**
+ * i18nデータを取得
+ */
+export function getI18nData() {
+    try {
+        const currentLanguage = i18next.language;
+        const resourceBundle = i18next.getResourceBundle(currentLanguage, 'translation');
+        return resourceBundle || {};
+    } catch (error) {
+        console.error('Failed to get i18n data:', error);
+        return {};
+    }
+}
+
+/**
  * 利用可能な言語一覧
  */
 export const availableLanguages = [

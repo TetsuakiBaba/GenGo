@@ -8,14 +8,15 @@
         "start": "electron-forge start",
         "dev": "electron-forge start",
         "package": "electron-forge package",
-        "make": "electron-forge make"
+        "make": "electron-forge make",
+        "publish": "electron-forge publish"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/TetsuakiBaba/GenGo.git"
     },
-    "author": "Tetsuaki BABA",
-    "license": "ISC",
+    "author": "Tetsuaki Baba",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/TetsuakiBaba/GenGo/issues"
     },
@@ -36,9 +37,8 @@
         "text-correction",
         "electron"
     ],
-    "author": "Tetsuaki Baba",
-    "license": "MIT",
     "dependencies": {
+        "@electron-forge/publisher-github": "^7.8.3",
         "electron-squirrel-startup": "^1.0.1",
         "i18next": "^25.4.2",
         "i18next-electron-fs-backend": "^3.0.3",

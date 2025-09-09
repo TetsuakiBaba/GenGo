@@ -4,7 +4,7 @@
         "description": "AIテキスト変換ツール"
     },
     "tray": {
-        "tooltip": "GenGo - AIテキスト変換ツール",
+        "title": "GenGo - AIテキスト変換ツール",
         "about": "GenGoについて",
         "settings": "設定",
         "quit": "終了"
@@ -29,6 +29,14 @@
             "title": "処理結果",
             "original_text": "元のテキスト",
             "processed_text": "処理結果"
+        },
+        "text_generation": {
+            "title": "テキスト生成",
+            "placeholder": "生成したいテキストの内容を入力してください...",
+            "generate_button": "生成",
+            "cancel_button": "キャンセル",
+            "processing": "テキスト生成中...",
+            "insert_button": "カーソル位置に挿入"
         }
     },
     "settings": {
@@ -48,12 +56,24 @@
         },
         "shortcuts": {
             "title": "ショートカットキー",
-            "translation_shortcut": "翻訳ショートカット",
+            "preset_prompt_shortcut": "事前プロンプトショートカット",
+            "ondemand_shortcut": "オンデマンドプロンプトショートカット",
             "shortcut_key": "ショートカットキー",
-            "description": "テキストを選択してこのキーを押すと翻訳を実行します",
+            "preset_description": "テキストを選択してこのキーを押すと事前プロンプト処理を実行します",
+            "ondemand_description": "テキストを選択してこのキーを押すとカスタムプロンプト入力画面を表示します",
             "description_label": "説明",
+            "ondemand_description_label": "説明",
+            "notation_title": "利用可能なショートカット記号の説明",
             "validation_error": "無効なショートカットキー形式です。'Cmd+;' や 'Ctrl+;' のような形式で入力してください",
             "available_keys_html": "<strong>利用可能なキー表記（例）</strong><ul class=\"mb-0\"><li>修飾キー: Ctrl, Alt, Shift, Meta（Cmd）</li><li>特殊キー: Enter, Space（Spacebar）, Tab, Esc, Backspace, Delete, Home, End, PageUp, PageDown, ↑ ↓ ← →</li><li>ファンクションキー: F1〜F12</li><li>記号キー: ';', ',', '.', '/', '\\\\', '[', ']', '-', '=' など（そのまま記載）</li></ul><div class=\"mt-1\"><strong>表記ルール</strong><ul class=\"mb-0\"><li>修飾キーと組み合わせる場合は <code>+</code> で連結（例: <code>Ctrl+Shift+S</code>, <code>Cmd+;</code>）</li><li><code>Space</code> は <code>Space</code> または <code>Spacebar</code> と表記</li><li>記号はそのままの文字で記載（必要なら括弧で意味を補足）</li></ul></div>"
+        },
+        "prompt": {
+            "title": "プロンプト設定",
+            "preset_label": "事前プロンプト",
+            "preset_description": "事前プロンプトショートカットで実行されるプロンプトです。デフォルトは日本語と英語の相互翻訳です。",
+            "reset_button": "デフォルトに戻す",
+            "reset_success": "プロンプトをデフォルト値に戻しました",
+            "reset_error": "プロンプトのリセット中にエラーが発生しました"
         },
         "llm": {
             "title": "LLMエンジン設定",
@@ -99,7 +119,8 @@
             "no_change": "変更の必要がありません。",
             "error": "処理中にエラーが発生しました: {{error}}",
             "invalid_selection": "有効なテキスト選択が見つかりません",
-            "processing": "既に処理中のため、リクエストを無視します"
+            "processing": "既に処理中のため、リクエストを無視します",
+            "text_generation": "テキスト生成中..."
         }
     },
     "about": {

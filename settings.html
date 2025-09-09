@@ -53,67 +53,24 @@
                             </div>
                         </div>
 
-                        <!-- 処理モード設定 -->
+                        <!-- プロンプト設定 -->
                         <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3" id="processing-mode-section-title">
-                                <i class="bi bi-cpu-fill"></i> 処理モード
+                            <h6 class="border-bottom pb-2 mb-3" id="prompt-section-title">
+                                <i class="bi bi-chat-left-text"></i> プロンプト設定
                             </h6>
 
                             <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="processingMode"
-                                        id="translationMode" value="translation" checked>
-                                    <label class="form-check-label" for="translationMode" id="mode-translation-label">
-                                        翻訳モード
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="processingMode" id="customMode"
-                                        value="custom">
-                                    <label class="form-check-label" for="customMode" id="mode-custom-label">
-                                        カスタムプロンプトモード
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- カスタムプロンプト設定 -->
-                            <div class="mb-3" id="customPromptSection" style="display: none;">
-                                <label for="customPrompt" class="form-label" id="custom-prompt-label">カスタムプロンプト</label>
-                                <textarea class="form-control" id="customPrompt" rows="3"
-                                    placeholder="Please process the following text and provide an improved version:"></textarea>
-                                <small class="text-muted" id="custom-prompt-description">
-                                    LLM処理用のカスタム指示を入力してください
+                                <label for="customPrompt" class="form-label" id="prompt-label">事前プロンプト</label>
+                                <textarea class="form-control" id="customPrompt" rows="4"
+                                    placeholder="日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。"></textarea>
+                                <small class="text-muted" id="prompt-description">
+                                    事前プロンプトショートカットで実行されるプロンプトです。デフォルトは日本語と英語の相互翻訳です。
                                 </small>
-                            </div>
-                        </div>
-
-                        <!-- 翻訳言語設定 -->
-                        <div class="mb-4" id="translationSettingsSection">
-                            <h6 class="border-bottom pb-2 mb-3" id="translation-settings-title">
-                                <i class="bi bi-translate"></i> 翻訳設定
-                            </h6>
-
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <label for="language1" class="form-label" id="language1-label">言語1</label>
-                                    <select class="form-select" id="language1">
-                                        <!-- Options will be populated by JavaScript -->
-                                    </select>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label for="language2" class="form-label" id="language2-label">言語2</label>
-                                    <select class="form-select" id="language2">
-                                        <!-- Options will be populated by JavaScript -->
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <div class="alert alert-info" id="translation-description">
-                                        <i class="bi bi-info-circle"></i>
-                                        選択した2つの言語間で相互翻訳を行います。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳します。
-                                    </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="resetPromptBtn">
+                                        <i class="bi bi-arrow-clockwise"></i> <span
+                                            id="reset-prompt-btn-text">デフォルトに戻す</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -124,16 +81,44 @@
                                 <i class="bi bi-keyboard"></i> ショートカットキー
                             </h6>
 
-                            <div class="row">
+                            <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="shortcutKey" class="form-label" id="shortcut-label">翻訳ショートカット</label>
-                                    <input type="text" class="form-control" id="shortcutKey" placeholder="Cmd+;"
-                                        value="Command+;">
+                                    <label for="shortcutKey" class="form-label"
+                                        id="shortcut-label">事前プロンプトショートカット</label>
+                                    <input type="text" class="form-control" id="shortcutKey" placeholder="Ctrl+1"
+                                        value="Ctrl+1">
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-control-plaintext text-muted small">
                                         <div id="shortcut-desc-label" class="small fw-bold mb-1"></div>
                                         <div id="shortcut-description"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="onDemandShortcutKey" class="form-label"
+                                        id="ondemand-shortcut-label">オンデマンドプロンプトショートカット</label>
+                                    <input type="text" class="form-control" id="onDemandShortcutKey"
+                                        placeholder="Ctrl+2" value="Ctrl+2">
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-control-plaintext text-muted small">
+                                        <div id="ondemand-shortcut-desc-label" class="small fw-bold mb-1"></div>
+                                        <div id="ondemand-shortcut-description"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ショートカットキー記法説明 -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading mb-2" id="shortcut-notation-title">
+                                            <i class="bi bi-info-circle"></i> 利用可能なショートカット記号の説明
+                                        </h6>
+                                        <div id="shortcut-notation-content"></div>
                                     </div>
                                 </div>
                             </div>
@@ -220,21 +205,8 @@
                 await changeUILanguage(e.target.value);
             });
 
-            // 処理モード切り替えイベント
-            document.querySelectorAll('input[name="processingMode"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const customPromptSection = document.getElementById('customPromptSection');
-                    const translationSettingsSection = document.getElementById('translationSettingsSection');
-
-                    if (e.target.value === 'custom') {
-                        customPromptSection.style.display = 'block';
-                        translationSettingsSection.style.display = 'none';
-                    } else {
-                        customPromptSection.style.display = 'none';
-                        translationSettingsSection.style.display = 'block';
-                    }
-                });
-            });
+            // プロンプトリセットボタンイベント
+            document.getElementById('resetPromptBtn').addEventListener('click', resetPrompt);
         });
 
         // 翻訳を読み込み
@@ -273,37 +245,34 @@
                 document.getElementById('ui-language-label').textContent =
                     await window.electronAPI.getTranslation('settings.ui_language.label') || 'UI言語';
 
-                // 処理モードセクション
-                document.getElementById('processing-mode-section-title').innerHTML =
-                    '<i class="bi bi-cpu-fill"></i> ' + await window.electronAPI.getTranslation('settings.processing_mode.title');
-                document.getElementById('mode-translation-label').textContent =
-                    await window.electronAPI.getTranslation('settings.other.mode_translation');
-                document.getElementById('mode-custom-label').textContent =
-                    await window.electronAPI.getTranslation('settings.other.mode_custom');
-                document.getElementById('custom-prompt-label').textContent =
-                    await window.electronAPI.getTranslation('settings.other.custom_prompt');
-                document.getElementById('custom-prompt-description').textContent =
-                    await window.electronAPI.getTranslation('settings.other.custom_prompt_description');
-
-                // 翻訳設定セクション
-                document.getElementById('translation-settings-title').innerHTML =
-                    '<i class="bi bi-translate"></i> ' + await window.electronAPI.getTranslation('settings.translation.title');
-                document.getElementById('language1-label').textContent =
-                    await window.electronAPI.getTranslation('settings.translation.language1');
-                document.getElementById('language2-label').textContent =
-                    await window.electronAPI.getTranslation('settings.translation.language2');
-                document.getElementById('translation-description').innerHTML =
-                    '<i class="bi bi-info-circle"></i> ' + await window.electronAPI.getTranslation('settings.translation.description');
+                // プロンプト設定セクション
+                document.getElementById('prompt-section-title').innerHTML =
+                    '<i class="bi bi-chat-left-text"></i> ' + await window.electronAPI.getTranslation('settings.prompt.title');
+                document.getElementById('prompt-label').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.preset_label');
+                document.getElementById('prompt-description').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.preset_description');
+                document.getElementById('reset-prompt-btn-text').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.reset_button');
 
                 // ショートカットセクション
                 document.getElementById('shortcuts-title').innerHTML =
                     '<i class="bi bi-keyboard"></i> ' + await window.electronAPI.getTranslation('settings.shortcuts.title');
                 document.getElementById('shortcut-label').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.translation_shortcut');
+                    await window.electronAPI.getTranslation('settings.shortcuts.preset_prompt_shortcut');
+                document.getElementById('ondemand-shortcut-label').textContent =
+                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_shortcut');
                 document.getElementById('shortcut-desc-label').textContent =
                     await window.electronAPI.getTranslation('settings.shortcuts.description_label') || '説明';
-                // 利用可能なキー表記は HTML を含むため innerHTML を使用
-                document.getElementById('shortcut-description').innerHTML =
+                document.getElementById('ondemand-shortcut-desc-label').textContent =
+                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_description_label') || '説明';
+                document.getElementById('shortcut-description').textContent =
+                    await window.electronAPI.getTranslation('settings.shortcuts.preset_description') || '';
+                document.getElementById('ondemand-shortcut-description').textContent =
+                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_description') || '';
+                document.getElementById('shortcut-notation-title').innerHTML =
+                    '<i class="bi bi-info-circle"></i> ' + await window.electronAPI.getTranslation('settings.shortcuts.notation_title');
+                document.getElementById('shortcut-notation-content').innerHTML =
                     await window.electronAPI.getTranslation('settings.shortcuts.available_keys_html') || '';
 
                 // LLMエンドポイント設定セクション
@@ -387,14 +356,6 @@
                 // 最初に言語選択肢を作成
                 await populateLanguageOptions();
 
-                // 翻訳言語設定
-                if (settings.translationLanguages) {
-                    console.log(`設定読み込み - Language1: ${settings.translationLanguages.language1}, Language2: ${settings.translationLanguages.language2}`);
-                    document.getElementById('language1').value = settings.translationLanguages.language1 || 'ja';
-                    document.getElementById('language2').value = settings.translationLanguages.language2 || 'en';
-                    console.log(`設定後の実際値 - Language1: ${document.getElementById('language1').value}, Language2: ${document.getElementById('language2').value}`);
-                }
-
                 // UI言語設定を含める
                 if (settings.language) {
                     document.getElementById('uiLanguage').value = settings.language || 'ja';
@@ -405,28 +366,17 @@
                     document.getElementById('shortcutKey').value = settings.shortcutKey;
                 }
 
+                // オンデマンドプロンプトショートカット設定
+                if (settings.onDemandShortcutKey) {
+                    document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey;
+                }
+
                 // LLMエンドポイント設定
                 if (settings.llmEndpoint) {
                     document.getElementById('llmEndpoint').value = settings.llmEndpoint;
                 }
 
-                // 処理モード設定
-                if (settings.processingMode) {
-                    const customPromptSection = document.getElementById('customPromptSection');
-                    const translationSettingsSection = document.getElementById('translationSettingsSection');
-
-                    if (settings.processingMode === 'custom') {
-                        document.getElementById('customMode').checked = true;
-                        customPromptSection.style.display = 'block';
-                        translationSettingsSection.style.display = 'none';
-                    } else {
-                        document.getElementById('translationMode').checked = true;
-                        customPromptSection.style.display = 'none';
-                        translationSettingsSection.style.display = 'block';
-                    }
-                }
-
-                // カスタムプロンプト設定
+                // プロンプト設定
                 if (settings.customPrompt) {
                     document.getElementById('customPrompt').value = settings.customPrompt;
                 }
@@ -443,6 +393,7 @@
         async function saveSettings() {
             try {
                 const shortcutKey = document.getElementById('shortcutKey').value;
+                const onDemandShortcutKey = document.getElementById('onDemandShortcutKey').value;
 
                 // ショートカットキーの検証
                 if (shortcutKey && !(await window.electronAPI.validateShortcutKey(shortcutKey))) {
@@ -451,18 +402,19 @@
                     return;
                 }
 
-                const processingMode = document.querySelector('input[name="processingMode"]:checked').value;
+                // オンデマンドショートカットキーの検証
+                if (onDemandShortcutKey && !(await window.electronAPI.validateShortcutKey(onDemandShortcutKey))) {
+                    const errorMessage = await window.electronAPI.getTranslation('settings.shortcuts.validation_error');
+                    showMessage(errorMessage, 'error');
+                    return;
+                }
 
                 const settings = {
-                    translationLanguages: {
-                        language1: document.getElementById('language1').value,
-                        language2: document.getElementById('language2').value
-                    },
                     autoApplyAndClose: document.getElementById('autoApplyAndClose').checked,
                     language: document.getElementById('uiLanguage').value,
                     shortcutKey: shortcutKey,
+                    onDemandShortcutKey: onDemandShortcutKey,
                     llmEndpoint: document.getElementById('llmEndpoint').value,
-                    processingMode: processingMode,
                     customPrompt: document.getElementById('customPrompt').value
                 };
 
@@ -507,17 +459,12 @@
 
                 // 要素を取得
                 const elements = {
-                    language1: document.getElementById('language1'),
-                    language2: document.getElementById('language2'),
                     autoApplyAndClose: document.getElementById('autoApplyAndClose'),
                     uiLanguage: document.getElementById('uiLanguage'),
                     shortcutKey: document.getElementById('shortcutKey'),
+                    onDemandShortcutKey: document.getElementById('onDemandShortcutKey'),
                     llmEndpoint: document.getElementById('llmEndpoint'),
-                    translationMode: document.getElementById('translationMode'),
-                    customMode: document.getElementById('customMode'),
-                    customPrompt: document.getElementById('customPrompt'),
-                    customPromptSection: document.getElementById('customPromptSection'),
-                    translationSettingsSection: document.getElementById('translationSettingsSection')
+                    customPrompt: document.getElementById('customPrompt')
                 };
 
                 // 要素の存在確認
@@ -528,29 +475,12 @@
                 }
 
                 // 値を設定
-                console.log(`リセット前 - Language1: ${elements.language1.value}, Language2: ${elements.language2.value}`);
-                elements.language1.value = resetSettingsData.translationLanguages.language1;
-                elements.language2.value = resetSettingsData.translationLanguages.language2;
-                console.log(`リセット後設定値 - Language1: ${resetSettingsData.translationLanguages.language1}, Language2: ${resetSettingsData.translationLanguages.language2}`);
-                console.log(`リセット後実際値 - Language1: ${elements.language1.value}, Language2: ${elements.language2.value}`);
                 elements.autoApplyAndClose.checked = resetSettingsData.autoApplyAndClose;
                 elements.uiLanguage.value = resetSettingsData.language;
                 elements.shortcutKey.value = resetSettingsData.shortcutKey;
+                elements.onDemandShortcutKey.value = resetSettingsData.onDemandShortcutKey;
                 elements.llmEndpoint.value = resetSettingsData.llmEndpoint;
                 elements.customPrompt.value = resetSettingsData.customPrompt;
-
-                // プロセシングモード関連
-                if (resetSettingsData.processingMode === 'translation') {
-                    elements.translationMode.checked = true;
-                    elements.customMode.checked = false;
-                    elements.customPromptSection.style.display = 'none';
-                    elements.translationSettingsSection.style.display = 'block';
-                } else {
-                    elements.translationMode.checked = false;
-                    elements.customMode.checked = true;
-                    elements.customPromptSection.style.display = 'block';
-                    elements.translationSettingsSection.style.display = 'none';
-                }
 
                 console.log('フォーム更新完了');
 
@@ -574,6 +504,21 @@
                     // 翻訳取得に失敗した場合のフォールバック
                     showMessage(`設定のリセット中にエラーが発生しました: ${error.message}`, 'error');
                 }
+            }
+        }
+
+        // プロンプトをデフォルトに戻す
+        async function resetPrompt() {
+            try {
+                const defaultPrompt = await window.electronAPI.getDefaultPrompt();
+                document.getElementById('customPrompt').value = defaultPrompt;
+
+                const successMessage = await window.electronAPI.getTranslation('settings.prompt.reset_success') || 'プロンプトをデフォルト値に戻しました';
+                showMessage(successMessage, 'success');
+            } catch (error) {
+                console.error('プロンプトリセットエラー:', error);
+                const errorMessage = await window.electronAPI.getTranslation('settings.prompt.reset_error') || 'プロンプトのリセット中にエラーが発生しました';
+                showMessage(errorMessage, 'error');
             }
         }
 

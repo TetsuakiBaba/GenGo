@@ -157,7 +157,7 @@
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" id="autoApplyAndClose">
                                 <label class="form-check-label" for="autoApplyAndClose" id="auto-apply-and-close-label">
-                                    翻訳完了後に自動で結果を適用してウィンドウを閉じる
+                                    AI処理完了後に自動で結果を適用してウィンドウを閉じる
                                 </label>
                             </div>
                         </div>
@@ -224,9 +224,30 @@
         // UI言語を変更
         async function changeUILanguage(language) {
             try {
-                await window.electronAPI.changeLanguage(language);
-                await updateUITexts();
-                await populateLanguageOptions();
+                const currentLang = await window.electronAPI.getCurrentLanguage();
+
+                // 言語が実際に変更された場合のみダイアログを表示
+                if (language !== currentLang) {
+                    // 再起動ダイアログのメッセージを取得
+                    const title = await window.electronAPI.getTranslation('settings.ui_language.restart_dialog.title');
+                    const message = await window.electronAPI.getTranslation('settings.ui_language.restart_dialog.message');
+
+                    // ダイアログで確認
+                    if (confirm(`${title}\n\n${message}`)) {
+                        // まず言語設定を保存
+                        await window.electronAPI.changeLanguage(language);
+
+                        // アプリケーションを再起動
+                        await window.electronAPI.restartApp();
+                    } else {
+                        // キャンセルされた場合は元の言語に戻す
+                        document.getElementById('uiLanguage').value = currentLang;
+                    }
+                } else {
+                    // 同じ言語の場合はUIを更新するだけ
+                    await updateUITexts();
+                    await populateLanguageOptions();
+                }
             } catch (error) {
                 console.error('言語変更エラー:', error);
             }

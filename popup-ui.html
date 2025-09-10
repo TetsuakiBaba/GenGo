@@ -16,7 +16,6 @@
 
 <body>
     <div class="container-fluid">
-
         <!-- AI処理中画面 -->
         <div id="processing"
             style="position:absolute; top:0; left:0; width:100%; height:100%; display:none; align-items:center; justify-content:center; padding:1rem; z-index:1050; background-color:rgba(255,255,255,0.9);">
@@ -152,24 +151,10 @@
             console.log('popup-ui.html DOMContentLoaded');
             await initI18n();
 
-            // デバッグモード：URLパラメータからフェーズを取得
-            const urlParams = new URLSearchParams(window.location.search);
-            const debugPhase = urlParams.get('phase');
-            const sampleText = urlParams.get('text') || 'これはサンプルテキストです。デバッグ用の文章として使用されます。';
-            const sampleResult = urlParams.get('result') || 'This is a sample text. It is used as a debugging sentence.';
-
-            if (debugPhase) {
-                console.log('デバッグモード:', debugPhase);
-                setupDebugMode(debugPhase, sampleText, sampleResult);
-                return; // デバッグモードの場合は通常の初期化をスキップ
-            }
-
             // 共通のキャンセル処理
             function handleCancel() {
                 if (window.electronAPI) {
                     window.electronAPI.closeWindow();
-                } else {
-                    console.log('デバッグモード: キャンセル処理');
                 }
             }
 
@@ -193,9 +178,6 @@
                         showProcessingScreen('processing');
                         if (window.electronAPI) {
                             window.electronAPI.processOnDemandPrompt(userPrompt, currentSelectedText);
-                        } else {
-                            console.log('デバッグモード: オンデマンドプロンプト処理:', userPrompt);
-                            setTimeout(() => showResultScreen(currentSelectedText, sampleResult), 2000);
                         }
                     }
                 } else if (!textGenerationInput.classList.contains('d-none')) {
@@ -205,8 +187,6 @@
                         showProcessingScreen('generation');
                         if (window.electronAPI) {
                             window.electronAPI.processTextGeneration(generationPrompt);
-                        } else {
-                            setTimeout(() => showTextGenerationResult(sampleResult), 2000);
                         }
                     } else {
                         alert('テキスト生成の指示を入力してください。');
@@ -241,7 +221,6 @@
             document.getElementById('cancelPromptBtn').addEventListener('click', handleCancel);
 
             document.getElementById('textGenerateBtn').addEventListener('click', () => {
-                console.log('テキスト生成ボタンがクリックされました');
                 handleExecute();
             });
 
@@ -249,105 +228,6 @@
         });
 
         // デバッグモード設定関数
-        function setupDebugMode(phase, sampleText, sampleResult) {
-            console.log('デバッグモード設定:', phase);
-            
-            // サンプル変数を設定
-            currentSelectedText = sampleText;
-            
-            // 共通のイベントハンドラー設定（デバッグ用）
-            setupDebugEventHandlers(sampleText, sampleResult);
-            
-            switch (phase) {
-                case 'ondemand':
-                    showOnDemandPromptScreen(sampleText);
-                    break;
-                case 'textgen':
-                    showTextGenerationMode();
-                    break;
-                case 'processing':
-                    showProcessingScreen('processing');
-                    break;
-                case 'result':
-                    showResultScreen(sampleText, sampleResult);
-                    break;
-                case 'textgen-result':
-                    showTextGenerationResult(sampleResult);
-                    break;
-                default:
-                    console.log('無効なデバッグフェーズ:', phase);
-                    console.log('利用可能なフェーズ: ondemand, textgen, processing, result, textgen-result');
-            }
-        }
-
-        // デバッグ用イベントハンドラー設定
-        function setupDebugEventHandlers(sampleText, sampleResult) {
-            // キーボードショートカット設定
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    console.log('デバッグモード: ESCキーでキャンセル');
-                    return;
-                }
-                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                    event.preventDefault();
-                    console.log('デバッグモード: Cmd+Enterで実行');
-                    handleDebugExecute(sampleText, sampleResult);
-                    return;
-                }
-            });
-
-            // ボタンイベント設定
-            document.getElementById('applyBtn').addEventListener('click', () => {
-                console.log('デバッグモード: 適用ボタンクリック');
-            });
-
-            document.getElementById('rejectBtn').addEventListener('click', () => {
-                console.log('デバッグモード: キャンセルボタンクリック');
-            });
-
-            document.getElementById('processBtn').addEventListener('click', () => {
-                handleDebugExecute(sampleText, sampleResult);
-            });
-
-            document.getElementById('cancelPromptBtn').addEventListener('click', () => {
-                console.log('デバッグモード: プロンプトキャンセルボタンクリック');
-            });
-
-            document.getElementById('textGenerateBtn').addEventListener('click', () => {
-                handleDebugExecute(sampleText, sampleResult);
-            });
-
-            document.getElementById('cancelGenerationBtn').addEventListener('click', () => {
-                console.log('デバッグモード: 生成キャンセルボタンクリック');
-            });
-        }
-
-        // デバッグ用実行処理
-        function handleDebugExecute(sampleText, sampleResult) {
-            const resultDisplay = document.getElementById('resultDisplay');
-            const onDemandPromptInput = document.getElementById('onDemandPromptInput');
-            const textGenerationInput = document.getElementById('textGenerationInput');
-
-            if (!resultDisplay.classList.contains('d-none')) {
-                console.log('デバッグモード: 結果画面で適用処理');
-            } else if (!onDemandPromptInput.classList.contains('d-none')) {
-                const userPrompt = document.getElementById('userPromptInput').value.trim();
-                if (userPrompt) {
-                    console.log('デバッグモード: オンデマンドプロンプト処理開始:', userPrompt);
-                    showProcessingScreen('processing');
-                    setTimeout(() => showResultScreen(sampleText, sampleResult), 2000);
-                }
-            } else if (!textGenerationInput.classList.contains('d-none')) {
-                const generationPrompt = document.getElementById('generationPromptInput').value.trim();
-                if (generationPrompt) {
-                    console.log('デバッグモード: テキスト生成処理開始:', generationPrompt);
-                    showProcessingScreen('generation');
-                    setTimeout(() => showTextGenerationResult(sampleResult), 2000);
-                }
-            }
-        }
-
         // 処理中画面表示
         async function showProcessingScreen(action) {
             // 他の全ての画面を非表示にする
@@ -364,9 +244,9 @@
             if (action === 'generation') {
                 processingMessage = 'テキスト生成中...';
             } else {
-                processingMessage = (window.electronAPI && await t(`popup.processing_messages.${action.replace('-', '_')}`)) || 
-                                   (window.electronAPI && await t('popup.processing')) || 
-                                   '処理中...';
+                processingMessage = (window.electronAPI && await t(`popup.processing_messages.${action.replace('-', '_')}`)) ||
+                    (window.electronAPI && await t('popup.processing')) ||
+                    '処理中...';
             }
             document.getElementById('processingAction').textContent = processingMessage;
         }
@@ -393,7 +273,7 @@
         // 結果表示画面表示
         async function showResultScreen(originalText, resultText) {
             console.log('showResultScreen開始:', { originalText, resultText });
-            
+
             document.getElementById('processing').style.display = 'none';
             document.getElementById('resultDisplay').classList.remove('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
@@ -419,7 +299,7 @@
         // オンデマンドプロンプト入力画面表示
         function showOnDemandPromptScreen(selectedText) {
             console.log('showOnDemandPromptScreen開始:', selectedText);
-            
+
             // 選択されたテキストを保存
             currentSelectedText = selectedText;
 
@@ -427,7 +307,7 @@
             document.getElementById('resultDisplay').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.remove('d-none');
             document.getElementById('textGenerationInput').classList.add('d-none');
-            
+
             document.getElementById('selectedTextDisplay').textContent = selectedText;
             document.getElementById('userPromptInput').value = '';
 
@@ -452,12 +332,19 @@
         };
 
         window.showProcessingMessage = (message, type = 'info') => {
+            // 処理中画面を非表示
             document.getElementById('processing').style.display = 'none';
-            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('resultDisplay').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
+            document.getElementById('textGenerationInput').classList.add('d-none');
 
-            // エラーメッセージ表示ロジック（必要に応じて拡張）
-            console.log(message, type);
+            // メッセージを表示
+            alert(message);
+            
+            // ウィンドウを閉じる
+            if (window.electronAPI) {
+                window.electronAPI.closeWindow();
+            }
         };
 
         // メインプロセスからのテキスト生成モード信号を受信（すでに上記のDOMContentLoadedで設定済み）
@@ -499,7 +386,7 @@
             const processingElement = document.getElementById('processing');
             processingElement.style.display = 'none';
             processingElement.style.visibility = 'hidden';
-            
+
             // 入力画面を非表示
             document.getElementById('textGenerationInput').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');

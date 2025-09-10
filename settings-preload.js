@@ -26,5 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getDefaultSettings: () => ipcRenderer.invoke('get-default-settings'),
 
     // 設定をリセット
-    resetSettings: () => ipcRenderer.invoke('reset-settings')
+    resetSettings: () => ipcRenderer.invoke('reset-settings'),
+
+    // アプリケーション再起動
+    restartApp: () => ipcRenderer.invoke('restart-app')
 });

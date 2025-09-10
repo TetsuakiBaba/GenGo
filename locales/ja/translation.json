@@ -11,7 +11,7 @@
     },
     "popup": {
         "title": "テキスト処理",
-        "processing": "翻訳処理中...",
+        "processing": "処理中...",
         "cancel": "キャンセル",
         "apply": "適用",
         "reject": "キャンセル",
@@ -23,7 +23,7 @@
         "processing_messages": {
             "kana_kanji": "かな漢字変換中...",
             "correction": "文章校正中...",
-            "translation": "翻訳処理中..."
+            "translation": "処理中..."
         },
         "result": {
             "title": "処理結果",
@@ -43,7 +43,13 @@
         "title": "設定",
         "ui_language": {
             "title": "UI言語",
-            "label": "UI言語"
+            "label": "UI言語",
+            "restart_dialog": {
+                "title": "再起動が必要です",
+                "message": "UI言語設定を変更した場合は、アプリケーションを再起動します。\n\n今すぐ再起動しますか？",
+                "ok": "OK",
+                "cancel": "キャンセル"
+            }
         },
         "translation": {
             "title": "翻訳設定",
@@ -82,7 +88,7 @@
         },
         "other": {
             "title": "その他の設定",
-            "auto_apply_and_close": "翻訳完了後に自動で結果を適用してウィンドウを閉じる",
+            "auto_apply_and_close": "AI処理完了後に自動で結果を適用してウィンドウを閉じる",
             "processing_mode": "処理モード",
             "mode_translation": "翻訳モード",
             "mode_custom": "カスタムプロンプトモード",

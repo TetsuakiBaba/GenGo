@@ -464,9 +464,10 @@ class GengoElectronMain {
                 height: 100,
                 minWidth: 100,
                 minHeight: 100,
-                maxWidth: 100,
-                maxHeight: 100,
+                maxWidth: 150,
+                maxHeight: 150,
                 resizable: false,
+                scrollable: false,
             }
             : {
                 width: 600,
@@ -526,11 +527,7 @@ class GengoElectronMain {
                 -webkit-user-select: text;
             }
 
-            /* スクロールバーの最低限の見た目調整（任意） */
-            ::-webkit-scrollbar {
-                width: 10px;
-                height: 10px;
-            }
+           
             ::-webkit-scrollbar-thumb {
                 background: rgba(0,0,0,0.2);
                 border-radius: 6px;
@@ -604,7 +601,7 @@ class GengoElectronMain {
 
         // macOSでポップアップ表示時にDockアイコンを一時的に表示
         if (process.platform === 'darwin') {
-            app.dock.show();
+            // app.dock.show();
         }
 
         // 既存のポップアップが開いている場合は閉じる
@@ -684,7 +681,7 @@ class GengoElectronMain {
     async showActionPopup(selectedText) {
         // macOSでポップアップ表示時にDockアイコンを一時的に表示
         if (process.platform === 'darwin') {
-            app.dock.show();
+            // app.dock.show();
         }
 
         // 既存のポップアップが開いている場合は閉じる
@@ -692,7 +689,7 @@ class GengoElectronMain {
             this.popupWindow.close();
             this.popupWindow = null;
             // 少し待ってから新しいウィンドウを作成
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
 
         this.createPopupWindow();
@@ -734,6 +731,7 @@ class GengoElectronMain {
 
         this.popupWindow.setPosition(x, y);
 
+
         this.popupWindow.show();
         this.popupWindow.focus();
 
@@ -743,18 +741,20 @@ class GengoElectronMain {
         // ポップアップ表示後、すぐに翻訳処理を開始
         console.log('翻訳処理を自動開始:', selectedText);
 
+        // 処理中画面を表示
+        this.popupWindow.webContents.executeJavaScript(`
+                showProcessingScreen('translation');
+            `);
+
         // 自動適用モードでも処理中画面を表示
         if (this.settings.autoApplyAndClose) {
             // ウィンドウサイズを一時的に拡大
             console.log('自動適用モード: 処理中画面表示のためウィンドウサイズを拡大');
-            this.popupWindow.setSize(300, 150);
+            this.popupWindow.setSize(300, 300);
             this.popupWindow.setResizable(false);
-            this.popupWindow.center();
-            
-            // 処理中画面を表示
-            this.popupWindow.webContents.executeJavaScript(`
-                showProcessingScreen('translation');
-            `);
+            // this.popupWindow.center();
+
+
         }
 
         // 通常の翻訳モードであることを設定
@@ -771,7 +771,7 @@ class GengoElectronMain {
     async showOnDemandPromptInput(selectedText) {
         // macOSでポップアップ表示時にDockアイコンを一時的に表示
         if (process.platform === 'darwin') {
-            app.dock.show();
+            // app.dock.show();
         }
 
         // 既存のポップアップが開いている場合は閉じる
@@ -986,6 +986,12 @@ class GengoElectronMain {
             return getCurrentLanguage();
         });
 
+        // アプリケーション再起動のIPCハンドラー
+        ipcMain.handle('restart-app', () => {
+            app.relaunch();
+            app.exit();
+        });
+
         // ショートカットキー検証のIPCハンドラー
         ipcMain.handle('validate-shortcut-key', (event, shortcut) => {
             return this.validateShortcutKey(shortcut);
@@ -1110,8 +1116,9 @@ class GengoElectronMain {
                     console.log('変更なし:', selectedText);
                     // オンデマンドプロンプトモードでは自動適用せず、変更なしメッセージを表示
                     if (this.popupWindow) {
+                        const noChangeMessage = await t('processing.messages.no_change');
                         this.popupWindow.webContents.executeJavaScript(`
-                            window.showProcessingMessage('${t('processing.messages.no_change')}', 'info');
+                            window.showProcessingMessage('${noChangeMessage}', 'info');
                         `);
                     }
 
@@ -1127,8 +1134,9 @@ class GengoElectronMain {
 
                 // オンデマンドプロンプトモードでは自動適用せず、エラーメッセージを表示
                 if (this.popupWindow) {
+                    const errorMessage = await t('processing.messages.error', { error: result.error });
                     this.popupWindow.webContents.executeJavaScript(`
-                        window.showProcessingMessage('${t('processing.messages.error', { error: result.error })}', 'error');
+                        window.showProcessingMessage('${errorMessage}', 'error');
                     `);
                 }
 
@@ -1144,8 +1152,9 @@ class GengoElectronMain {
 
             // オンデマンドプロンプトモードでは自動適用せず、エラーメッセージを表示
             if (this.popupWindow) {
+                const errorMessage = await t('processing.messages.error', { error: error.message });
                 this.popupWindow.webContents.executeJavaScript(`
-                    window.showProcessingMessage('${t('processing.messages.error', { error: error.message })}', 'error');
+                    window.showProcessingMessage('${errorMessage}', 'error');
                 `);
             }
 
@@ -1728,7 +1737,7 @@ class GengoElectronMain {
 
         // macOSで設定ウィンドウ表示時にDockアイコンを一時的に表示
         if (process.platform === 'darwin') {
-            app.dock.show();
+            // app.dock.show();
         }
 
         this.settingsWindow = new BrowserWindow({

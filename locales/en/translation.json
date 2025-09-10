@@ -11,7 +11,7 @@
     },
     "popup": {
         "title": "Text Processing",
-        "processing": "Translating...",
+        "processing": "Processing...",
         "cancel": "Cancel",
         "apply": "Apply",
         "reject": "Cancel",
@@ -43,7 +43,13 @@
         "title": "Settings",
         "ui_language": {
             "title": "UI Language",
-            "label": "UI Language"
+            "label": "UI Language",
+            "restart_dialog": {
+                "title": "Restart Required",
+                "message": "The application will restart when you change the UI language setting.\n\nDo you want to restart now?",
+                "ok": "OK",
+                "cancel": "Cancel"
+            }
         },
         "translation": {
             "title": "Translation Settings",
@@ -82,7 +88,7 @@
         },
         "other": {
             "title": "Other Settings",
-            "auto_apply_and_close": "Automatically apply result and close window after translation is complete",
+            "auto_apply_and_close": "Automatically apply result and close window after AI processing is complete",
             "processing_mode": "Processing Mode",
             "mode_translation": "Translation Mode",
             "mode_custom": "Custom Prompt Mode",

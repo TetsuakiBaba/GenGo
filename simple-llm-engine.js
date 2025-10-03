@@ -4,10 +4,19 @@
  */
 export class SimpleLLMEngine {
     constructor(options = {}) {
+        this.provider = options.provider || 'local';
         this.apiEndpoint = options.apiEndpoint || 'http://127.0.0.1:1234/v1';
+        this.apiKey = options.apiKey;
         this.model = options.model || 'local-model';
         this.maxRetries = options.maxRetries || 3;
         this.timeout = options.timeout || 60000; // 30秒 → 60秒に延長（長い文章処理に対応）
+
+        console.log('SimpleLLMEngine初期化:', {
+            provider: this.provider,
+            endpoint: this.apiEndpoint,
+            model: this.model,
+            hasApiKey: !!this.apiKey
+        });
     }
 
     /**
@@ -229,6 +238,7 @@ export class SimpleLLMEngine {
 
         console.log(`プロンプト長: ${promptLength}文字, max_tokens: ${maxTokens}`);
 
+        // リクエストボディを構築
         const requestBody = {
             model: this.model,
             messages: [
@@ -238,21 +248,74 @@ export class SimpleLLMEngine {
                 }
             ],
             temperature: 0.3,
-            max_tokens: maxTokens,
             stream: false
         };
 
-        console.log('LLM API呼び出し:', this.apiEndpoint);
+        // モデルに応じて適切なトークン制限パラメータを使用
+        // OpenAI API (gpt-*), Anthropic (claude-*) などリモートプロバイダーは max_completion_tokens を優先
+        // ローカルモデルは max_tokens を使用
+        console.log(`モデル判定 - provider: "${this.provider}", model: "${this.model}", type: ${typeof this.model}`);
+
+        const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
+            this.model.startsWith('gpt-') ||
+            this.model.includes('gpt-4o') ||
+            this.model.includes('gpt-4-turbo') ||
+            this.model.includes('o1') ||
+            this.model.includes('o3')
+        );
+
+        console.log(`useMaxCompletionTokens: ${useMaxCompletionTokens}`);
+
+        if (useMaxCompletionTokens) {
+            requestBody.max_completion_tokens = maxTokens;
+            console.log(`max_completion_tokens を使用: ${maxTokens}`);
+        } else {
+            requestBody.max_tokens = maxTokens;
+            console.log(`max_tokens を使用: ${maxTokens}`);
+        }
+
+        // ヘッダーを構築（プロバイダーに応じて認証を設定）
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+
+        // リモートプロバイダーの場合はAPIキーを追加
+        if (this.provider === 'remote' && this.apiKey) {
+            headers['Authorization'] = `Bearer ${this.apiKey}`;
+            console.log('リモートプロバイダー認証ヘッダーを設定');
+        } else if (this.provider === 'local') {
+            console.log('ローカルプロバイダー（認証なし）');
+        }
+
+        // エンドポイントURLを構築（既に/chat/completionsが含まれている場合は追加しない）
+        let apiUrl = this.apiEndpoint;
+
+        // 末尾のスラッシュを削除
+        if (apiUrl.endsWith('/')) {
+            apiUrl = apiUrl.slice(0, -1);
+        }
+
+        // /chat/completionsが含まれていない場合のみ追加
+        if (!apiUrl.endsWith('/chat/completions')) {
+            apiUrl = `${apiUrl}/chat/completions`;
+        }
+
+        console.log(`LLM API呼び出し詳細:`, {
+            provider: this.provider,
+            url: apiUrl,
+            model: this.model,
+            hasApiKey: !!this.apiKey,
+            promptLength: promptLength,
+            maxTokens: maxTokens
+        });
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
         try {
-            const response = await fetch(`${this.apiEndpoint}/chat/completions`, {
+            const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify(requestBody),
                 signal: controller.signal
             });
@@ -260,7 +323,28 @@ export class SimpleLLMEngine {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                throw new Error(`LLM API エラー: ${response.status} ${response.statusText}`);
+                let errorMessage = `HTTP ${response.status} ${response.statusText}`;
+                try {
+                    const errorText = await response.text();
+                    console.error(`LLM API エラー詳細: ${response.status} ${response.statusText}`, errorText);
+
+                    // JSONエラーレスポンスをパース
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        if (errorData.error && errorData.error.message) {
+                            errorMessage = errorData.error.message;
+                        }
+                    } catch (parseError) {
+                        // JSON解析失敗の場合はテキストをそのまま使用
+                        if (errorText && errorText.length < 200) {
+                            errorMessage = errorText;
+                        }
+                    }
+                } catch (textError) {
+                    console.error('エラーレスポンスの読み取りに失敗:', textError);
+                }
+
+                throw new Error(`LLM API エラー: ${errorMessage}`);
             }
 
             const data = await response.json();
@@ -280,6 +364,7 @@ export class SimpleLLMEngine {
                 throw new Error('LLM API呼び出しがタイムアウトしました');
             }
 
+            console.error('LLM API呼び出しエラー:', error);
             throw error;
         }
     }

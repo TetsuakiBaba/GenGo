@@ -83,8 +83,20 @@
         },
         "llm": {
             "title": "LLMエンジン設定",
+            "provider": "プロバイダー",
+            "provider_local": "ローカル",
+            "provider_remote": "リモート",
             "endpoint": "APIエンドポイント",
-            "endpoint_description": "LLM APIのエンドポイントURL（例: http://127.0.0.1:1234/v1）"
+            "endpoint_description": "ベースURL（例: http://127.0.0.1:1234/v1 または https://api.openai.com/v1）。/chat/completions は自動で追加されます",
+            "api_key": "APIキー",
+            "api_key_description": "リモートプロバイダー接続用のAPIキー",
+            "model_name": "モデル名",
+            "model_name_description": "使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）",
+            "test_connection": "接続テスト",
+            "test_success": "接続に成功しました",
+            "test_failed": "接続に失敗しました: {{error}}",
+            "provider_description_local": "ローカルにホストされたLLMサーバーに接続します（認証なし）",
+            "provider_description_remote": "リモートLLMサービスのAPIエンドポイント（例: https://api.openai.com/v1）"
         },
         "other": {
             "title": "その他の設定",

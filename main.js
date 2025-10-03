@@ -48,6 +48,7 @@ class GengoElectronMain {
             llmEndpoint: 'http://127.0.0.1:1234/v1', // LLMエンドポイント（ローカル・リモート共通）
             apiKey: '', // APIキー（リモート接続用）
             modelName: 'gpt-4o-mini', // モデル名（リモート接続用、デフォルトは最新の推奨モデル）
+            maxTokens: 4096, // 最大トークン数（デフォルト4096）
             shortcutKey: 'Ctrl+1', // プロンプトのショートカットキー設定
             onDemandShortcutKey: 'Ctrl+2', // オンデマンドプロンプトのショートカットキー設定
             customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。' // プロンプト
@@ -132,13 +133,15 @@ class GengoElectronMain {
                 provider: 'remote',
                 apiEndpoint: this.settings.llmEndpoint,
                 apiKey: this.settings.apiKey,
-                model: this.settings.modelName || 'gpt-3.5-turbo'
+                model: this.settings.modelName || 'gpt-3.5-turbo',
+                maxTokens: this.settings.maxTokens || 4096
             };
         } else {
             return {
                 provider: 'local',
                 apiEndpoint: this.settings.llmEndpoint,
-                model: 'local-model'
+                model: 'local-model',
+                maxTokens: this.settings.maxTokens || 4096
             };
         }
     }
@@ -961,6 +964,7 @@ class GengoElectronMain {
                 llmEndpoint: 'http://127.0.0.1:1234/v1',
                 apiKey: '',
                 modelName: 'gpt-4o-mini',
+                maxTokens: 4096,
                 shortcutKey: 'Ctrl+Space',
                 processingMode: 'translation',
                 customPrompt: 'Please process the following text and provide an improved version:'
@@ -976,6 +980,7 @@ class GengoElectronMain {
                 llmEndpoint: 'http://127.0.0.1:1234/v1',
                 apiKey: '',
                 modelName: 'gpt-4o-mini',
+                maxTokens: 4096,
                 shortcutKey: 'Ctrl+1',
                 onDemandShortcutKey: 'Ctrl+2',
                 customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。'
@@ -1093,7 +1098,8 @@ class GengoElectronMain {
                     provider: config.provider,
                     apiEndpoint: config.endpoint,
                     apiKey: config.apiKey,
-                    model: config.modelName || 'local-model'
+                    model: config.modelName || 'local-model',
+                    maxTokens: config.maxTokens || 4096
                 };
 
                 const testEngine = new SimpleLLMEngine(testConfig);

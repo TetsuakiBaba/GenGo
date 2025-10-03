@@ -174,6 +174,16 @@
                                 </div>
                             </div>
 
+                            <!-- 最大トークン数設定 -->
+                            <div class="mb-3">
+                                <label for="maxTokens" class="form-label" id="max-tokens-label">最大トークン数</label>
+                                <input type="number" class="form-control" id="maxTokens" 
+                                       placeholder="4096" min="256" max="32768" step="256">
+                                <small class="text-muted" id="max-tokens-description">
+                                    LLMの応答に使用する最大トークン数（デフォルト: 4096）
+                                </small>
+                            </div>
+
                             <!-- LLM接続テストボタン -->
                             <button type="button" class="btn btn-outline-primary btn-sm" id="testLLMConnection">
                                 <i class="bi bi-wifi"></i> <span id="test-connection-text">接続テスト</span>
@@ -365,6 +375,12 @@
                 document.getElementById('model-name-description').textContent =
                     await window.electronAPI.getTranslation('settings.llm.model_name_description');
 
+                // 最大トークン数関連
+                document.getElementById('max-tokens-label').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.max_tokens');
+                document.getElementById('max-tokens-description').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.max_tokens_description');
+
                 // 接続テスト
                 document.getElementById('test-connection-text').textContent =
                     await window.electronAPI.getTranslation('settings.llm.test_connection');
@@ -469,6 +485,9 @@
                     document.getElementById('modelName').value = settings.modelName;
                 }
 
+                // 最大トークン数設定
+                document.getElementById('maxTokens').value = settings.maxTokens || 4096;
+
                 // プロバイダー設定に応じてUI表示を切り替え
                 handleProviderChange();
 
@@ -514,6 +533,7 @@
                     llmEndpoint: document.getElementById('llmEndpoint').value,
                     apiKey: document.getElementById('apiKey').value,
                     modelName: document.getElementById('modelName').value,
+                    maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096,
                     customPrompt: document.getElementById('customPrompt').value
                 };
 
@@ -666,7 +686,8 @@
                     provider: provider,
                     endpoint: document.getElementById('llmEndpoint').value,
                     apiKey: provider === 'remote' ? document.getElementById('apiKey').value : '',
-                    modelName: provider === 'remote' ? document.getElementById('modelName').value : 'local-model'
+                    modelName: provider === 'remote' ? document.getElementById('modelName').value : 'local-model',
+                    maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096
                 };
 
                 const result = await window.electronAPI.testLLMConnection(config);

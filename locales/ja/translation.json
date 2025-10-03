@@ -92,6 +92,8 @@
             "api_key_description": "リモートプロバイダー接続用のAPIキー",
             "model_name": "モデル名",
             "model_name_description": "使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）",
+            "max_tokens": "最大トークン数",
+            "max_tokens_description": "LLMの応答に使用する最大トークン数（デフォルト: 4096）",
             "test_connection": "接続テスト",
             "test_success": "接続に成功しました",
             "test_failed": "接続に失敗しました: {{error}}",

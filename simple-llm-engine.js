@@ -8,6 +8,7 @@ export class SimpleLLMEngine {
         this.apiEndpoint = options.apiEndpoint || 'http://127.0.0.1:1234/v1';
         this.apiKey = options.apiKey;
         this.model = options.model || 'local-model';
+        this.maxTokens = options.maxTokens || 4096; // デフォルトは4096トークン
         this.maxRetries = options.maxRetries || 3;
         this.timeout = options.timeout || 60000; // 30秒 → 60秒に延長（長い文章処理に対応）
 
@@ -15,6 +16,7 @@ export class SimpleLLMEngine {
             provider: this.provider,
             endpoint: this.apiEndpoint,
             model: this.model,
+            maxTokens: this.maxTokens,
             hasApiKey: !!this.apiKey
         });
     }
@@ -222,19 +224,9 @@ export class SimpleLLMEngine {
      * LLM APIを呼び出し
      */
     async callLLM(prompt) {
-        // プロンプトの長さに基づいて適切なmax_tokensを計算
+        // 設定されたmaxTokensを使用（ユーザーが設定画面で指定可能）
+        const maxTokens = this.maxTokens;
         const promptLength = prompt.length;
-        let maxTokens;
-
-        if (promptLength > 3000) {
-            maxTokens = 8192; // 非常に長いテキスト
-        } else if (promptLength > 1500) {
-            maxTokens = 6144; // 長いテキスト
-        } else if (promptLength > 500) {
-            maxTokens = 4096; // 中程度のテキスト
-        } else {
-            maxTokens = 2048; // 短いテキスト
-        }
 
         console.log(`プロンプト長: ${promptLength}文字, max_tokens: ${maxTokens}`);
 
@@ -247,7 +239,7 @@ export class SimpleLLMEngine {
                     content: prompt
                 }
             ],
-            temperature: 0.3,
+            // temperature: 0.3,
             stream: false
         };
 
@@ -258,10 +250,9 @@ export class SimpleLLMEngine {
 
         const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
             this.model.startsWith('gpt-') ||
-            this.model.includes('gpt-4o') ||
-            this.model.includes('gpt-4-turbo') ||
             this.model.includes('o1') ||
-            this.model.includes('o3')
+            this.model.includes('o3') ||
+            this.model.includes('o4')
         );
 
         console.log(`useMaxCompletionTokens: ${useMaxCompletionTokens}`);

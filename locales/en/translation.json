@@ -83,8 +83,20 @@
         },
         "llm": {
             "title": "LLM Engine Settings",
+            "provider": "Provider",
+            "provider_local": "Local",
+            "provider_remote": "Remote",
             "endpoint": "API Endpoint",
-            "endpoint_description": "URL of the LLM API endpoint (e.g., http://127.0.0.1:1234/v1)"
+            "endpoint_description": "Base URL (e.g., http://127.0.0.1:1234/v1 or https://api.openai.com/v1). /chat/completions will be added automatically",
+            "api_key": "API Key",
+            "api_key_description": "API key for remote provider connection",
+            "model_name": "Model Name",
+            "model_name_description": "Model name to use (e.g., gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022)",
+            "test_connection": "Test Connection",
+            "test_success": "Connection successful",
+            "test_failed": "Connection failed: {{error}}",
+            "provider_description_local": "Connect to locally hosted LLM server (no authentication)",
+            "provider_description_remote": "Remote LLM service API endpoint (e.g., https://api.openai.com/v1)"
         },
         "other": {
             "title": "Other Settings",

@@ -9,6 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- i18next -->
+    <script src="https://unpkg.com/i18next/dist/umd/i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-http-backend/i18nextHttpBackend.min.js"></script>
+    <script src="i18n.js"></script>
     <style>
         .full-container {
             margin: 0;
@@ -124,28 +128,57 @@
                             </div>
                         </div>
 
-                        <!-- LLMエンドポイント設定 -->
+                        <!-- LLMエンジン設定 -->
                         <div class="mb-4">
                             <h6 class="border-bottom pb-2 mb-3" id="llm-settings-title">
                                 <i class="bi bi-cpu"></i> LLMエンジン設定
                             </h6>
 
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <label for="llmEndpoint" class="form-label"
-                                        id="llm-endpoint-label">APIエンドポイント</label>
-                                    <input type="text" class="form-control" id="llmEndpoint"
-                                        placeholder="http://127.0.0.1:1234/v1">
-                                </div>
+                            <!-- LLMプロバイダー選択 -->
+                            <div class="mb-3">
+                                <label for="llmProvider" class="form-label" id="llm-provider-label">LLMプロバイダー</label>
+                                <select class="form-select" id="llmProvider">
+                                    <option value="local" id="llm-provider-local-option">ローカルLLM</option>
+                                    <option value="remote" id="llm-provider-remote-option">リモートLLM</option>
+                                </select>
                             </div>
 
-                            <div class="row mt-2">
-                                <div class="col-12">
-                                    <small class="text-muted" id="llm-endpoint-description">
-                                        LLM APIのエンドポイントURL（例: http://127.0.0.1:1234/v1）
+                            <!-- エンドポイントURL（共通） -->
+                            <div class="mb-3">
+                                <label for="llmEndpoint" class="form-label" id="llm-endpoint-label">APIエンドポイント</label>
+                                <input type="text" class="form-control" id="llmEndpoint"
+                                    placeholder="http://127.0.0.1:1234/v1">
+                                <small class="text-muted" id="llm-endpoint-description">
+                                    ベースURL（例: http://127.0.0.1:1234/v1 または https://api.openai.com/v1）。/chat/completions
+                                    は自動で追加されます
+                                </small>
+                            </div>
+
+                            <!-- リモート接続用設定 -->
+                            <div id="remoteSettings" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="apiKey" class="form-label" id="api-key-label">APIキー</label>
+                                    <input type="password" class="form-control" id="apiKey"
+                                        placeholder="your-api-key-here">
+                                    <small class="text-muted" id="api-key-description">
+                                        リモートLLMサービスのAPIキー（ローカルに保存されます）
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="modelName" class="form-label" id="model-name-label">モデル名</label>
+                                    <input type="text" class="form-control" id="modelName" placeholder="gpt-4o-mini">
+                                    <small class="text-muted" id="model-name-description">
+                                        使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）
                                     </small>
                                 </div>
                             </div>
+
+                            <!-- LLM接続テストボタン -->
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="testLLMConnection">
+                                <i class="bi bi-wifi"></i> <span id="test-connection-text">接続テスト</span>
+                            </button>
+                            <div id="llmTestResult" class="mt-2"></div>
                         </div>
 
                         <!-- その他の設定 -->
@@ -207,6 +240,12 @@
 
             // プロンプトリセットボタンイベント
             document.getElementById('resetPromptBtn').addEventListener('click', resetPrompt);
+
+            // LLMプロバイダー変更イベント
+            document.getElementById('llmProvider').addEventListener('change', handleProviderChange);
+
+            // LLM接続テストイベント
+            document.getElementById('testLLMConnection').addEventListener('click', testLLMConnection);
         });
 
         // 翻訳を読み込み
@@ -299,10 +338,36 @@
                 // LLMエンドポイント設定セクション
                 document.getElementById('llm-settings-title').innerHTML =
                     '<i class="bi bi-cpu"></i> ' + await window.electronAPI.getTranslation('settings.llm.title');
+
+                // LLMプロバイダー関連
+                document.getElementById('llm-provider-label').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.provider');
+                document.getElementById('llm-provider-local-option').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.provider_local');
+                document.getElementById('llm-provider-remote-option').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.provider_remote');
+
+                // エンドポイント関連
                 document.getElementById('llm-endpoint-label').textContent =
                     await window.electronAPI.getTranslation('settings.llm.endpoint');
                 document.getElementById('llm-endpoint-description').textContent =
                     await window.electronAPI.getTranslation('settings.llm.endpoint_description');
+
+                // APIキー関連
+                document.getElementById('api-key-label').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.api_key');
+                document.getElementById('api-key-description').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.api_key_description');
+
+                // モデル名関連
+                document.getElementById('model-name-label').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.model_name');
+                document.getElementById('model-name-description').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.model_name_description');
+
+                // 接続テスト
+                document.getElementById('test-connection-text').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.test_connection');
 
                 // その他設定セクション
                 document.getElementById('other-settings-title').innerHTML =
@@ -392,10 +457,20 @@
                     document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey;
                 }
 
-                // LLMエンドポイント設定
-                if (settings.llmEndpoint) {
-                    document.getElementById('llmEndpoint').value = settings.llmEndpoint;
+                // LLM設定
+                document.getElementById('llmProvider').value = settings.llmProvider || 'local';
+                document.getElementById('llmEndpoint').value = settings.llmEndpoint || 'http://127.0.0.1:1234/v1';
+
+                if (settings.apiKey) {
+                    document.getElementById('apiKey').value = settings.apiKey;
                 }
+
+                if (settings.modelName) {
+                    document.getElementById('modelName').value = settings.modelName;
+                }
+
+                // プロバイダー設定に応じてUI表示を切り替え
+                handleProviderChange();
 
                 // プロンプト設定
                 if (settings.customPrompt) {
@@ -435,7 +510,10 @@
                     language: document.getElementById('uiLanguage').value,
                     shortcutKey: shortcutKey,
                     onDemandShortcutKey: onDemandShortcutKey,
+                    llmProvider: document.getElementById('llmProvider').value,
                     llmEndpoint: document.getElementById('llmEndpoint').value,
+                    apiKey: document.getElementById('apiKey').value,
+                    modelName: document.getElementById('modelName').value,
                     customPrompt: document.getElementById('customPrompt').value
                 };
 
@@ -540,6 +618,78 @@
                 console.error('プロンプトリセットエラー:', error);
                 const errorMessage = await window.electronAPI.getTranslation('settings.prompt.reset_error') || 'プロンプトのリセット中にエラーが発生しました';
                 showMessage(errorMessage, 'error');
+            }
+        }
+
+        // LLMプロバイダー変更時の処理
+        async function handleProviderChange() {
+            const provider = document.getElementById('llmProvider').value;
+            const remoteSettings = document.getElementById('remoteSettings');
+            const endpointInput = document.getElementById('llmEndpoint');
+            const endpointDescription = document.getElementById('llm-endpoint-description');
+
+            if (provider === 'remote') {
+                remoteSettings.style.display = 'block';
+                endpointInput.placeholder = 'https://api.openai.com/v1';
+                try {
+                    const description = await window.electronAPI.getTranslation('settings.llm.endpoint_description');
+                    endpointDescription.textContent = description || 'ベースURL（例: https://api.openai.com/v1）。/chat/completions は自動で追加されます';
+                } catch (error) {
+                    endpointDescription.textContent = 'ベースURL（例: https://api.openai.com/v1）。/chat/completions は自動で追加されます';
+                }
+            } else {
+                remoteSettings.style.display = 'none';
+                endpointInput.placeholder = 'http://127.0.0.1:1234/v1';
+                try {
+                    const description = await window.electronAPI.getTranslation('settings.llm.endpoint_description');
+                    endpointDescription.textContent = description || 'ベースURL（例: http://127.0.0.1:1234/v1）。/chat/completions は自動で追加されます';
+                } catch (error) {
+                    endpointDescription.textContent = 'ベースURL（例: http://127.0.0.1:1234/v1）。/chat/completions は自動で追加されます';
+                }
+            }
+        }
+
+        // LLM接続テスト
+        async function testLLMConnection() {
+            const button = document.getElementById('testLLMConnection');
+            const resultDiv = document.getElementById('llmTestResult');
+            const testText = document.getElementById('test-connection-text');
+
+            // テスト中の表示
+            button.disabled = true;
+            testText.textContent = 'テスト中...';
+            resultDiv.innerHTML = '';
+
+            try {
+                const provider = document.getElementById('llmProvider').value;
+                const config = {
+                    provider: provider,
+                    endpoint: document.getElementById('llmEndpoint').value,
+                    apiKey: provider === 'remote' ? document.getElementById('apiKey').value : '',
+                    modelName: provider === 'remote' ? document.getElementById('modelName').value : 'local-model'
+                };
+
+                const result = await window.electronAPI.testLLMConnection(config);
+
+                if (result.success) {
+                    const successMessage = await window.electronAPI.getTranslation('settings.llm.test_success') || '接続に成功しました';
+                    resultDiv.innerHTML = `<div class="alert alert-success alert-sm">✓ ${successMessage}</div>`;
+                } else {
+                    const failMessage = await window.electronAPI.getTranslation('settings.llm.test_failed') || '接続に失敗しました';
+                    resultDiv.innerHTML = `<div class="alert alert-danger alert-sm">✗ ${failMessage.replace('{{error}}', result.error)}</div>`;
+                }
+            } catch (error) {
+                const failMessage = await window.electronAPI.getTranslation('settings.llm.test_failed') || '接続に失敗しました';
+                resultDiv.innerHTML = `<div class="alert alert-danger alert-sm">✗ ${failMessage.replace('{{error}}', error.message)}</div>`;
+            } finally {
+                button.disabled = false;
+                const testButtonText = await window.electronAPI.getTranslation('settings.llm.test_connection') || '接続テスト';
+                testText.textContent = testButtonText;
+
+                // 5秒後にメッセージを消去
+                setTimeout(() => {
+                    resultDiv.innerHTML = '';
+                }, 5000);
             }
         }
 

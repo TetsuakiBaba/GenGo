@@ -29,5 +29,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resetSettings: () => ipcRenderer.invoke('reset-settings'),
 
     // アプリケーション再起動
-    restartApp: () => ipcRenderer.invoke('restart-app')
+    restartApp: () => ipcRenderer.invoke('restart-app'),
+
+    // LLM接続テスト
+    testLLMConnection: (config) => ipcRenderer.invoke('test-llm-connection', config)
 });

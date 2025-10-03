@@ -44,7 +44,10 @@ class GengoElectronMain {
         this.settings = {
             autoApplyAndClose: false,
             language: 'en', // UI言語設定
-            llmEndpoint: 'http://127.0.0.1:1234/v1', // LLMエンドポイント設定
+            llmProvider: 'local', // 'local' または 'remote'
+            llmEndpoint: 'http://127.0.0.1:1234/v1', // LLMエンドポイント（ローカル・リモート共通）
+            apiKey: '', // APIキー（リモート接続用）
+            modelName: 'gpt-4o-mini', // モデル名（リモート接続用、デフォルトは最新の推奨モデル）
             shortcutKey: 'Ctrl+1', // プロンプトのショートカットキー設定
             onDemandShortcutKey: 'Ctrl+2', // オンデマンドプロンプトのショートカットキー設定
             customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。' // プロンプト
@@ -62,11 +65,11 @@ class GengoElectronMain {
         // i18n初期化
         await initI18n(this.settings.language);
 
+        // LLM設定を出力
+        console.log('LLM設定詳細:', this.getLLMConfig());
+
         // LLMエンジン初期化
-        this.llmEngine = new SimpleLLMEngine({
-            apiEndpoint: this.settings.llmEndpoint,
-            model: 'local-model'
-        });
+        this.llmEngine = new SimpleLLMEngine(this.getLLMConfig());
 
         // システムトレイを作成
         this.createTray();
@@ -117,6 +120,26 @@ class GengoElectronMain {
             console.log('システムトレイを作成しました');
         } catch (error) {
             console.error('システムトレイ作成エラー:', error);
+        }
+    }
+
+    /**
+     * LLM設定を取得
+     */
+    getLLMConfig() {
+        if (this.settings.llmProvider === 'remote') {
+            return {
+                provider: 'remote',
+                apiEndpoint: this.settings.llmEndpoint,
+                apiKey: this.settings.apiKey,
+                model: this.settings.modelName || 'gpt-3.5-turbo'
+            };
+        } else {
+            return {
+                provider: 'local',
+                apiEndpoint: this.settings.llmEndpoint,
+                model: 'local-model'
+            };
         }
     }
 
@@ -832,6 +855,35 @@ class GengoElectronMain {
      * IPCイベントハンドラーを設定
      */
     setupIPCHandlers() {
+        // 既存のハンドラーを削除（重複エラーを防ぐため）
+        const handlers = [
+            'close-window',
+            'apply-result',
+            'process-on-demand-prompt',
+            'get-settings',
+            'save-settings',
+            'close-settings-window',
+            'get-default-settings',
+            'reset-settings',
+            'get-i18n-data',
+            'get-translation',
+            'change-language',
+            'get-current-language',
+            'validate-shortcut-key',
+            'get-default-prompt',
+            'process-text-generation',
+            'restart-app',
+            'test-llm-connection'
+        ];
+
+        handlers.forEach(handler => {
+            try {
+                ipcMain.removeHandler(handler);
+            } catch (error) {
+                // ハンドラーが存在しない場合は無視
+            }
+        });
+
         // ウィンドウを閉じる
         ipcMain.handle('close-window', () => {
             if (this.popupWindow) {
@@ -859,7 +911,7 @@ class GengoElectronMain {
 
         ipcMain.handle('save-settings', async (event, newSettings) => {
             const oldLanguage = this.settings.language;
-            const oldLLMEndpoint = this.settings.llmEndpoint;
+            const oldLLMConfig = JSON.stringify(this.getLLMConfig());
             const oldShortcutKey = this.settings.shortcutKey;
 
             await this.saveSettings(newSettings);
@@ -871,13 +923,11 @@ class GengoElectronMain {
                 this.createTray();
             }
 
-            // LLMエンドポイントが変更された場合、LLMエンジンを再初期化
-            if (newSettings.llmEndpoint && newSettings.llmEndpoint !== oldLLMEndpoint) {
-                this.llmEngine = new SimpleLLMEngine({
-                    apiEndpoint: this.settings.llmEndpoint,
-                    model: 'local-model'
-                });
-                console.log('LLMエンドポイントを更新しました:', this.settings.llmEndpoint);
+            // LLM設定が変更された場合、LLMエンジンを再初期化
+            const newLLMConfig = JSON.stringify(this.getLLMConfig());
+            if (newLLMConfig !== oldLLMConfig) {
+                this.llmEngine = new SimpleLLMEngine(this.getLLMConfig());
+                console.log('LLM設定を更新しました:', this.getLLMConfig());
             }
 
             // ショートカットキーが変更された場合、ショートカットを再登録
@@ -907,7 +957,10 @@ class GengoElectronMain {
                 },
                 autoApplyAndClose: false,
                 language: 'en',
+                llmProvider: 'local',
                 llmEndpoint: 'http://127.0.0.1:1234/v1',
+                apiKey: '',
+                modelName: 'gpt-4o-mini',
                 shortcutKey: 'Ctrl+Space',
                 processingMode: 'translation',
                 customPrompt: 'Please process the following text and provide an improved version:'
@@ -919,7 +972,10 @@ class GengoElectronMain {
             const defaultSettings = {
                 autoApplyAndClose: false,
                 language: 'en',
+                llmProvider: 'local',
                 llmEndpoint: 'http://127.0.0.1:1234/v1',
+                apiKey: '',
+                modelName: 'gpt-4o-mini',
                 shortcutKey: 'Ctrl+1',
                 onDemandShortcutKey: 'Ctrl+2',
                 customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。'
@@ -986,12 +1042,6 @@ class GengoElectronMain {
             return getCurrentLanguage();
         });
 
-        // アプリケーション再起動のIPCハンドラー
-        ipcMain.handle('restart-app', () => {
-            app.relaunch();
-            app.exit();
-        });
-
         // ショートカットキー検証のIPCハンドラー
         ipcMain.handle('validate-shortcut-key', (event, shortcut) => {
             return this.validateShortcutKey(shortcut);
@@ -1025,6 +1075,43 @@ class GengoElectronMain {
             }
 
             return result;
+        });
+
+        // アプリケーション再起動のIPCハンドラー
+        ipcMain.handle('restart-app', () => {
+            app.relaunch();
+            app.exit();
+        });
+
+        // LLM接続テストのIPCハンドラー
+        ipcMain.handle('test-llm-connection', async (event, config) => {
+            try {
+                console.log('LLM接続テスト開始:', config);
+
+                // 一時的なLLMエンジンを作成してテスト
+                const testConfig = {
+                    provider: config.provider,
+                    apiEndpoint: config.endpoint,
+                    apiKey: config.apiKey,
+                    model: config.modelName || 'local-model'
+                };
+
+                const testEngine = new SimpleLLMEngine(testConfig);
+
+                // 簡単なテストプロンプトを実行
+                const result = await testEngine.processCustomPrompt('Hello', 'Say "Connection successful" in response.');
+
+                if (result.success) {
+                    console.log('LLM接続テスト成功');
+                    return { success: true };
+                } else {
+                    console.log('LLM接続テスト失敗:', result.error);
+                    return { success: false, error: result.error };
+                }
+            } catch (error) {
+                console.error('LLM接続テストエラー:', error);
+                return { success: false, error: error.message };
+            }
         });
 
         console.log('IPC設定完了');

@@ -4,4 +4,4 @@ out/
 forge.config.js
 .DS_Store
 .vscode/
-
+*ignore*

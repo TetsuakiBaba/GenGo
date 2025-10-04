@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="GenGo - AI-powered multilingual text processing tool with local and remote LLM support">
+    <title>GenGo - AI-Powered Text Processing Tool</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ナビゲーション -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="./original.png" alt="GenGo Logo" height="32" class="me-2">
+                <strong>GenGo</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features" data-i18n="nav.features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#screenshots" data-i18n="nav.screenshots">Screenshots</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#download" data-i18n="nav.download">Download</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/TetsuakiBaba/GenGo" target="_blank">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-globe"></i> <span id="currentLang">日本語</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="changeLanguage('ja'); return false;">日本語</a>
+                            </li>
+                            <li><a class="dropdown-item" href="#"
+                                    onclick="changeLanguage('en'); return false;">English</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ヒーローセクション -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center justify-content-center min-vh-100">
+                <div class="col-lg-8 text-center">
+                    <img src="./original.png" alt="GenGo Logo" class="mb-4 hero-logo animate-fade-in"
+                        style="width: 150px; height: 150px;">
+                    <h1 class="display-3 fw-bold mb-4 animate-fade-in" data-i18n="hero.title">
+                        GenGo
+                    </h1>
+                    <p class="lead mb-4 animate-fade-in-delay-1" data-i18n="hero.subtitle">
+                        AI-Powered Text Processing Tool
+                    </p>
+                    <video autoplay muted loop class="img-fluid mb-4 hero-video animate-fade-in">
+                        <source src="./images/top.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p class="text-muted mb-5 animate-fade-in-delay-2 mx-auto" style="max-width: 600px;"
+                        data-i18n="hero.description">
+                        ローカルまたはリモートLLMを活用した、スマートなテキスト処理アプリケーション。
+                        翻訳、校正、カスタムプロンプト処理を、ショートカットキー一つで実行できます。
+                    </p>
+                    <div class="d-flex gap-3 justify-content-center animate-fade-in-delay-3">
+                        <a href="#download" class="btn btn-primary btn-lg">
+                            <i class="bi bi-download"></i> <span data-i18n="hero.downloadBtn">ダウンロード</span>
+                        </a>
+                        <a href="https://github.com/TetsuakiBaba/GenGo" class="btn btn-outline-secondary btn-lg"
+                            target="_blank">
+                            <i class="bi bi-github"></i> <span data-i18n="hero.githubBtn">View on GitHub</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特徴セクション -->
+    <section id="features" class="section-padding bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3" data-i18n="features.title">主な機能</h2>
+                <p class="lead text-muted" data-i18n="features.subtitle">GenGoが提供する強力な機能</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Feature 1 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-cpu-fill"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.dualLlm.title">デュアルLLM対応</h3>
+                        <p class="text-muted" data-i18n="features.dualLlm.description">
+                            ローカルLLM（LM Studio, Ollama）とリモートLLM（OpenAI, Anthropic）の両方に対応。
+                            用途に応じて柔軟に切り替え可能。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-translate"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.translation.title">スマート翻訳</h3>
+                        <p class="text-muted" data-i18n="features.translation.description">
+                            入力されたテキストの言語を自動判定し、設定した言語間で相互翻訳。
+                            自然で読みやすい翻訳を実現。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-keyboard"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.shortcuts.title">ショートカットキー</h3>
+                        <p class="text-muted" data-i18n="features.shortcuts.description">
+                            カスタマイズ可能なグローバルショートカットキーで、
+                            テキストを選択して即座にLLM処理を実行。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-pencil-square"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.customPrompts.title">カスタムプロンプト</h3>
+                        <p class="text-muted" data-i18n="features.customPrompts.description">
+                            独自のプロンプトを設定して、テキストの校正、要約、
+                            スタイル変換など、あらゆる処理に対応。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-globe"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.multilingual.title">多言語UI</h3>
+                        <p class="text-muted" data-i18n="features.multilingual.description">
+                            日本語・英語に対応したユーザーインターフェース。
+                            10以上の言語間での翻訳をサポート。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.privacy.title">プライバシー優先</h3>
+                        <p class="text-muted" data-i18n="features.privacy.description">
+                            ローカルLLMを使用すれば、すべての処理をオフラインで完結。
+                            データは外部に送信されません。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 使い方セクション -->
+    <section id="how-it-works" class="section-padding">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3" data-i18n="howItWorks.title">使い方</h2>
+                <p class="lead text-muted" data-i18n="howItWorks.subtitle">3ステップで簡単に始められます</p>
+            </div>
+
+            <div class="row g-5">
+                <!-- Step 1 -->
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="step-number mx-auto mb-4">1</div>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step1.title">LLM設定</h3>
+                        <p class="text-muted" data-i18n="howItWorks.step1.description">
+                            ローカルLLM（LM Studio等）を起動するか、
+                            OpenAI APIキーを設定します。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="step-number mx-auto mb-4">2</div>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step2.title">テキスト選択</h3>
+                        <p class="text-muted" data-i18n="howItWorks.step2.description">
+                            処理したいテキストを任意のアプリケーションで選択します。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="step-number mx-auto mb-4">3</div>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step3.title">ショートカット実行</h3>
+                        <p class="text-muted" data-i18n="howItWorks.step3.description">
+                            Ctrl+1（またはカスタム設定）を押すだけで、
+                            即座にAI処理が開始されます。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- スクリーンショットセクション -->
+    <section id="screenshots" class="section-padding bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3" data-i18n="screenshots.title">スクリーンショット</h2>
+                <p class="lead text-muted" data-i18n="screenshots.subtitle">GenGoの使用例</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="screenshot-card">
+                        <video autoplay muted loop class="img-fluid rounded">
+                            <source src="./images/hello.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="p-3">
+                            <h4 data-i18n="screenshots.translation.title">翻訳機能</h4>
+                            <p class="text-muted mb-0" data-i18n="screenshots.translation.description">日本語と英語の相互翻訳を瞬時に実行
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="screenshot-card">
+                        <img src="./images/settings.png" alt="Settings" class="img-fluid rounded">
+                        <div class="p-3">
+                            <h4 data-i18n="screenshots.settings.title">設定画面</h4>
+                            <p class="text-muted mb-0" data-i18n="screenshots.settings.description">直感的なUIで簡単に設定をカスタマイズ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="screenshot-card">
+                        <video autoplay muted loop class="img-fluid rounded">
+                            <source src="./images/keigo.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="p-3">
+                            <h4 data-i18n="screenshots.customPrompt.title">カスタムプロンプト</h4>
+                            <p class="text-muted mb-0" data-i18n="screenshots.customPrompt.description">
+                                オンデマンドで任意のプロンプトを実行</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="screenshot-card">
+                        <img src="./images/wagahaihaneko.png" alt="Result" class="img-fluid rounded">
+                        <div class="p-3">
+                            <h4 data-i18n="screenshots.result.title">結果プレビュー</h4>
+                            <p class="text-muted mb-0" data-i18n="screenshots.result.description">処理結果を確認してから適用</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術スタックセクション -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3" data-i18n="techStack.title">技術スタック</h2>
+                <p class="lead text-muted" data-i18n="techStack.subtitle">最新の技術で構築</p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-3 col-sm-6">
+                    <div class="tech-card text-center">
+                        <i class="bi bi-window-desktop tech-icon"></i>
+                        <h5>Electron</h5>
+                        <p class="text-muted small" data-i18n="techStack.electron">クロスプラットフォーム デスクトップアプリ</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="tech-card text-center">
+                        <i class="bi bi-cpu tech-icon"></i>
+                        <h5>LLM Integration</h5>
+                        <p class="text-muted small" data-i18n="techStack.llm">ローカル & リモート AI モデル</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="tech-card text-center">
+                        <i class="bi bi-code-slash tech-icon"></i>
+                        <h5>Modern JavaScript</h5>
+                        <p class="text-muted small" data-i18n="techStack.javascript">モジュール対応 ES6+</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="tech-card text-center">
+                        <i class="bi bi-bootstrap tech-icon"></i>
+                        <h5>Bootstrap UI</h5>
+                        <p class="text-muted small" data-i18n="techStack.bootstrap">レスポンシブデザイン</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ダウンロードセクション -->
+    <section id="download" class="section-padding bg-primary text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h2 class="display-5 fw-bold mb-4" data-i18n="download.title">始めましょう</h2>
+                    <p class="lead mb-5" data-i18n="download.subtitle">
+                        GenGoをダウンロードして、AI-powered text processingを体験してください。
+                    </p>
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest" class="btn btn-light btn-lg"
+                            target="_blank">
+                            <i class="bi bi-apple"></i> <span data-i18n="download.macBtn">macOS版をダウンロード</span>
+                        </a>
+                        <!-- <a href="https://github.com/TetsuakiBaba/GenGo/releases" class="btn btn-outline-light btn-lg"
+                            target="_blank" disabled>
+                            <i class="bi bi-windows"></i> <span data-i18n="download.winBtn">Windows版をダウンロード</span>
+                        </a> -->
+                    </div>
+                    <p class="mt-4 mb-0">
+                        <small data-i18n="download.version">Version 0.7.1 | MIT License | オープンソース</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3">
+                        GenGo
+                    </h5>
+                    <p class="text-muted" data-i18n="footer.description">
+                        AI-powered text processing tool for everyone.
+                        Built with ❤️ using Electron and modern web technologies.
+                    </p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3" data-i18n="footer.links">リンク</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo" class="text-muted text-decoration-none">
+                                <i class="bi bi-github"></i> <span data-i18n="footer.githubRepo">GitHubリポジトリ</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo/issues"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-bug"></i> <span data-i18n="footer.reportIssues">問題を報告</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo/releases"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-download"></i> <span data-i18n="footer.releases">リリース</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3" data-i18n="footer.support">サポート</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo#readme"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-book"></i> <span data-i18n="footer.documentation">ドキュメント</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba" class="text-muted text-decoration-none">
+                                <i class="bi bi-person"></i> <span data-i18n="footer.author">作者: Tetsuaki Baba</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 bg-secondary">
+            <div class="text-center text-muted">
+                <small data-i18n="footer.copyright">&copy; 2025 GenGo. Licensed under MIT License.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- i18n JS -->
+    <script src="i18n.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/TetsuakiBaba/placeholderable@main/placeholderable.js"
+        crossorigin="anonymous" type="text/javascript"></script>
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+
+</html>

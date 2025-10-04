@@ -47,7 +47,7 @@ class GengoElectronMain {
             llmProvider: 'local', // 'local' または 'remote'
             llmEndpoint: 'http://127.0.0.1:1234/v1', // LLMエンドポイント（ローカル・リモート共通）
             apiKey: '', // APIキー（リモート接続用）
-            modelName: 'gpt-4o-mini', // モデル名（リモート接続用、デフォルトは最新の推奨モデル）
+            modelName: 'gpt-5-nano', // モデル名（リモート接続用、デフォルトは最新の推奨モデル）
             maxTokens: 4096, // 最大トークン数（デフォルト4096）
             shortcutKey: 'Ctrl+1', // プロンプトのショートカットキー設定
             onDemandShortcutKey: 'Ctrl+2', // オンデマンドプロンプトのショートカットキー設定

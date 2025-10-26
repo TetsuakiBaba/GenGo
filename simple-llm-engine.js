@@ -595,4 +595,190 @@ export class SimpleLLMEngine {
 
         return cleaned;
     }
+
+    /**
+     * ストリーミングモードでLLMを呼び出し
+     * @param {string} prompt - プロンプト
+     * @param {function} onChunk - チャンクを受信したときのコールバック関数
+     * @returns {Promise<string>} - 完全なレスポンステキスト
+     */
+    async callLLMStreaming(prompt, onChunk) {
+        const maxTokens = this.maxTokens;
+        const promptLength = prompt.length;
+
+        console.log(`ストリーミングモード - プロンプト長: ${promptLength}文字, max_tokens: ${maxTokens}`);
+
+        // リクエストボディを構築
+        const requestBody = {
+            model: this.model,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            stream: true // ストリーミングを有効化
+        };
+
+        // トークン制限パラメータの設定
+        const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
+            this.model.startsWith('gpt-') ||
+            this.model.includes('o1') ||
+            this.model.includes('o3') ||
+            this.model.includes('o4')
+        );
+
+        if (useMaxCompletionTokens) {
+            requestBody.max_completion_tokens = maxTokens;
+        } else {
+            requestBody.max_tokens = maxTokens;
+        }
+
+        // ヘッダーを構築
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+
+        if (this.provider === 'remote' && this.apiKey) {
+            headers['Authorization'] = `Bearer ${this.apiKey}`;
+        }
+
+        // エンドポイントURLを構築
+        let apiUrl = this.apiEndpoint;
+        if (apiUrl.endsWith('/')) {
+            apiUrl = apiUrl.slice(0, -1);
+        }
+        if (!apiUrl.endsWith('/chat/completions')) {
+            apiUrl = `${apiUrl}/chat/completions`;
+        }
+
+        console.log('ストリーミングAPI呼び出し:', apiUrl);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+
+            // ストリーミングレスポンスを処理
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // 最後の不完全な行を保持
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || trimmedLine === 'data: [DONE]') {
+                        continue;
+                    }
+
+                    if (trimmedLine.startsWith('data: ')) {
+                        const jsonStr = trimmedLine.substring(6);
+                        try {
+                            const data = JSON.parse(jsonStr);
+                            const content = data.choices?.[0]?.delta?.content;
+
+                            if (content) {
+                                fullText += content;
+                                // コールバックを呼び出してチャンクを渡す
+                                if (onChunk) {
+                                    onChunk(content, fullText);
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('JSON parse error:', parseError, 'Line:', jsonStr);
+                        }
+                    }
+                }
+            }
+
+            console.log('ストリーミング完了:', fullText.substring(0, 100) + '...');
+            return fullText;
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error('ストリーミングAPI呼び出しエラー:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * カスタムプロンプト処理（ストリーミング対応）
+     */
+    async processCustomPromptStreaming(inputText, customPrompt, onChunk) {
+        try {
+            console.log('カスタムプロンプト処理開始（ストリーミング）:', { inputText, customPrompt });
+
+            const fullPrompt = `${customPrompt}
+
+入力テキスト: "${inputText}"
+
+重要な指示:
+- 処理結果のみを出力してください
+- マークダウン記法は使用しないでください
+- タイトルや見出しを付けないでください
+- 説明文や前置きは不要です
+- 元のテキストと同じ形式で出力してください
+- 結果だけを簡潔に回答してください
+
+処理結果:`;
+
+            const response = await this.callLLMStreaming(fullPrompt, onChunk);
+
+            if (response && response.trim()) {
+                let processedText = response.trim();
+
+                // よくあるLLMの冗長な回答パターンを除去
+                processedText = this.cleanLLMResponse(processedText);
+
+                console.log('カスタムプロンプト処理完了:', processedText);
+
+                return {
+                    success: true,
+                    originalText: inputText,
+                    processedText: processedText,
+                    needsReplacement: processedText !== inputText
+                };
+            }
+
+            return {
+                success: false,
+                error: 'LLMからの応答が空です',
+                originalText: inputText,
+                processedText: inputText
+            };
+
+        } catch (error) {
+            console.error('カスタムプロンプト処理エラー:', error);
+            return {
+                success: false,
+                error: error.message || '処理中にエラーが発生しました',
+                originalText: inputText,
+                processedText: inputText
+            };
+        }
+    }
 }

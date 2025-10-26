@@ -1,6 +1,6 @@
 {
     "name": "GenGo",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "description": "GenGo - Popup LLM UI for Text Processing",
     "main": "main.js",
     "type": "module",

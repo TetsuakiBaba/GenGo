@@ -19,43 +19,59 @@ const translations = {
             subtitle: 'GenGoが提供する強力な機能',
             dualLlm: {
                 title: 'デュアルLLM対応',
-                description: 'ローカルLLM（LM Studio）とリモートLLM（OpenAI, Anthropic）の両方に対応。用途に応じて柔軟に切り替え可能。OpenAI互換APIであればその他のサービスも利用可能。'
+                description: 'ローカルLLM（LM Studio, Ollama）とリモートLLM（OpenAI, Anthropic）の両方に対応。用途に応じて柔軟に切り替え可能。'
+            },
+            presetPrompts: {
+                title: '複数の事前プロンプト',
+                description: '最大5個の事前プロンプトを登録可能。翻訳、校正、要約など、よく使う処理をショートカットキーで即座に実行。'
+            },
+            shortcuts: {
+                title: 'カスタマイズ可能なショートカット',
+                description: '各事前プロンプトとオンデマンドプロンプトに、自由にショートカットキーを割り当て可能。'
+            },
+            ondemand: {
+                title: 'オンデマンドプロンプト',
+                description: 'ショートカット実行時にその場でプロンプトを入力。柔軟な処理が必要な場合に最適。'
             },
             translation: {
                 title: 'スマート翻訳',
                 description: '入力されたテキストの言語を自動判定し、設定した言語間で相互翻訳。自然で読みやすい翻訳を実現。'
             },
-            shortcuts: {
-                title: 'ショートカットキー',
-                description: 'カスタマイズ可能なグローバルショートカットキーで、テキストを選択して即座にLLM処理を実行。'
-            },
-            customPrompts: {
-                title: 'カスタムプロンプト',
-                description: '独自のプロンプトを設定して、テキストの校正、要約、スタイル変換など、あらゆる処理に対応。'
-            },
             multilingual: {
                 title: '多言語UI',
-                description: '日本語・英語に対応したユーザーインターフェース。'
+                description: '日本語・英語に対応したユーザーインターフェース。10以上の言語間での翻訳をサポート。'
             },
             privacy: {
                 title: 'プライバシー優先',
                 description: 'ローカルLLMを使用すれば、すべての処理をオフラインで完結。データは外部に送信されません。'
+            },
+            streaming: {
+                title: 'リアルタイムストリーミング',
+                description: 'LLMの応答をリアルタイムで表示。処理の進行状況を視覚的に確認できます。'
+            },
+            autoApply: {
+                title: '自動適用機能',
+                description: '処理完了後、結果を自動的に適用してウィンドウを閉じる設定が可能。シームレスなワークフローを実現。'
             }
         },
         howItWorks: {
             title: '使い方',
-            subtitle: '3ステップで簡単に始められます',
+            subtitle: '4ステップで簡単に始められます',
             step1: {
                 title: 'LLM設定',
-                description: 'ローカルLLM（LM Studio等）を起動するか、OpenAI APIキーを設定します。'
+                description: 'ローカルLLM（LM Studio, Ollama等）を起動するか、リモートLLMのAPIキーを設定します。'
             },
             step2: {
+                title: 'プロンプト設定',
+                description: '最大5個の事前プロンプトを登録し、それぞれにショートカットキーを割り当てます。'
+            },
+            step3: {
                 title: 'テキスト選択',
                 description: '処理したいテキストを任意のアプリケーションで選択します。'
             },
-            step3: {
+            step4: {
                 title: 'ショートカット実行',
-                description: 'Ctrl+1（またはカスタム設定）を押すだけで、即座にAI処理が開始されます。'
+                description: '設定したショートカットキーを押すだけで、即座にAI処理が開始されます。'
             }
         },
         screenshots: {
@@ -63,15 +79,15 @@ const translations = {
             subtitle: 'GenGoの使用例',
             translation: {
                 title: '翻訳機能',
-                description: '日本語と英語の相互翻訳を瞬時に実行。設定からPreset Promptを利用することで、フランス語やドイツ語などの他の翻訳言語もサポート可能です。翻訳以外にも普段頻繁に利用するプロンプトをPreset Promptとして登録しておくことで、ワンクリックで様々な処理を実行できます。'
+                description: '日本語と英語の相互翻訳を瞬時に実行。事前プロンプトに登録することで、よく使う処理をショートカットキー一つで実行できます。'
             },
             settings: {
                 title: '設定画面',
-                description: '直感的なUIで簡単に設定をカスタマイズ'
+                description: '最大5個の事前プロンプトを登録し、それぞれに自由なショートカットキーを設定可能'
             },
             customPrompt: {
-                title: 'カスタムプロンプト',
-                description: 'オンデマンドで任意のプロンプトを実行'
+                title: 'オンデマンドプロンプト',
+                description: 'その場でプロンプトを入力して柔軟に処理を実行'
             },
             result: {
                 title: '結果プレビュー',
@@ -124,43 +140,59 @@ const translations = {
             subtitle: 'Powerful features provided by GenGo',
             dualLlm: {
                 title: 'Dual LLM Support',
-                description: 'Supports both local LLMs (LM Studio) and remote LLMs (OpenAI, Anthropic). Switch flexibly according to your needs. Other services can be used if they support OpenAI-compatible API.'
+                description: 'Supports both local LLMs (LM Studio, Ollama) and remote LLMs (OpenAI, Anthropic). Switch flexibly according to your needs.'
+            },
+            presetPrompts: {
+                title: 'Multiple Preset Prompts',
+                description: 'Register up to 5 preset prompts. Instantly execute frequently used processes like translation, proofreading, and summarization with shortcut keys.'
+            },
+            shortcuts: {
+                title: 'Customizable Shortcuts',
+                description: 'Freely assign shortcut keys to each preset prompt and on-demand prompt.'
+            },
+            ondemand: {
+                title: 'On-Demand Prompt',
+                description: 'Enter prompts on-the-fly when executing shortcuts. Ideal for cases requiring flexible processing.'
             },
             translation: {
                 title: 'Smart Translation',
                 description: 'Automatically detects the language of input text and translates between configured languages. Achieves natural and readable translations.'
             },
-            shortcuts: {
-                title: 'Shortcut Keys',
-                description: 'Execute LLM processing instantly by selecting text with customizable global shortcut keys.'
-            },
-            customPrompts: {
-                title: 'Custom Prompts',
-                description: 'Set your own prompts to handle any processing such as proofreading, summarization, and style conversion.'
-            },
             multilingual: {
                 title: 'Multilingual UI',
-                description: 'User interface supporting Japanese and English.'
+                description: 'User interface supporting Japanese and English. Supports translation between 10+ languages.'
             },
             privacy: {
                 title: 'Privacy First',
                 description: 'When using local LLMs, all processing is completed offline. Data is never sent externally.'
+            },
+            streaming: {
+                title: 'Real-time Streaming',
+                description: 'Display LLM responses in real-time. Visually confirm the progress of processing.'
+            },
+            autoApply: {
+                title: 'Auto-Apply Feature',
+                description: 'Option to automatically apply results and close the window after processing completes. Achieve seamless workflow.'
             }
         },
         howItWorks: {
             title: 'How It Works',
-            subtitle: 'Get started in 3 easy steps',
+            subtitle: 'Get started in 4 easy steps',
             step1: {
                 title: 'Setup LLM',
-                description: 'Launch a local LLM (such as LM Studio) or configure your OpenAI API key.'
+                description: 'Launch a local LLM (such as LM Studio, Ollama) or configure your remote LLM API key.'
             },
             step2: {
+                title: 'Configure Prompts',
+                description: 'Register up to 5 preset prompts and assign shortcut keys to each.'
+            },
+            step3: {
                 title: 'Select Text',
                 description: 'Select the text you want to process in any application.'
             },
-            step3: {
+            step4: {
                 title: 'Execute Shortcut',
-                description: 'Simply press Ctrl+1 (or custom setting) to instantly start AI processing.'
+                description: 'Simply press the configured shortcut key to instantly start AI processing.'
             }
         },
         screenshots: {
@@ -168,15 +200,15 @@ const translations = {
             subtitle: 'GenGo in action',
             translation: {
                 title: 'Translation Feature',
-                description: 'Execute bidirectional translation between Japanese and English instantly and easily. By using Preset Prompts from the settings, you can also support other translation languages such as French and German. In addition to translation, you can register frequently used prompts as Preset Prompts to execute various processes with a single click.'
+                description: 'Execute bidirectional translation between Japanese and English instantly. Register frequently used processes as preset prompts and execute with a single shortcut key.'
             },
             settings: {
                 title: 'Settings Panel',
-                description: 'Easily customize settings with an intuitive UI'
+                description: 'Register up to 5 preset prompts and assign custom shortcut keys to each'
             },
             customPrompt: {
-                title: 'Custom Prompt',
-                description: 'Execute any prompt on demand'
+                title: 'On-Demand Prompt',
+                description: 'Enter prompts on-the-fly for flexible processing'
             },
             result: {
                 title: 'Result Preview',

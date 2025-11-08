@@ -126,12 +126,12 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card h-100">
                         <div class="feature-icon">
-                            <i class="bi bi-translate"></i>
+                            <i class="bi bi-list-stars"></i>
                         </div>
-                        <h3 class="h4 mb-3" data-i18n="features.translation.title">スマート翻訳</h3>
-                        <p class="text-muted" data-i18n="features.translation.description">
-                            入力されたテキストの言語を自動判定し、設定した言語間で相互翻訳。
-                            自然で読みやすい翻訳を実現。
+                        <h3 class="h4 mb-3" data-i18n="features.presetPrompts.title">複数の事前プロンプト</h3>
+                        <p class="text-muted" data-i18n="features.presetPrompts.description">
+                            最大5個の事前プロンプトを登録可能。翻訳、校正、要約など、
+                            よく使う処理をショートカットキーで即座に実行。
                         </p>
                     </div>
                 </div>
@@ -142,10 +142,10 @@
                         <div class="feature-icon">
                             <i class="bi bi-keyboard"></i>
                         </div>
-                        <h3 class="h4 mb-3" data-i18n="features.shortcuts.title">ショートカットキー</h3>
+                        <h3 class="h4 mb-3" data-i18n="features.shortcuts.title">カスタマイズ可能なショートカット</h3>
                         <p class="text-muted" data-i18n="features.shortcuts.description">
-                            カスタマイズ可能なグローバルショートカットキーで、
-                            テキストを選択して即座にLLM処理を実行。
+                            各事前プロンプトとオンデマンドプロンプトに、
+                            自由にショートカットキーを割り当て可能。
                         </p>
                     </div>
                 </div>
@@ -154,17 +154,31 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card h-100">
                         <div class="feature-icon">
-                            <i class="bi bi-pencil-square"></i>
+                            <i class="bi bi-lightning-fill"></i>
                         </div>
-                        <h3 class="h4 mb-3" data-i18n="features.customPrompts.title">カスタムプロンプト</h3>
-                        <p class="text-muted" data-i18n="features.customPrompts.description">
-                            独自のプロンプトを設定して、テキストの校正、要約、
-                            スタイル変換など、あらゆる処理に対応。
+                        <h3 class="h4 mb-3" data-i18n="features.ondemand.title">オンデマンドプロンプト</h3>
+                        <p class="text-muted" data-i18n="features.ondemand.description">
+                            ショートカット実行時にその場でプロンプトを入力。
+                            柔軟な処理が必要な場合に最適。
                         </p>
                     </div>
                 </div>
 
                 <!-- Feature 5 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-translate"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.translation.title">スマート翻訳</h3>
+                        <p class="text-muted" data-i18n="features.translation.description">
+                            入力されたテキストの言語を自動判定し、設定した言語間で相互翻訳。
+                            自然で読みやすい翻訳を実現。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 6 -->
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card h-100">
                         <div class="feature-icon">
@@ -178,7 +192,7 @@
                     </div>
                 </div>
 
-                <!-- Feature 6 -->
+                <!-- Feature 7 -->
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card h-100">
                         <div class="feature-icon">
@@ -191,6 +205,34 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- Feature 8 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.streaming.title">リアルタイムストリーミング</h3>
+                        <p class="text-muted" data-i18n="features.streaming.description">
+                            LLMの応答をリアルタイムで表示。
+                            処理の進行状況を視覚的に確認できます。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 9 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon">
+                            <i class="bi bi-magic"></i>
+                        </div>
+                        <h3 class="h4 mb-3" data-i18n="features.autoApply.title">自動適用機能</h3>
+                        <p class="text-muted" data-i18n="features.autoApply.description">
+                            処理完了後、結果を自動的に適用してウィンドウを閉じる設定が可能。
+                            シームレスなワークフローを実現。
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -200,40 +242,52 @@
         <div class="container">
             <div class="text-center mb-5">
                 <h2 class="display-5 fw-bold mb-3" data-i18n="howItWorks.title">使い方</h2>
-                <p class="lead text-muted" data-i18n="howItWorks.subtitle">3ステップで簡単に始められます</p>
+                <p class="lead text-muted" data-i18n="howItWorks.subtitle">4ステップで簡単に始められます</p>
             </div>
 
             <div class="row g-5">
                 <!-- Step 1 -->
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="text-center">
                         <div class="step-number mx-auto mb-4">1</div>
                         <h3 class="h4 mb-3" data-i18n="howItWorks.step1.title">LLM設定</h3>
                         <p class="text-muted" data-i18n="howItWorks.step1.description">
-                            ローカルLLM（LM Studio等）を起動するか、
-                            OpenAI APIキーを設定します。
+                            ローカルLLM（LM Studio, Ollama等）を起動するか、
+                            リモートLLMのAPIキーを設定します。
                         </p>
                     </div>
                 </div>
 
                 <!-- Step 2 -->
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="text-center">
                         <div class="step-number mx-auto mb-4">2</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step2.title">テキスト選択</h3>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step2.title">プロンプト設定</h3>
                         <p class="text-muted" data-i18n="howItWorks.step2.description">
-                            処理したいテキストを任意のアプリケーションで選択します。
+                            最大5個の事前プロンプトを登録し、
+                            それぞれにショートカットキーを割り当てます。
                         </p>
                     </div>
                 </div>
 
                 <!-- Step 3 -->
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="text-center">
                         <div class="step-number mx-auto mb-4">3</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step3.title">ショートカット実行</h3>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step3.title">テキスト選択</h3>
                         <p class="text-muted" data-i18n="howItWorks.step3.description">
-                            Ctrl+1（またはカスタム設定）を押すだけで、
+                            処理したいテキストを任意のアプリケーションで選択します。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="col-lg-3">
+                    <div class="text-center">
+                        <div class="step-number mx-auto mb-4">4</div>
+                        <h3 class="h4 mb-3" data-i18n="howItWorks.step4.title">ショートカット実行</h3>
+                        <p class="text-muted" data-i18n="howItWorks.step4.description">
+                            設定したショートカットキーを押すだけで、
                             即座にAI処理が開始されます。
                         </p>
                     </div>

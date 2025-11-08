@@ -10,7 +10,30 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        /* ショートカットキーのツールチップスタイル */
+        .shortcut-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 10000;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
 
+        .shortcut-tooltip.show {
+            opacity: 1;
+        }
+
+        /* ボタンにホバー時のポジション調整 */
+        .btn-with-shortcut {
+            position: relative;
+        }
     </style>
 </head>
 
@@ -57,8 +80,10 @@
             </div>
 
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
-                <button class="btn btn-outline-dark" id="applyBtn" data-i18n="popup.apply">適用</button>
-                <button class="btn btn-secondary" id="rejectBtn" data-i18n="popup.reject">キャンセル</button>
+                <button class="btn btn-outline-dark btn-with-shortcut" id="applyBtn" data-i18n="popup.apply"
+                    data-shortcut="⌘+Enter">適用</button>
+                <button class="btn btn-secondary btn-with-shortcut" id="rejectBtn" data-i18n="popup.reject"
+                    data-shortcut="Esc">キャンセル</button>
             </div>
         </div>
 
@@ -81,8 +106,9 @@
             </div>
 
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
-                <button class="btn btn-primary" id="processBtn">処理実行</button>
-                <button class="btn btn-secondary" id="cancelPromptBtn">キャンセル</button>
+                <button class="btn btn-primary btn-with-shortcut" id="processBtn" data-shortcut="⌘+Enter">処理実行</button>
+                <button class="btn btn-secondary btn-with-shortcut" id="cancelPromptBtn"
+                    data-shortcut="Esc">キャンセル</button>
             </div>
         </div>
 
@@ -99,8 +125,10 @@
             </div>
 
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
-                <button class="btn btn-primary" id="textGenerateBtn">テキスト生成</button>
-                <button class="btn btn-secondary" id="cancelGenerationBtn">キャンセル</button>
+                <button class="btn btn-primary btn-with-shortcut" id="textGenerateBtn"
+                    data-shortcut="⌘+Enter">テキスト生成</button>
+                <button class="btn btn-secondary btn-with-shortcut" id="cancelGenerationBtn"
+                    data-shortcut="Esc">キャンセル</button>
             </div>
         </div>
 
@@ -230,7 +258,54 @@
             });
 
             document.getElementById('cancelGenerationBtn').addEventListener('click', handleCancel);
+
+            // ショートカットキーのツールチップ機能を初期化
+            initShortcutTooltips();
         });
+
+        // ショートカットキーのツールチップ機能
+        function initShortcutTooltips() {
+            // ツールチップ要素を作成
+            const tooltip = document.createElement('div');
+            tooltip.className = 'shortcut-tooltip';
+            document.body.appendChild(tooltip);
+
+            let currentButton = null;
+
+            // すべての.btn-with-shortcutボタンにイベントリスナーを追加
+            document.querySelectorAll('.btn-with-shortcut').forEach(button => {
+                button.addEventListener('mouseenter', (event) => {
+                    const shortcut = button.getAttribute('data-shortcut');
+                    if (shortcut) {
+                        currentButton = button;
+                        tooltip.textContent = shortcut;
+                        tooltip.classList.add('show');
+                        updateTooltipPosition(event, tooltip);
+                    }
+                });
+
+                button.addEventListener('mousemove', (event) => {
+                    if (currentButton === button) {
+                        updateTooltipPosition(event, tooltip);
+                    }
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    if (currentButton === button) {
+                        tooltip.classList.remove('show');
+                        currentButton = null;
+                    }
+                });
+            });
+        }
+
+        // ツールチップの位置を更新
+        function updateTooltipPosition(event, tooltip) {
+            const offsetX = 10;
+            const offsetY = -30;
+            tooltip.style.left = (event.clientX + offsetX) + 'px';
+            tooltip.style.top = (event.clientY + offsetY) + 'px';
+        }
 
         // デバッグモード設定関数
         // 処理中画面表示

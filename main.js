@@ -34,7 +34,6 @@ if (app.isPackaged) {
 class GengoElectronMain {
     constructor() {
         this.popupWindow = null;
-        this.popupWindowReady = false; // ポップアップウィンドウの準備完了フラグ
         this.settingsWindow = null;
         this.tray = null;
         this.llmEngine = null;
@@ -50,9 +49,14 @@ class GengoElectronMain {
             apiKey: '',
             modelName: 'gpt-5-nano',
             maxTokens: 4096,
-            shortcutKey: 'Ctrl+1',
-            onDemandShortcutKey: 'Ctrl+2',
-            customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。'
+            onDemandShortcutKey: 'Ctrl+Shift+1',
+            presetPrompts: [
+                {
+                    shortcutKey: 'Ctrl+1',
+                    prompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。',
+                    enabled: true
+                }
+            ]
         };
         this.settingsPath = join(app.getPath('userData'), 'settings.json');
     }
@@ -75,9 +79,6 @@ class GengoElectronMain {
 
         // システムトレイを作成
         this.createTray();
-
-        // ポップアップウィンドウを事前作成（最初は非表示）
-        this.initializePopupWindow();
 
         // グローバルショートカットを登録
         this.registerGlobalShortcuts();
@@ -191,23 +192,32 @@ class GengoElectronMain {
      */
     registerGlobalShortcuts() {
         try {
-            // 設定からショートカットキーを取得
-            const shortcut = this.settings.shortcutKey;
-            const registered = globalShortcut.register(shortcut, () => {
-                this.handleTextSelectionTrigger();
-            });
+            // 既存のショートカットをすべて解除
+            globalShortcut.unregisterAll();
+            console.log('既存のショートカットをすべて解除しました');
+
+            // 事前プロンプトのショートカットを登録
+            if (this.settings.presetPrompts && Array.isArray(this.settings.presetPrompts)) {
+                this.settings.presetPrompts.forEach((preset, index) => {
+                    if (preset.enabled && preset.shortcutKey) {
+                        const registered = globalShortcut.register(preset.shortcutKey, () => {
+                            this.handlePresetPromptTrigger(index);
+                        });
+
+                        if (registered) {
+                            console.log(`事前プロンプト ${index + 1} のショートカット ${preset.shortcutKey} を登録しました`);
+                        } else {
+                            console.error(`事前プロンプト ${index + 1} のショートカット登録に失敗しました: ${preset.shortcutKey}`);
+                        }
+                    }
+                });
+            }
 
             // オンデマンドプロンプトモード用のショートカット（設定から取得）
             const onDemandShortcut = this.settings.onDemandShortcutKey;
             const onDemandRegistered = globalShortcut.register(onDemandShortcut, () => {
                 this.handleOnDemandPromptTrigger();
             });
-
-            if (registered) {
-                console.log(`グローバルショートカット ${shortcut} を登録しました`);
-            } else {
-                console.error('グローバルショートカット登録に失敗しました');
-            }
 
             if (onDemandRegistered) {
                 console.log(`オンデマンドプロンプトショートカット ${onDemandShortcut} を登録しました`);
@@ -220,10 +230,19 @@ class GengoElectronMain {
     }
 
     /**
-     * テキスト選択トリガー処理（改良版）
+     * 事前プロンプトトリガー処理（プロンプトインデックス指定）
      */
-    async handleTextSelectionTrigger() {
+    async handlePresetPromptTrigger(presetIndex) {
         try {
+            // プロンプト設定を取得
+            const preset = this.settings.presetPrompts[presetIndex];
+            if (!preset || !preset.enabled) {
+                console.log(`事前プロンプト ${presetIndex + 1} が無効または存在しません`);
+                return;
+            }
+
+            console.log(`事前プロンプト ${presetIndex + 1} トリガー実行:`, preset.prompt);
+
             // 結果表示中の場合は Apply を実行
             if (this.isShowingResult && this.currentProcessingData) {
                 console.log('結果表示中のため、Apply処理を実行します');
@@ -277,8 +296,8 @@ class GengoElectronMain {
                     console.log('選択コンテキスト:', this.selectionContext);
                     this.currentSelectedText = selectedText;
 
-                    // ウィンドウ表示（非同期なのでブロックしない）
-                    this.showActionPopup(selectedText);
+                    // プロンプトを使用してウィンドウ表示（非同期なのでブロックしない）
+                    this.showActionPopupWithPrompt(selectedText, preset.prompt);
 
                     // クリップボードを復元
                     setTimeout(() => {
@@ -308,7 +327,15 @@ class GengoElectronMain {
     }
 
     /**
-     * オンデマンドプロンプトトリガー処理（Ctrl+2）
+     * テキスト選択トリガー処理（旧メソッド名、互換性のため残す）
+     * デフォルトで最初の事前プロンプトを使用
+     */
+    async handleTextSelectionTrigger() {
+        return this.handlePresetPromptTrigger(0);
+    }
+
+    /**
+     * オンデマンドプロンプトトリガー処理（Ctrl+Shift+1）
      */
     async handleOnDemandPromptTrigger() {
         try {
@@ -599,123 +626,17 @@ class GengoElectronMain {
     }
 
     /**
-     * ポップアップウィンドウを事前初期化（起動時に一度だけ呼び出し）
-     * ウィンドウを作成して非表示にしておき、ショートカット時に表示するだけにすることで
-     * ウィンドウの表示速度を大幅に向上させる
-     */
-    initializePopupWindow() {
-        console.log('ポップアップウィンドウを初期化中...');
-
-        // 標準サイズで作成
-        this.popupWindow = new BrowserWindow({
-            width: 600,
-            height: 300,
-            minWidth: 400,
-            minHeight: 200,
-            maxWidth: 1000,
-            maxHeight: 800,
-            resizable: true,
-            alwaysOnTop: true,
-            frame: false,
-            transparent: false,
-            movable: true,
-            acceptFirstMouse: true,
-            show: false, // 最初は表示しない
-            webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-                preload: join(__dirname, 'popup-preload.js')
-            }
-        });
-
-        // スクロール可能なポップアップにするための CSS を挿入
-        this.popupWindow.webContents.on('dom-ready', () => {
-            this.popupWindow.webContents.insertCSS(`
-            /* 全体をスクロール可能に */
-            html, body {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                overflow: auto;
-                -webkit-user-select: text;
-                -webkit-touch-callout: default;
-                -webkit-font-smoothing: antialiased;
-                background-color: transparent;
-            }
-
-            /* ドラッグ可能領域は明示的な要素のみ */
-            .drag-region,card-title{
-                -webkit-app-region: drag;
-            }
-
-            /* 入力類やボタン等はドラッグ不可にして選択可能にする */
-            button, a, input, textarea, select, svg, [data-no-drag] {
-                -webkit-app-region: no-drag;
-                -webkit-user-select: text;
-            }
-
-            /* スクロールバーのスタイリング */
-            ::-webkit-scrollbar {
-                width: 12px;
-            }
-
-            ::-webkit-scrollbar-track {
-                background: rgba(0,0,0,0.05);
-            }
-
-            ::-webkit-scrollbar-thumb {
-                background: rgba(0,0,0,0.2);
-                border-radius: 6px;
-            }
-            `).catch(err => {
-                console.error('ドラッグ/スクロール用CSS挿入エラー:', err);
-            });
-        });
-
-        // macOS のウィンドウボタン（トラフィックライト）を非表示にする
-        if (process.platform === 'darwin' && typeof this.popupWindow.setWindowButtonVisibility === 'function') {
-            this.popupWindow.setWindowButtonVisibility(false);
-        }
-
-        this.popupWindow.loadFile('popup-ui.html');
-
-        // ウィンドウが閉じられようとした時の処理（close イベント）
-        // デフォルトの動作（ウィンドウ破棄）をキャンセルして非表示にする
-        this.popupWindow.on('close', (event) => {
-            event.preventDefault();
-            console.log('ポップアップウィンドウを非表示にします');
-            this.popupWindow.hide();
-
-            // フラグをリセット
-            this.isShowingResult = false;
-            this.currentProcessingData = null;
-
-            // macOSでDockアイコンを再び非表示にする
-            if (process.platform === 'darwin') {
-                app.dock.hide();
-            }
-        });
-
-        // アプリ終了時のみウィンドウを破棄（destroyed イベント）
-        this.popupWindow.on('destroyed', () => {
-            console.log('ポップアップウィンドウが破棄されました');
-            this.popupWindow = null;
-            this.popupWindowReady = false;
-        });
-
-        this.popupWindowReady = true;
-        console.log('ポップアップウィンドウの初期化完了');
-    }
-
-    /**
-     * 事前作成されたポップアップウィンドウを表示
-     * ウィンドウがまだ準備できていない場合は、従来の方法で作成して表示
+     * ポップアップウィンドウを表示
      */
     showPopupWindow(mode = 'normal', cursorPosition = null) {
-        if (!this.popupWindow || this.popupWindow.isDestroyed()) {
-            console.log('ポップアップウィンドウが準備されていません。新規作成します');
-            this.popupWindow = this.createPopupWindow(mode === 'onDemand');
+        // 既存のウィンドウがあれば閉じる
+        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+            this.popupWindow.destroy();
+            this.popupWindow = null;
         }
+
+        // 新しいウィンドウを作成
+        this.popupWindow = this.createPopupWindow(mode === 'onDemand');
 
         // 自動適用モード時のウィンドウサイズ調整
         if (mode === 'autoApply' && this.settings.autoApplyAndClose) {
@@ -744,47 +665,6 @@ class GengoElectronMain {
         // ウィンドウを表示
         this.popupWindow.show();
         this.popupWindow.focus();
-
-        // ウィンドウ表示後に状態をリセット（DOMが準備できてから実行）
-        setTimeout(() => {
-            if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                this.popupWindow.webContents.executeJavaScript(`
-                    (function() {
-                        try {
-                            // すべてのセクションを非表示にする
-                            const processing = document.getElementById('processing');
-                            if (processing) processing.style.display = 'none';
-                            
-                            const resultDisplay = document.getElementById('resultDisplay');
-                            if (resultDisplay) resultDisplay.classList.add('d-none');
-                            
-                            const onDemandPromptInput = document.getElementById('onDemandPromptInput');
-                            if (onDemandPromptInput) onDemandPromptInput.classList.add('d-none');
-                            
-                            const textGenerationInput = document.getElementById('textGenerationInput');
-                            if (textGenerationInput) textGenerationInput.classList.add('d-none');
-                            
-                            // 各入力フィールドをクリア
-                            const generationPromptInput = document.getElementById('generationPromptInput');
-                            if (generationPromptInput) generationPromptInput.value = '';
-                            
-                            const userPromptInput = document.getElementById('userPromptInput');
-                            if (userPromptInput) userPromptInput.value = '';
-                            
-                            const originalText = document.getElementById('originalText');
-                            if (originalText) originalText.textContent = '';
-                            
-                            const processedText = document.getElementById('processedText');
-                            if (processedText) processedText.textContent = '';
-                        } catch (error) {
-                            console.error('状態リセット中のエラー:', error);
-                        }
-                    })();
-                `).catch(err => {
-                    console.error('ウィンドウ状態リセットエラー:', err);
-                });
-            }
-        }, 50);
     }
 
     /**
@@ -861,7 +741,7 @@ class GengoElectronMain {
         windowX = Math.max(displayX, windowX);
         windowY = Math.max(displayY, windowY);
 
-        // 事前作成されたウィンドウを表示（テキスト生成モード）
+        // ウィンドウを新規作成して表示（テキスト生成モード）
         this.showPopupWindow('textGeneration', { x: windowX, y: windowY });
 
         // テキスト生成モード用にウィンドウサイズを設定
@@ -871,8 +751,8 @@ class GengoElectronMain {
         // 新しい処理開始のため、結果表示フラグをリセット
         this.isShowingResult = false;
 
-        // テキスト生成モードを表示する関数
-        const showTextGenMode = () => {
+        // DOMの準備ができてからテキスト生成モードを表示
+        this.popupWindow.webContents.once('dom-ready', () => {
             console.log('テキスト生成モード設定中');
 
             // テキスト生成モードであることを設定
@@ -882,36 +762,22 @@ class GengoElectronMain {
             `);
 
             // テキスト生成モードを表示
-            setTimeout(() => {
-                if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    this.popupWindow.webContents.executeJavaScript(`
-                        if (typeof window.showTextGenerationMode === 'function') {
-                            window.showTextGenerationMode();
-                        } else {
-                            console.error('showTextGenerationMode function not found');
-                        }
-                    `);
-                }
-            }, 150); // 状態リセット(50ms) + バッファ(100ms)
-        };
-
-        // ウィンドウが既にロード済みの場合は即座に実行
-        if (this.popupWindow.webContents.isLoading()) {
-            console.log('ウィンドウロード中 - did-finish-load待機');
-            this.popupWindow.webContents.once('did-finish-load', () => {
-                console.log('ポップアップ読み込み完了');
-                showTextGenMode();
-            });
-        } else {
-            console.log('ウィンドウ既にロード済み - 即座に表示');
-            showTextGenMode();
-        }
+            if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                this.popupWindow.webContents.executeJavaScript(`
+                    if (typeof window.showTextGenerationMode === 'function') {
+                        window.showTextGenerationMode();
+                    } else {
+                        console.error('showTextGenerationMode function not found');
+                    }
+                `);
+            }
+        });
     }
 
     /**
-     * HTMLベースのポップアップを表示
+     * HTMLベースのポップアップを表示（プロンプト指定版）
      */
-    async showActionPopup(selectedText) {
+    async showActionPopupWithPrompt(selectedText, customPrompt) {
         // macOSでポップアップ表示時にDockアイコンを一時的に表示
         if (process.platform === 'darwin') {
             // app.dock.show();
@@ -923,33 +789,44 @@ class GengoElectronMain {
         const defaultX = Math.floor(defaultBounds.x + (defaultBounds.width - 700) / 2);
         const defaultY = Math.floor(defaultBounds.y + (defaultBounds.height - 350) / 2);
 
-        // 事前作成されたウィンドウを即座に表示（通常のアクションモード）
+        // ウィンドウを新規作成して表示（通常のアクションモード）
         this.showPopupWindow('action', { x: defaultX, y: defaultY });
 
         // 新しい処理開始のため、結果表示フラグをリセット
         this.isShowingResult = false;
 
-        // 通常の翻訳モードであることを設定
-        this.popupWindow.webContents.executeJavaScript(`
-            window.isOnDemandMode = false;
-        `);
+        // DOMの準備ができてから処理を実行
+        this.popupWindow.webContents.once('dom-ready', () => {
+            // 通常の翻訳モードであることを設定
+            this.popupWindow.webContents.executeJavaScript(`
+                window.isOnDemandMode = false;
+            `);
 
-        // 自動適用モードでも処理中画面を表示
-        if (this.settings.autoApplyAndClose) {
-            // ウィンドウサイズを一時的に拡大
-            console.log('自動適用モード: 処理中画面表示のためウィンドウサイズを拡大');
-            this.popupWindow.setSize(300, 300);
-            this.popupWindow.setResizable(false);
-        }
-
-        // 処理中画面を表示（状態リセット後に実行）
-        setTimeout(() => {
-            if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                this.popupWindow.webContents.executeJavaScript(`
-                    showProcessingScreen('translation');
-                `);
+            // 自動適用モードでも処理中画面を表示
+            if (this.settings.autoApplyAndClose) {
+                // ウィンドウサイズを一時的に拡大
+                console.log('自動適用モード: 処理中画面表示のためウィンドウサイズを拡大');
+                this.popupWindow.setSize(300, 300);
+                this.popupWindow.setResizable(false);
             }
-        }, 150); // 状態リセット(50ms) + バッファ(100ms)
+
+            // 処理中画面を表示
+            this.popupWindow.webContents.executeJavaScript(`
+                showProcessingScreen('translation');
+            `);
+
+            // LLM処理を非同期で実行（UIをブロックしない）- カスタムプロンプトを使用
+            this.processTextWithCustomPrompt(selectedText, customPrompt)
+                .catch(error => {
+                    console.error('処理エラー:', error);
+                    // エラー時の処理
+                    if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                        this.popupWindow.webContents.executeJavaScript(`
+                            showError(${JSON.stringify(error.message || 'Processing failed')});
+                        `);
+                    }
+                });
+        });
 
         // カーソル位置を取得して最適な位置に移動（バックグラウンドで実行）
         this.getCursorPosition().then(cursorPos => {
@@ -993,21 +870,18 @@ class GengoElectronMain {
             console.error('カーソル位置取得エラー:', error);
             // エラーが発生してもウィンドウは既に表示されているので問題なし
         });
+    }
 
-        // ポップアップ表示後、すぐに翻訳処理を開始
-        console.log('翻訳処理を自動開始:', selectedText);
+    /**
+     * HTMLベースのポップアップを表示（デフォルトプロンプト使用）
+     */
+    async showActionPopup(selectedText) {
+        // デフォルトで最初の事前プロンプトを使用
+        const defaultPrompt = this.settings.presetPrompts && this.settings.presetPrompts[0]
+            ? this.settings.presetPrompts[0].prompt
+            : '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
 
-        // LLM処理を非同期で実行（UIをブロックしない）
-        this.processTextWithAction(selectedText, 'translation')
-            .catch(error => {
-                console.error('翻訳処理エラー:', error);
-                // エラー時の処理
-                if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    this.popupWindow.webContents.executeJavaScript(`
-                        showError(${JSON.stringify(error.message || 'Translation failed')});
-                    `);
-                }
-            });
+        return this.showActionPopupWithPrompt(selectedText, defaultPrompt);
     }
 
     /**
@@ -1046,7 +920,7 @@ class GengoElectronMain {
         console.log('調整後ポップアップ位置:', { x: adjustedX, y: adjustedY }, 'カーソル位置:', { x, y });
         console.log('ディスプレイ作業領域:', `(${workArea.x}, ${workArea.y}) - (${workArea.x + workArea.width}, ${workArea.y + workArea.height})`);
 
-        // 事前作成されたウィンドウを表示（オンデマンドモード）
+        // ウィンドウを新規作成して表示（オンデマンドモード）
         this.showPopupWindow('onDemand', { x: adjustedX, y: adjustedY });
 
         // 新しい処理開始のため、結果表示フラグをリセット
@@ -1055,15 +929,15 @@ class GengoElectronMain {
         // オンデマンドプロンプト入力モードで画面を初期化
         console.log('オンデマンドプロンプト入力画面を表示:', selectedText);
 
-        // 状態リセット後にオンデマンドプロンプト画面を表示
-        setTimeout(() => {
+        // DOMの準備ができてからオンデマンドプロンプト画面を表示
+        this.popupWindow.webContents.once('dom-ready', () => {
             if (this.popupWindow && !this.popupWindow.isDestroyed()) {
                 this.popupWindow.webContents.executeJavaScript(`
                     window.isOnDemandMode = true;
                     window.showOnDemandPromptInput(${JSON.stringify(selectedText)});
                 `);
             }
-        }, 150); // 状態リセット(50ms) + バッファ(100ms)
+        });
     }
 
     /**
@@ -1560,6 +1434,120 @@ class GengoElectronMain {
     }
 
     /**
+     * テキストを指定されたカスタムプロンプトで処理
+     */
+    async processTextWithCustomPrompt(text, customPrompt) {
+        try {
+            console.log('カスタムプロンプト処理開始:', { text, customPrompt });
+
+            let streamingText = '';
+
+            // ストリーミングコールバック関数
+            const onChunk = (chunk, fullText) => {
+                streamingText = fullText;
+                // リアルタイムで結果を更新
+                if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                    const cleanedText = this.llmEngine.extractCorrectedText(streamingText);
+                    this.popupWindow.webContents.executeJavaScript(`
+                        if (typeof window.updateStreamingResult === 'function') {
+                            window.updateStreamingResult(${JSON.stringify(cleanedText)});
+                        }
+                    `).catch(err => {
+                        console.error('ストリーミング更新エラー:', err);
+                    });
+                }
+            };
+
+            // カスタムプロンプトで処理（ストリーミング）
+            const result = await this.llmEngine.processCustomPromptStreaming(text, customPrompt, onChunk);
+
+            if (result.success) {
+                const processedText = result.correctedText || result.translatedText || result.processedText;
+
+                if (processedText && processedText !== text) {
+                    // 結果をポップアップウィンドウに表示
+                    this.currentProcessingData = {
+                        original: text,
+                        result: processedText,
+                        action: 'custom-prompt'
+                    };
+
+                    // 自動適用・閉じる設定が有効な場合は直接適用
+                    if (this.settings.autoApplyAndClose) {
+                        // 結果を直接適用（表示しない）
+                        console.log('自動適用モード: 結果を直接適用します');
+                        await this.handleApplyResult();
+                    } else {
+                        // 通常モード：結果を表示
+                        if (this.popupWindow) {
+                            this.popupWindow.webContents.executeJavaScript(`
+                                window.showProcessingResult(${JSON.stringify(text)}, ${JSON.stringify(processedText)});
+                            `);
+
+                            // 結果表示中フラグを設定
+                            this.isShowingResult = true;
+                        }
+                    }
+                } else {
+                    console.log('変更なし:', text);
+                    // 自動適用モードの場合はウィンドウを閉じる
+                    if (this.settings.autoApplyAndClose) {
+                        console.log('自動適用モード: 変更なしのためウィンドウを閉じます');
+                        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                            this.popupWindow.close();
+                        }
+                        this.isProcessing = false;
+                        this.isShowingResult = false;
+                    } else {
+                        // 通常モード：変更なしのメッセージを表示
+                        if (this.popupWindow) {
+                            this.popupWindow.webContents.executeJavaScript(`
+                                window.showProcessingMessage('${t('processing.messages.no_change')}', 'info');
+                            `);
+                        }
+                    }
+                }
+            } else {
+                console.error('カスタムプロンプト処理エラー:', result.error);
+                // 自動適用モードの場合はウィンドウを閉じる
+                if (this.settings.autoApplyAndClose) {
+                    console.log('自動適用モード: エラーのためウィンドウを閉じます');
+                    if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                        this.popupWindow.close();
+                    }
+                    this.isProcessing = false;
+                    this.isShowingResult = false;
+                } else {
+                    // 通常モード：エラーメッセージを表示
+                    if (this.popupWindow) {
+                        this.popupWindow.webContents.executeJavaScript(`
+                            window.showProcessingMessage('${t('processing.messages.error', { error: result.error })}', 'error');
+                        `);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('カスタムプロンプト処理実行エラー:', error);
+            // 自動適用モードの場合はウィンドウを閉じる
+            if (this.settings.autoApplyAndClose) {
+                console.log('自動適用モード: 処理エラーのためウィンドウを閉じます');
+                if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                    this.popupWindow.close();
+                }
+                this.isProcessing = false;
+                this.isShowingResult = false;
+            } else {
+                // 通常モード：エラーメッセージを表示
+                if (this.popupWindow) {
+                    this.popupWindow.webContents.executeJavaScript(`
+                        window.showProcessingMessage('${t('processing.messages.error', { error: error.message })}', 'error');
+                    `);
+                }
+            }
+        }
+    }
+
+    /**
      * テキストを指定された処理で実行
      */
     async processTextWithAction(text, action) {
@@ -1586,7 +1574,11 @@ class GengoElectronMain {
             };
 
             // Ctrl+1で実行 - プロンプト処理（ストリーミング）
-            result = await this.llmEngine.processCustomPromptStreaming(text, this.settings.customPrompt, onChunk);
+            const customPrompt = this.settings.presetPrompts && this.settings.presetPrompts[0]
+                ? this.settings.presetPrompts[0].prompt
+                : '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
+
+            result = await this.llmEngine.processCustomPromptStreaming(text, customPrompt, onChunk);
 
             if (result.success) {
                 const processedText = result.correctedText || result.translatedText || result.processedText;
@@ -2039,18 +2031,40 @@ class GengoElectronMain {
                     delete loadedSettings.autoApply;
                 }
 
+                // customPromptからpresetPromptsへの移行処理
+                if (loadedSettings.customPrompt && !loadedSettings.presetPrompts) {
+                    console.log('customPromptをpresetPromptsに移行します');
+                    loadedSettings.presetPrompts = [
+                        {
+                            shortcutKey: 'Ctrl+1',
+                            prompt: loadedSettings.customPrompt,
+                            enabled: true
+                        }
+                    ];
+                    // 古いcustomPromptは削除
+                    delete loadedSettings.customPrompt;
+                }
+
+                // 旧shortcutKeyの削除
+                if (loadedSettings.shortcutKey) {
+                    delete loadedSettings.shortcutKey;
+                }
+
                 // 新しい設定項目がない場合はデフォルト値を設定
                 if (!loadedSettings.llmEndpoint) {
                     loadedSettings.llmEndpoint = 'http://127.0.0.1:1234/v1';
                 }
-                if (!loadedSettings.shortcutKey) {
-                    loadedSettings.shortcutKey = 'Ctrl+1';
-                }
                 if (!loadedSettings.onDemandShortcutKey) {
-                    loadedSettings.onDemandShortcutKey = 'Ctrl+2';
+                    loadedSettings.onDemandShortcutKey = 'Ctrl+Shift+1';
                 }
-                if (!loadedSettings.customPrompt) {
-                    loadedSettings.customPrompt = '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
+                if (!loadedSettings.presetPrompts || loadedSettings.presetPrompts.length === 0) {
+                    loadedSettings.presetPrompts = [
+                        {
+                            shortcutKey: 'Ctrl+1',
+                            prompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。',
+                            enabled: true
+                        }
+                    ];
                 }
 
                 this.settings = { ...this.settings, ...loadedSettings };
@@ -2078,6 +2092,9 @@ class GengoElectronMain {
 
             await writeFile(this.settingsPath, JSON.stringify(this.settings, null, 2));
             console.log('設定を保存しました:', this.settings);
+
+            // ショートカットを再登録
+            this.registerGlobalShortcuts();
         } catch (error) {
             console.error('設定保存エラー:', error);
             throw error;

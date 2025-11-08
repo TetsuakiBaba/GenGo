@@ -14,242 +14,491 @@
     <script src="https://unpkg.com/i18next-http-backend/i18nextHttpBackend.min.js"></script>
     <script src="i18n.js"></script>
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
         .full-container {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             width: 100%;
             height: 100vh;
             box-sizing: border-box;
-            background: white;
-            overflow-y: scroll;
-            /* スクロールバーを常に表示 */
+            background: #f8f9fa;
+            overflow-y: auto;
         }
 
         /* スクロールバーのスタイリング（Webkit系ブラウザ用） */
         .full-container::-webkit-scrollbar {
-            width: 12px;
+            width: 8px;
         }
 
         .full-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 6px;
+            background: transparent;
         }
 
         .full-container::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 6px;
+            background: #cbd5e0;
+            border-radius: 4px;
         }
 
         .full-container::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #a0aec0;
+        }
+
+        /* ヘッダー */
+        .settings-header {
+            background: #ffffff;
+            color: #2d3748;
+            padding: 24px 32px;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .settings-header h5 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .settings-header h5 i {
+            color: #667eea;
+        }
+
+        .settings-header .btn-light {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+
+        .settings-header .btn-light:hover {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+
+        /* コンテンツエリア */
+        .settings-content {
+            padding: 32px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* セクション */
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s;
+        }
+
+        .settings-section:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .settings-section h6 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .settings-section h6 i {
+            color: #667eea;
+            margin-right: 8px;
+        }
+
+        /* フォーム要素 */
+        .form-label {
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        /* プロンプトリスト */
+        .list-group-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px !important;
+            margin-bottom: 12px;
+            padding: 20px;
+            background: #f7fafc;
+            transition: all 0.2s;
+        }
+
+        .list-group-item:hover {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .preset-prompt-textarea {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .preset-shortcut-input {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        /* ボタン */
+        .btn {
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline-primary {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline-primary:hover {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        .btn-outline-danger:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border: none;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        /* バッジ */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* アラート */
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+
+        /* ボタングループ（下部） */
+        .button-group {
+            background: white;
+            padding: 20px 32px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .button-group .btn {
+            min-width: 120px;
+        }
+
+        /* プレースホルダー */
+        ::placeholder {
+            color: #a0aec0;
+            opacity: 1;
+        }
+
+        /* チェックボックス */
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .form-check-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 追加ボタン */
+        #addPresetPromptBtn {
+            border: 2px dashed #cbd5e0;
+            background: transparent;
+            color: #667eea;
+            width: 100%;
+            padding: 12px;
+            transition: all 0.2s;
+        }
+
+        #addPresetPromptBtn:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        /* 削除ボタン */
+        .delete-preset-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* テストボタン */
+        #testLLMConnection {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 接続テスト結果 */
+        #llmTestResult {
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        /* レスポンシブ調整 */
+        @media (max-width: 768px) {
+            .settings-content {
+                padding: 16px;
+            }
+
+            .settings-section {
+                padding: 16px;
+            }
+
+            .button-group {
+                padding: 16px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="full-container">
-        <div class="card h-100 border-0">
-            <div class="card-title d-flex justify-content-between align-items-center">
-                <h5 class="mb-0" id="settings-title">
-                    <i class="bi bi-gear"></i> <span id="settingsTitle">設定</span>
+        <!-- ヘッダー -->
+        <div class="settings-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 id="settings-title">
+                    <i class="bi bi-gear-fill"></i> <span id="settingsTitle">設定</span>
                 </h5>
                 <button type="button" class="btn btn-light btn-sm" id="closeBtn">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
+        </div>
 
-            <div class="card-body">
+        <!-- コンテンツ -->
+        <div class="settings-content">
+            <!-- UI言語設定 -->
+            <div class="settings-section">
+                <h6>
+                    <i class="bi bi-globe"></i> <span id="ui-language-title">UI言語</span>
+                </h6>
                 <div class="row">
-                    <div class="col-12">
-                        <!-- UI言語設定 -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3">
-                                <i class="bi bi-globe"></i> <span id="ui-language-title">UI言語</span>
-                            </h6>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label for="uiLanguage" class="form-label" id="ui-language-label">UI言語</label>
-                                    <select class="form-select" id="uiLanguage">
-                                        <option value="ja">日本語</option>
-                                        <option value="en">English</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- プロンプト設定 -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3" id="prompt-section-title">
-                                <i class="bi bi-chat-left-text"></i> プロンプト設定
-                            </h6>
-
-                            <div class="mb-3">
-                                <label for="customPrompt" class="form-label" id="prompt-label">事前プロンプト</label>
-                                <textarea class="form-control" id="customPrompt" rows="4"
-                                    placeholder="日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。"></textarea>
-                                <small class="text-muted" id="prompt-description">
-                                    事前プロンプトショートカットで実行されるプロンプトです。デフォルトは日本語と英語の相互翻訳です。
-                                </small>
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="resetPromptBtn">
-                                        <i class="bi bi-arrow-clockwise"></i> <span
-                                            id="reset-prompt-btn-text">デフォルトに戻す</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ショートカットキー設定 -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3" id="shortcuts-title">
-                                <i class="bi bi-keyboard"></i> ショートカットキー
-                            </h6>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="shortcutKey" class="form-label"
-                                        id="shortcut-label">事前プロンプトショートカット</label>
-                                    <input type="text" class="form-control" id="shortcutKey" placeholder="Ctrl+1"
-                                        value="Ctrl+1">
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-control-plaintext text-muted small">
-                                        <div id="shortcut-desc-label" class="small fw-bold mb-1"></div>
-                                        <div id="shortcut-description"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="onDemandShortcutKey" class="form-label"
-                                        id="ondemand-shortcut-label">オンデマンドプロンプトショートカット</label>
-                                    <input type="text" class="form-control" id="onDemandShortcutKey"
-                                        placeholder="Ctrl+2" value="Ctrl+2">
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-control-plaintext text-muted small">
-                                        <div id="ondemand-shortcut-desc-label" class="small fw-bold mb-1"></div>
-                                        <div id="ondemand-shortcut-description"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- ショートカットキー記法説明 -->
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <h6 class="alert-heading mb-2" id="shortcut-notation-title">
-                                            <i class="bi bi-info-circle"></i> 利用可能なショートカット記号の説明
-                                        </h6>
-                                        <div id="shortcut-notation-content"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- LLMエンジン設定 -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3" id="llm-settings-title">
-                                <i class="bi bi-cpu"></i> LLMエンジン設定
-                            </h6>
-
-                            <!-- LLMプロバイダー選択 -->
-                            <div class="mb-3">
-                                <label for="llmProvider" class="form-label" id="llm-provider-label">LLMプロバイダー</label>
-                                <select class="form-select" id="llmProvider">
-                                    <option value="local" id="llm-provider-local-option">ローカルLLM</option>
-                                    <option value="remote" id="llm-provider-remote-option">リモートLLM</option>
-                                </select>
-                            </div>
-
-                            <!-- エンドポイントURL（共通） -->
-                            <div class="mb-3">
-                                <label for="llmEndpoint" class="form-label" id="llm-endpoint-label">APIエンドポイント</label>
-                                <input type="text" class="form-control" id="llmEndpoint"
-                                    placeholder="http://127.0.0.1:1234/v1">
-                                <small class="text-muted" id="llm-endpoint-description">
-                                    ベースURL（例: http://127.0.0.1:1234/v1 または https://api.openai.com/v1）。/chat/completions
-                                    は自動で追加されます
-                                </small>
-                            </div>
-
-                            <!-- リモート接続用設定 -->
-                            <div id="remoteSettings" style="display: none;">
-                                <div class="mb-3">
-                                    <label for="apiKey" class="form-label" id="api-key-label">APIキー</label>
-                                    <input type="password" class="form-control" id="apiKey"
-                                        placeholder="your-api-key-here">
-                                    <small class="text-muted" id="api-key-description">
-                                        リモートLLMサービスのAPIキー（ローカルに保存されます）
-                                    </small>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="modelName" class="form-label" id="model-name-label">モデル名</label>
-                                    <input type="text" class="form-control" id="modelName" placeholder="gpt-4o-mini">
-                                    <small class="text-muted" id="model-name-description">
-                                        使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）
-                                    </small>
-                                </div>
-                            </div>
-
-                            <!-- 最大トークン数設定 -->
-                            <div class="mb-3">
-                                <label for="maxTokens" class="form-label" id="max-tokens-label">最大トークン数</label>
-                                <input type="number" class="form-control" id="maxTokens" placeholder="4096" min="256"
-                                    max="32768" step="256">
-                                <small class="text-muted" id="max-tokens-description">
-                                    LLMの応答に使用する最大トークン数（デフォルト: 4096）
-                                </small>
-                            </div>
-
-                            <!-- LLM接続テストボタン -->
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="testLLMConnection">
-                                <i class="bi bi-wifi"></i> <span id="test-connection-text">接続テスト</span>
-                            </button>
-                            <div id="llmTestResult" class="mt-2"></div>
-                        </div>
-
-                        <!-- その他の設定 -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2 mb-3" id="other-settings-title">
-                                <i class="bi bi-toggles"></i> その他の設定
-                            </h6>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="autoApplyAndClose">
-                                <label class="form-check-label" for="autoApplyAndClose" id="auto-apply-and-close-label">
-                                    AI処理完了後に自動で結果を適用してウィンドウを閉じる
-                                </label>
-                            </div>
-                        </div>
+                    <div class="col-md-6">
+                        <label for="uiLanguage" class="form-label" id="ui-language-label">UI言語</label>
+                        <select class="form-select" id="uiLanguage">
+                            <option value="ja">日本語</option>
+                            <option value="en">English</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div class="card-footer bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-outline-danger" id="resetBtn">
-                        <i class="bi bi-arrow-clockwise"></i> リセット
-                    </button>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-secondary" id="cancelBtn">
-                            キャンセル
-                        </button>
-                        <button type="button" class="btn btn-dark" id="saveBtn">
-                            <i class="bi bi-check"></i> 保存
-                        </button>
+            <!-- プロンプト設定 -->
+            <div class="settings-section">
+                <h6 id="prompt-section-title">
+                    <i class="bi bi-chat-left-text"></i> プロンプト設定
+                </h6>
+
+                <!-- 事前プロンプトリスト -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="form-label mb-0" id="preset-prompts-label">事前プロンプト（最大5個）</label>
                     </div>
+                    <small class="text-muted d-block mb-3" id="preset-prompts-description">
+                        各事前プロンプトにショートカットキーを設定できます。
+                    </small>
+
+                    <!-- 事前プロンプトリストコンテナ -->
+                    <div id="presetPromptsList" class="mb-3">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary" id="addPresetPromptBtn">
+                        <i class="bi bi-plus-circle"></i> <span id="add-preset-btn-text">事前プロンプトを追加</span>
+                    </button>
+                </div>
+
+                <!-- オンデマンドプロンプト設定 -->
+                <div class="mb-3 mt-4 pt-4" style="border-top: 1px solid #e2e8f0;">
+                    <label class="form-label" id="ondemand-prompt-label">
+                        <i class="bi bi-lightning-fill text-warning"></i> オンデマンドプロンプト
+                    </label>
+                    <div class="mb-2">
+                        <label class="form-label small" id="ondemand-shortcut-label">ショートカットキー</label>
+                        <input type="text" class="form-control" id="onDemandShortcutKey" placeholder="例: Ctrl+Shift+1">
+                        <small class="form-text text-muted" id="ondemand-shortcut-help">
+                            使用可能なキー: Ctrl, Alt, Shift, Command (Mac), 英数字, F1-F12など
+                        </small>
+                    </div>
+                    <small class="text-muted d-block" id="ondemand-prompt-description">
+                        ショートカット実行時にプロンプト入力画面が表示されます。
+                    </small>
+                </div>
+            </div>
+
+            <!-- LLMエンジン設定 -->
+            <div class="settings-section">
+                <h6 id="llm-settings-title">
+                    <i class="bi bi-cpu"></i> LLMエンジン設定
+                </h6>
+
+                <!-- LLMプロバイダー選択 -->
+                <div class="mb-3">
+                    <label for="llmProvider" class="form-label" id="llm-provider-label">LLMプロバイダー</label>
+                    <select class="form-select" id="llmProvider">
+                        <option value="local" id="llm-provider-local-option">ローカルLLM</option>
+                        <option value="remote" id="llm-provider-remote-option">リモートLLM</option>
+                    </select>
+                </div>
+
+                <!-- エンドポイントURL（共通） -->
+                <div class="mb-3">
+                    <label for="llmEndpoint" class="form-label" id="llm-endpoint-label">APIエンドポイント</label>
+                    <input type="text" class="form-control" id="llmEndpoint" placeholder="http://127.0.0.1:1234/v1">
+                    <small class="text-muted" id="llm-endpoint-description">
+                        ベースURL（例: http://127.0.0.1:1234/v1 または https://api.openai.com/v1）。/chat/completions
+                        は自動で追加されます
+                    </small>
+                </div>
+
+                <!-- リモート接続用設定 -->
+                <div id="remoteSettings" style="display: none;">
+                    <div class="mb-3">
+                        <label for="apiKey" class="form-label" id="api-key-label">APIキー</label>
+                        <input type="password" class="form-control" id="apiKey" placeholder="your-api-key-here">
+                        <small class="text-muted" id="api-key-description">
+                            リモートLLMサービスのAPIキー（ローカルに保存されます）
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modelName" class="form-label" id="model-name-label">モデル名</label>
+                        <input type="text" class="form-control" id="modelName" placeholder="gpt-4o-mini">
+                        <small class="text-muted" id="model-name-description">
+                            使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）
+                        </small>
+                    </div>
+                </div>
+
+                <!-- 最大トークン数設定 -->
+                <div class="mb-3">
+                    <label for="maxTokens" class="form-label" id="max-tokens-label">最大トークン数</label>
+                    <input type="number" class="form-control" id="maxTokens" placeholder="4096" min="256" max="32768"
+                        step="256">
+                    <small class="text-muted" id="max-tokens-description">
+                        LLMの応答に使用する最大トークン数（デフォルト: 4096）
+                    </small>
+                </div>
+
+                <!-- LLM接続テストボタン -->
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-primary" id="testLLMConnection">
+                        <i class="bi bi-wifi"></i> <span id="test-connection-text">接続テスト</span>
+                    </button>
+                    <div id="llmTestResult" class="mt-2"></div>
+                </div>
+            </div>
+
+            <!-- その他の設定 -->
+            <div class="settings-section">
+                <h6 id="other-settings-title">
+                    <i class="bi bi-toggles"></i> その他の設定
+                </h6>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="autoApplyAndClose">
+                    <label class="form-check-label" for="autoApplyAndClose" id="auto-apply-and-close-label">
+                        AI処理完了後に自動で結果を適用してウィンドウを閉じる
+                    </label>
                 </div>
             </div>
         </div>
+
+        <!-- ボタングループ（下部固定） -->
+        <div class="button-group">
+            <div class="d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-outline-danger" id="resetBtn">
+                    <i class="bi bi-arrow-clockwise"></i> リセット
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">
+                        <i class="bi bi-x-circle"></i> キャンセル
+                    </button>
+                    <button type="button" class="btn btn-success" id="saveBtn">
+                        <i class="bi bi-check-circle"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </button>
+    </div>
+    </div>
+    </div>
+    </div>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // グローバル変数：翻訳テキスト
+        let translations = {
+            shortcutKeyLabel: 'ショートカットキー',
+            shortcutKeyHelp: '使用可能なキー: Ctrl, Alt, Shift, Command (Mac), 英数字, F1-F12など',
+            promptLabel: 'プロンプト'
+        };
+
         // 初期化
         document.addEventListener('DOMContentLoaded', async () => {
             // 翻訳を読み込み
@@ -269,8 +518,8 @@
                 await changeUILanguage(e.target.value);
             });
 
-            // プロンプトリセットボタンイベント
-            document.getElementById('resetPromptBtn').addEventListener('click', resetPrompt);
+            // 事前プロンプト追加ボタンイベント
+            document.getElementById('addPresetPromptBtn').addEventListener('click', addPresetPrompt);
 
             // LLMプロバイダー変更イベント
             document.getElementById('llmProvider').addEventListener('change', handleProviderChange);
@@ -339,32 +588,27 @@
                 // プロンプト設定セクション
                 document.getElementById('prompt-section-title').innerHTML =
                     '<i class="bi bi-chat-left-text"></i> ' + await window.electronAPI.getTranslation('settings.prompt.title');
-                document.getElementById('prompt-label').textContent =
-                    await window.electronAPI.getTranslation('settings.prompt.preset_label');
-                document.getElementById('prompt-description').textContent =
-                    await window.electronAPI.getTranslation('settings.prompt.preset_description');
-                document.getElementById('reset-prompt-btn-text').textContent =
-                    await window.electronAPI.getTranslation('settings.prompt.reset_button');
+                document.getElementById('preset-prompts-label').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.preset_prompts_label') || '事前プロンプト（最大5個）';
+                document.getElementById('preset-prompts-description').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.preset_prompts_description') || '各事前プロンプトにショートカットキーを設定できます。';
+                document.getElementById('addPresetPromptBtn').innerHTML =
+                    '<i class="bi bi-plus-circle"></i> ' + (await window.electronAPI.getTranslation('settings.prompt.add_preset_button') || '事前プロンプトを追加');
 
-                // ショートカットセクション
-                document.getElementById('shortcuts-title').innerHTML =
-                    '<i class="bi bi-keyboard"></i> ' + await window.electronAPI.getTranslation('settings.shortcuts.title');
-                document.getElementById('shortcut-label').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.preset_prompt_shortcut');
+                // 翻訳テキストをグローバル変数に保存（動的生成で使用）
+                translations.shortcutKeyLabel = await window.electronAPI.getTranslation('settings.prompt.shortcut_key_label') || 'ショートカットキー';
+                translations.shortcutKeyHelp = await window.electronAPI.getTranslation('settings.prompt.shortcut_key_help') || '使用可能なキー: Ctrl, Alt, Shift, Command (Mac), 英数字, F1-F12など';
+                translations.promptLabel = await window.electronAPI.getTranslation('settings.prompt.prompt_label') || 'プロンプト';
+
+                // オンデマンドプロンプトセクション
+                document.getElementById('ondemand-prompt-label').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.ondemand_label') || 'オンデマンドプロンプト';
                 document.getElementById('ondemand-shortcut-label').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_shortcut');
-                document.getElementById('shortcut-desc-label').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.description_label') || '説明';
-                document.getElementById('ondemand-shortcut-desc-label').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_description_label') || '説明';
-                document.getElementById('shortcut-description').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.preset_description') || '';
-                document.getElementById('ondemand-shortcut-description').textContent =
-                    await window.electronAPI.getTranslation('settings.shortcuts.ondemand_description') || '';
-                document.getElementById('shortcut-notation-title').innerHTML =
-                    '<i class="bi bi-info-circle"></i> ' + await window.electronAPI.getTranslation('settings.shortcuts.notation_title');
-                document.getElementById('shortcut-notation-content').innerHTML =
-                    await window.electronAPI.getTranslation('settings.shortcuts.available_keys_html') || '';
+                    await window.electronAPI.getTranslation('settings.prompt.shortcut_key_label') || 'ショートカットキー';
+                document.getElementById('ondemand-shortcut-help').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.shortcut_key_help') || '使用可能なキー: Ctrl, Alt, Shift, Command (Mac), 英数字, F1-F12など';
+                document.getElementById('ondemand-prompt-description').textContent =
+                    await window.electronAPI.getTranslation('settings.prompt.ondemand_description') || '選択したテキストに対して、毎回異なるプロンプトを入力できます。';
 
                 // LLMエンドポイント設定セクション
                 document.getElementById('llm-settings-title').innerHTML =
@@ -484,15 +728,11 @@
                     document.getElementById('uiLanguage').value = settings.language || 'ja';
                 }
 
-                // ショートカットキー設定
-                if (settings.shortcutKey) {
-                    document.getElementById('shortcutKey').value = settings.shortcutKey;
-                }
+                // 事前プロンプトリストを描画
+                renderPresetPrompts(settings.presetPrompts || []);
 
-                // オンデマンドプロンプトショートカット設定
-                if (settings.onDemandShortcutKey) {
-                    document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey;
-                }
+                // オンデマンドプロンプトショートカットを設定
+                document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey || 'Ctrl+Shift+1';
 
                 // LLM設定
                 document.getElementById('llmProvider').value = settings.llmProvider || 'local';
@@ -512,11 +752,6 @@
                 // プロバイダー設定に応じてUI表示を切り替え
                 handleProviderChange();
 
-                // プロンプト設定
-                if (settings.customPrompt) {
-                    document.getElementById('customPrompt').value = settings.customPrompt;
-                }
-
                 // 統合された自動適用・閉じる設定
                 document.getElementById('autoApplyAndClose').checked = settings.autoApplyAndClose || false;
 
@@ -525,37 +760,184 @@
             }
         }
 
-        // 設定保存
-        async function saveSettings() {
-            try {
-                const shortcutKey = document.getElementById('shortcutKey').value;
-                const onDemandShortcutKey = document.getElementById('onDemandShortcutKey').value;
+        // 事前プロンプトリストを描画
+        function renderPresetPrompts(presetPrompts) {
+            const container = document.getElementById('presetPromptsList');
+            container.innerHTML = '';
 
-                // ショートカットキーの検証
-                if (shortcutKey && !(await window.electronAPI.validateShortcutKey(shortcutKey))) {
-                    const errorMessage = await window.electronAPI.getTranslation('settings.shortcuts.validation_error');
-                    showMessage(errorMessage, 'error');
+            presetPrompts.forEach((preset, index) => {
+                const item = createPresetPromptItem(preset, index);
+                container.appendChild(item);
+            });
+
+            // 追加ボタンの表示/非表示を制御
+            const addBtn = document.getElementById('addPresetPromptBtn');
+            if (presetPrompts.length >= 5) {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = 'inline-block';
+            }
+        }
+
+        // 事前プロンプトアイテムを作成
+        function createPresetPromptItem(preset, index) {
+            const item = document.createElement('div');
+            item.className = 'list-group-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <strong>事前プロンプト ${index + 1}</strong>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">${translations.shortcutKeyLabel}</label>
+                            <input type="text" class="form-control form-control-sm preset-shortcut-input" 
+                                   data-index="${index}" value="${preset.shortcutKey}" 
+                                   placeholder="例: Ctrl+1, Ctrl+Shift+A">
+                            <small class="form-text text-muted">
+                                ${translations.shortcutKeyHelp}
+                            </small>
+                        </div>
+                        <div>
+                            <label class="form-label small">${translations.promptLabel}</label>
+                            <textarea class="form-control preset-prompt-textarea" rows="3" data-index="${index}">${preset.prompt}</textarea>
+                        </div>
+                    </div>
+                    ${index > 0 ? `
+                    <button type="button" class="btn btn-outline-danger btn-sm ms-2 delete-preset-btn" data-index="${index}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    ` : ''}
+                </div>
+            `;
+
+            // 削除ボタンのイベントリスナー
+            const deleteBtn = item.querySelector('.delete-preset-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => deletePresetPrompt(index));
+            }
+
+            return item;
+        }
+
+        // 事前プロンプトを追加
+        async function addPresetPrompt() {
+            try {
+                const settings = await window.electronAPI.getSettings();
+                const presetPrompts = settings.presetPrompts || [];
+
+                if (presetPrompts.length >= 5) {
+                    alert('事前プロンプトは最大5個までです。');
                     return;
                 }
 
-                // オンデマンドショートカットキーの検証
-                if (onDemandShortcutKey && !(await window.electronAPI.validateShortcutKey(onDemandShortcutKey))) {
-                    const errorMessage = await window.electronAPI.getTranslation('settings.shortcuts.validation_error');
-                    showMessage(errorMessage, 'error');
+                // 次の空いているショートカットキーを見つける
+                const usedNumbers = presetPrompts.map(p => {
+                    const match = p.shortcutKey.match(/Ctrl\+(\d)/);
+                    return match ? parseInt(match[1]) : 0;
+                });
+
+                let nextNumber = 1;
+                for (let i = 1; i <= 5; i++) {
+                    if (!usedNumbers.includes(i)) {
+                        nextNumber = i;
+                        break;
+                    }
+                }
+
+                // 新しいプロンプトを追加
+                presetPrompts.push({
+                    shortcutKey: `Ctrl+${nextNumber}`,
+                    prompt: '',
+                    enabled: true
+                });
+
+                renderPresetPrompts(presetPrompts);
+            } catch (error) {
+                console.error('プロンプト追加エラー:', error);
+            }
+        }
+
+        // 事前プロンプトを削除
+        async function deletePresetPrompt(index) {
+            if (!confirm('このプロンプトを削除しますか？')) {
+                return;
+            }
+
+            try {
+                const settings = await window.electronAPI.getSettings();
+                const presetPrompts = settings.presetPrompts || [];
+
+                // 配列から削除
+                presetPrompts.splice(index, 1);
+
+                renderPresetPrompts(presetPrompts);
+            } catch (error) {
+                console.error('プロンプト削除エラー:', error);
+            }
+        }
+
+        // 設定保存
+        async function saveSettings() {
+            try {
+                // 事前プロンプトを収集
+                const presetPrompts = [];
+                const textareas = document.querySelectorAll('.preset-prompt-textarea');
+                const shortcutInputs = document.querySelectorAll('.preset-shortcut-input');
+
+                // ショートカットキーの重複チェック用
+                const usedShortcuts = new Set();
+
+                textareas.forEach((textarea, index) => {
+                    const shortcutInput = shortcutInputs[index];
+                    const shortcutKey = shortcutInput ? shortcutInput.value.trim() : `Ctrl+${index + 1}`;
+                    const prompt = textarea.value;
+
+                    // ショートカットキーが空でないかチェック
+                    if (!shortcutKey) {
+                        throw new Error(`事前プロンプト ${index + 1} のショートカットキーを入力してください。`);
+                    }
+
+                    // 重複チェック
+                    if (usedShortcuts.has(shortcutKey)) {
+                        throw new Error(`ショートカットキー "${shortcutKey}" が重複しています。`);
+                    }
+                    usedShortcuts.add(shortcutKey);
+
+                    presetPrompts.push({
+                        shortcutKey: shortcutKey,
+                        prompt: prompt,
+                        enabled: true
+                    });
+                });
+
+                // 最低1個の事前プロンプトは必須
+                if (presetPrompts.length === 0) {
+                    alert('最低1個の事前プロンプトが必要です。');
                     return;
+                }
+
+                // オンデマンドプロンプトのショートカットキー
+                const onDemandShortcutKey = document.getElementById('onDemandShortcutKey').value.trim();
+                if (!onDemandShortcutKey) {
+                    throw new Error('オンデマンドプロンプトのショートカットキーを入力してください。');
+                }
+
+                // オンデマンドショートカットが事前プロンプトと重複していないかチェック
+                if (usedShortcuts.has(onDemandShortcutKey)) {
+                    throw new Error(`オンデマンドプロンプトのショートカットキー "${onDemandShortcutKey}" が事前プロンプトと重複しています。`);
                 }
 
                 const settings = {
                     autoApplyAndClose: document.getElementById('autoApplyAndClose').checked,
                     language: document.getElementById('uiLanguage').value,
-                    shortcutKey: shortcutKey,
+                    presetPrompts: presetPrompts,
                     onDemandShortcutKey: onDemandShortcutKey,
                     llmProvider: document.getElementById('llmProvider').value,
                     llmEndpoint: document.getElementById('llmEndpoint').value,
                     apiKey: document.getElementById('apiKey').value,
                     modelName: document.getElementById('modelName').value,
-                    maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096,
-                    customPrompt: document.getElementById('customPrompt').value
+                    maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096
                 };
 
                 await window.electronAPI.saveSettings(settings);
@@ -570,8 +952,13 @@
 
             } catch (error) {
                 console.error('設定保存エラー:', error);
-                const errorMessage = await window.electronAPI.getTranslation('settings.messages.save_error');
-                showMessage(errorMessage, 'error');
+                // エラーメッセージを表示
+                if (error.message) {
+                    showMessage(error.message, 'error');
+                } else {
+                    const errorMessage = await window.electronAPI.getTranslation('settings.messages.save_error');
+                    showMessage(errorMessage, 'error');
+                }
             }
         }
 
@@ -646,22 +1033,6 @@
                 }
             }
         }
-
-        // プロンプトをデフォルトに戻す
-        async function resetPrompt() {
-            try {
-                const defaultPrompt = await window.electronAPI.getDefaultPrompt();
-                document.getElementById('customPrompt').value = defaultPrompt;
-
-                const successMessage = await window.electronAPI.getTranslation('settings.prompt.reset_success') || 'プロンプトをデフォルト値に戻しました';
-                showMessage(successMessage, 'success');
-            } catch (error) {
-                console.error('プロンプトリセットエラー:', error);
-                const errorMessage = await window.electronAPI.getTranslation('settings.prompt.reset_error') || 'プロンプトのリセット中にエラーが発生しました';
-                showMessage(errorMessage, 'error');
-            }
-        }
-
         // LLMプロバイダー変更時の処理
         async function handleProviderChange() {
             const provider = document.getElementById('llmProvider').value;

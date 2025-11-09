@@ -90,6 +90,35 @@ class GengoElectronMain {
     }
 
     /**
+     * プラットフォーム判定ヘルパー
+     */
+    isMac() {
+        return process.platform === 'darwin';
+    }
+
+    isWindows() {
+        return process.platform === 'win32';
+    }
+
+    isLinux() {
+        return process.platform === 'linux';
+    }
+
+    /**
+     * プラットフォームに応じたコマンドキー名を取得
+     */
+    getCmdKey() {
+        return this.isMac() ? 'cmd' : 'ctrl';
+    }
+
+    /**
+     * プラットフォームに応じたコマンドキー表示名を取得
+     */
+    getCmdKeyDisplay() {
+        return this.isMac() ? '⌘' : 'Ctrl';
+    }
+
+    /**
      * システムトレイを作成または更新
      */
     createTray() {
@@ -270,16 +299,19 @@ class GengoElectronMain {
             console.log('元のクリップボード保存:', clipboardPreview);
 
             // アクティブアプリケーションを確認
-            const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
-            console.log('アクティブアプリケーション:', activeApp);
+            const cmdKey = this.getCmdKey();
+            if (this.isMac()) {
+                const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+                console.log('アクティブアプリケーション:', activeApp);
+            }
 
             // クリップボードを一時的にクリアして選択テキストの検出を確実にする
             clipboard.writeText('__GENGO_TEMP_MARKER__');
 
-            // Cmd+Cでテキストをコピー
-            console.log('Cmd+C実行中...');
-            await this.simulateKeyPress('c', ['cmd']);
-            console.log('Cmd+C実行完了');
+            // Cmd+C (Mac) または Ctrl+C (Windows)でテキストをコピー
+            console.log(`${this.getCmdKeyDisplay()}+C実行中...`);
+            await this.simulateKeyPress('c', [cmdKey]);
+            console.log(`${this.getCmdKeyDisplay()}+C実行完了`);
 
             // 少し待ってからクリップボードを確認（短縮：500ms → 200ms）
             setTimeout(() => {
@@ -366,16 +398,19 @@ class GengoElectronMain {
             console.log('元のクリップボード保存:', clipboardPreview);
 
             // アクティブアプリケーションを確認
-            const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
-            console.log('アクティブアプリケーション:', activeApp);
+            const cmdKey = this.getCmdKey();
+            if (this.isMac()) {
+                const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+                console.log('アクティブアプリケーション:', activeApp);
+            }
 
             // クリップボードを一時的にクリアして選択テキストの検出を確実にする
             clipboard.writeText('__GENGO_TEMP_MARKER__');
 
-            // Cmd+Cでテキストをコピー
-            console.log('Cmd+C実行中...');
-            await this.simulateKeyPress('c', ['cmd']);
-            console.log('Cmd+C実行完了');
+            // Cmd+C (Mac) または Ctrl+C (Windows)でテキストをコピー
+            console.log(`${this.getCmdKeyDisplay()}+C実行中...`);
+            await this.simulateKeyPress('c', [cmdKey]);
+            console.log(`${this.getCmdKeyDisplay()}+C実行完了`);
 
             // 少し待ってからクリップボードを確認（長いテキストの場合は時間がかかる可能性がある）
             setTimeout(() => {
@@ -421,89 +456,190 @@ class GengoElectronMain {
     }
 
     /**
-     * 選択時のコンテキスト情報を記憶（改良版）
+     * 選択時のコンテキスト情報を記憶（改良版・クロスプラットフォーム対応）
      */
     async captureSelectionContext() {
         return new Promise((resolve) => {
-            const contextScript = `
-                tell application "System Events"
-                    set frontApp to first application process whose frontmost is true
-                    set appName to name of frontApp
-                    
-                    -- アプリケーションの詳細情報を取得
-                    try
-                        set appBundle to bundle identifier of frontApp
-                        set appDisplayName to displayed name of frontApp
-                        return appName & "|" & appBundle & "|" & appDisplayName
-                    on error
-                        return appName & "|unknown|unknown"
-                    end try
-                end tell
-            `;
+            if (this.isMac()) {
+                // macOS: AppleScriptを使用
+                const contextScript = `
+                    tell application "System Events"
+                        set frontApp to first application process whose frontmost is true
+                        set appName to name of frontApp
+                        
+                        -- アプリケーションの詳細情報を取得
+                        try
+                            set appBundle to bundle identifier of frontApp
+                            set appDisplayName to displayed name of frontApp
+                            return appName & "|" & appBundle & "|" & appDisplayName
+                        on error
+                            return appName & "|unknown|unknown"
+                        end try
+                    end tell
+                `;
 
-            exec(`osascript -e '${contextScript}'`, (error, stdout, stderr) => {
-                if (!error && stdout) {
-                    const parts = stdout.trim().split('|');
-                    this.selectionContext = {
-                        appName: parts[0],
-                        bundleId: parts[1],
-                        displayName: parts[2],
-                        processName: parts[0],
-                        timestamp: Date.now()
-                    };
-                    console.log('コンテキスト記憶:', this.selectionContext);
-                } else {
-                    console.error('コンテキスト取得エラー:', error);
-                    // フォールバック
-                    this.selectionContext = {
-                        appName: 'Unknown',
-                        bundleId: 'unknown',
-                        displayName: 'Unknown',
-                        processName: 'Unknown',
-                        timestamp: Date.now()
-                    };
-                }
+                exec(`osascript -e '${contextScript}'`, (error, stdout, stderr) => {
+                    if (!error && stdout) {
+                        const parts = stdout.trim().split('|');
+                        this.selectionContext = {
+                            appName: parts[0],
+                            bundleId: parts[1],
+                            displayName: parts[2],
+                            processName: parts[0],
+                            timestamp: Date.now()
+                        };
+                        console.log('コンテキスト記憶:', this.selectionContext);
+                    } else {
+                        console.error('コンテキスト取得エラー:', error);
+                        this.selectionContext = this._getFallbackContext();
+                    }
+                    resolve();
+                });
+            } else if (this.isWindows()) {
+                // Windows: PowerShellを使用
+                const psScript = `Add-Type @"
+                    using System;
+                    using System.Runtime.InteropServices;
+                    public class WindowInfo {
+                        [DllImport("user32.dll")]
+                        public static extern IntPtr GetForegroundWindow();
+                        [DllImport("user32.dll")]
+                        public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+                    }
+"@
+$hwnd = [WindowInfo]::GetForegroundWindow()
+$processId = 0
+[WindowInfo]::GetWindowThreadProcessId($hwnd, [ref]$processId) | Out-Null
+$process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+if ($process) {
+    Write-Output "$($process.ProcessName)|$($process.Id)|$($process.MainWindowTitle)"
+} else {
+    Write-Output "Unknown|0|Unknown"
+}`;
+
+                exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error, stdout, stderr) => {
+                    if (!error && stdout) {
+                        const parts = stdout.trim().split('|');
+                        this.selectionContext = {
+                            appName: parts[0],
+                            bundleId: parts[1],
+                            displayName: parts[2],
+                            processName: parts[0],
+                            timestamp: Date.now()
+                        };
+                        console.log('コンテキスト記憶:', this.selectionContext);
+                    } else {
+                        console.error('コンテキスト取得エラー:', error);
+                        this.selectionContext = this._getFallbackContext();
+                    }
+                    resolve();
+                });
+            } else {
+                // Linux: フォールバック
+                this.selectionContext = this._getFallbackContext();
                 resolve();
-            });
+            }
         });
     }
 
     /**
-     * AppleScriptを使ったキープレス
+     * フォールバックコンテキスト
+     */
+    _getFallbackContext() {
+        return {
+            appName: 'Unknown',
+            bundleId: 'unknown',
+            displayName: 'Unknown',
+            processName: 'Unknown',
+            timestamp: Date.now()
+        };
+    }
+
+    /**
+     * キープレスをシミュレート（クロスプラットフォーム対応）
      */
     async simulateKeyPress(key, modifiers = []) {
         return new Promise((resolve, reject) => {
-            let keystrokeCommand = '';
+            if (this.isMac()) {
+                // macOS: AppleScript
+                let keystrokeCommand = '';
 
-            if (modifiers.length > 0) {
+                if (modifiers.length > 0) {
+                    const modifierMap = {
+                        'cmd': 'command',
+                        'ctrl': 'control',
+                        'shift': 'shift',
+                        'alt': 'option',
+                        'option': 'option'
+                    };
+
+                    const appleModifiers = modifiers.map(mod => modifierMap[mod] || mod).join(' down, ') + ' down';
+                    keystrokeCommand = `keystroke "${key}" using {${appleModifiers}}`;
+                } else {
+                    keystrokeCommand = `keystroke "${key}"`;
+                }
+
+                const script = `
+                    tell application "System Events"
+                        ${keystrokeCommand}
+                    end tell
+                `;
+
+                exec(`osascript -e '${script}'`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error('AppleScript実行エラー:', error.message);
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                });
+            } else if (this.isWindows()) {
+                // Windows: PowerShellでSendKeysを使用
                 const modifierMap = {
-                    'cmd': 'command',
-                    'ctrl': 'control',
-                    'shift': 'shift',
-                    'alt': 'option',
-                    'option': 'option'
+                    'cmd': '^',    // Ctrl
+                    'ctrl': '^',   // Ctrl
+                    'shift': '+',  // Shift
+                    'alt': '%'     // Alt
                 };
 
-                const appleModifiers = modifiers.map(mod => modifierMap[mod] || mod).join(' down, ') + ' down';
-                keystrokeCommand = `keystroke "${key}" using {${appleModifiers}}`;
-            } else {
-                keystrokeCommand = `keystroke "${key}"`;
-            }
-
-            const script = `
-                tell application "System Events"
-                    ${keystrokeCommand}
-                end tell
-            `;
-
-            exec(`osascript -e '${script}'`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error('AppleScript実行エラー:', error.message);
-                    reject(error);
-                } else {
-                    resolve();
+                let keyString = key;
+                if (modifiers.length > 0) {
+                    const modPrefix = modifiers.map(mod => modifierMap[mod] || '').join('');
+                    keyString = modPrefix + key;
                 }
-            });
+
+                const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("${keyString}")`;
+                
+                exec(`powershell -Command "${psScript}"`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error('PowerShell実行エラー:', error.message);
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                });
+            } else {
+                // Linux: xdotoolを使用（要インストール）
+                const modifierMap = {
+                    'cmd': 'ctrl',
+                    'ctrl': 'ctrl',
+                    'shift': 'shift',
+                    'alt': 'alt'
+                };
+
+                const mods = modifiers.map(mod => modifierMap[mod] || mod);
+                const modString = mods.length > 0 ? mods.join('+') + '+' : '';
+                const command = `xdotool key ${modString}${key}`;
+
+                exec(command, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error('xdotool実行エラー:', error.message);
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                });
+            }
         });
     }
 
@@ -1667,7 +1803,7 @@ class GengoElectronMain {
     }
 
     /**
-     * 生成されたテキストを現在のカーソル位置に挿入
+     * 生成されたテキストを現在のカーソル位置に挿入（クロスプラットフォーム対応）
      */
     async insertGeneratedText(generatedText) {
         return new Promise((resolve, reject) => {
@@ -1692,20 +1828,39 @@ class GengoElectronMain {
                 }
 
                 // 元のアプリケーションにフォーカスを戻してからテキストを挿入
-                const targetApp = this.selectionContext?.appName || 'System Events';
-                console.log('対象アプリに戻る:', targetApp);
+                if (this.isMac()) {
+                    // macOS: AppleScriptでフォーカス
+                    const targetApp = this.selectionContext?.appName || 'System Events';
+                    console.log('対象アプリに戻る:', targetApp);
 
-                const focusScript = `tell application "${targetApp}" to activate`;
-                exec(`osascript -e '${focusScript}'`, (error, stdout, stderr) => {
-                    if (error) {
-                        console.error('アプリケーションフォーカスエラー:', error);
-                        // エラーでも続行
-                    }
+                    const focusScript = `tell application "${targetApp}" to activate`;
+                    exec(`osascript -e '${focusScript}'`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.error('アプリケーションフォーカスエラー:', error);
+                            // エラーでも続行
+                        }
 
-                    // 少し待ってからCmd+Vを実行
+                        // 少し待ってからCmd+V (Mac) または Ctrl+V (Windows)を実行
+                        setTimeout(() => {
+                            const cmdKey = this.getCmdKey();
+                            this.simulateKeyPress('v', [cmdKey]).then(() => {
+                                console.log(`${this.getCmdKeyDisplay()}+V実行完了`);
+
+                                // 少し待ってからクリップボードを復元
+                                setTimeout(() => {
+                                    clipboard.writeText(originalClipboard);
+                                    console.log('クリップボード復元完了');
+                                    resolve();
+                                }, 200);
+                            }).catch(reject);
+                        }, 300); // フォーカス切り替え後の待機時間を延長
+                    });
+                } else {
+                    // Windows/Linux: 直接Ctrl+Vを実行（フォーカスは自動的に戻る想定）
                     setTimeout(() => {
-                        this.simulateKeyPress('v', ['cmd']).then(() => {
-                            console.log('Cmd+V実行完了');
+                        const cmdKey = this.getCmdKey();
+                        this.simulateKeyPress('v', [cmdKey]).then(() => {
+                            console.log(`${this.getCmdKeyDisplay()}+V実行完了`);
 
                             // 少し待ってからクリップボードを復元
                             setTimeout(() => {
@@ -1714,8 +1869,8 @@ class GengoElectronMain {
                                 resolve();
                             }, 200);
                         }).catch(reject);
-                    }, 300); // フォーカス切り替え後の待機時間を延長
-                });
+                    }, 300);
+                }
 
             } catch (error) {
                 console.error('テキスト挿入エラー:', error);

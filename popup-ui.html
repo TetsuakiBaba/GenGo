@@ -143,11 +143,16 @@
         // 選択されたテキストを保存するグローバル変数
         let currentSelectedText = '';
 
+        // プラットフォーム判定
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const cmdKeyDisplay = isMac ? '⌘' : 'Ctrl';
+
         async function initI18n() {
             try {
                 const i18nData = await window.electronAPI.getI18nData();
                 i18nMap = i18nData;
                 translatePage();
+                updateShortcutDisplay();  // ショートカット表示を更新
             } catch (error) {
                 console.error('i18n初期化エラー:', error);
             }
@@ -178,6 +183,18 @@
                 }
             }
             return value || key;
+        }
+
+        // ショートカット表示を更新
+        function updateShortcutDisplay() {
+            const buttons = document.querySelectorAll('.btn-with-shortcut[data-shortcut]');
+            buttons.forEach(btn => {
+                const shortcut = btn.getAttribute('data-shortcut');
+                if (shortcut.includes('⌘')) {
+                    const newShortcut = shortcut.replace('⌘', cmdKeyDisplay);
+                    btn.setAttribute('data-shortcut', newShortcut);
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', async () => {

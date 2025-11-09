@@ -298,11 +298,17 @@ class GengoElectronMain {
                 : originalClipboard;
             console.log('元のクリップボード保存:', clipboardPreview);
 
-            // アクティブアプリケーションを確認
+            // アクティブアプリケーションを確認（macOSのみ）
             const cmdKey = this.getCmdKey();
             if (this.isMac()) {
-                const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
-                console.log('アクティブアプリケーション:', activeApp);
+                try {
+                    const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+                    console.log('アクティブアプリケーション (macOS):', activeApp);
+                } catch (error) {
+                    console.error('アクティブアプリケーション取得エラー:', error.message);
+                }
+            } else {
+                console.log('プラットフォーム:', process.platform);
             }
 
             // クリップボードを一時的にクリアして選択テキストの検出を確実にする
@@ -397,11 +403,17 @@ class GengoElectronMain {
                 : originalClipboard;
             console.log('元のクリップボード保存:', clipboardPreview);
 
-            // アクティブアプリケーションを確認
+            // アクティブアプリケーションを確認（macOSのみ）
             const cmdKey = this.getCmdKey();
             if (this.isMac()) {
-                const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
-                console.log('アクティブアプリケーション:', activeApp);
+                try {
+                    const activeApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+                    console.log('アクティブアプリケーション (macOS):', activeApp);
+                } catch (error) {
+                    console.error('アクティブアプリケーション取得エラー:', error.message);
+                }
+            } else {
+                console.log('プラットフォーム:', process.platform);
             }
 
             // クリップボードを一時的にクリアして選択テキストの検出を確実にする
@@ -609,7 +621,7 @@ if ($process) {
                 }
 
                 const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("${keyString}")`;
-                
+
                 exec(`powershell -Command "${psScript}"`, (error, stdout, stderr) => {
                     if (error) {
                         console.error('PowerShell実行エラー:', error.message);
@@ -1881,12 +1893,23 @@ if ($process) {
 
     /**
      * テキストを置換適用（改良版・アプリケーション名正規化対応）
+     * 注意: 現在の実装はmacOS専用です。Windows/Linuxでは動作しません。
      */
     async applyTextReplacement(newText) {
         return new Promise((resolve, reject) => {
             try {
                 console.log('テキスト置換実行:', newText);
                 console.log('対象アプリ:', this.selectionContext.appName);
+                console.log('プラットフォーム:', process.platform);
+
+                // macOS以外では未サポート
+                if (!this.isMac()) {
+                    console.warn('テキスト置換機能は現在macOSでのみサポートされています');
+                    console.warn('代替としてクリップボードにコピーします');
+                    clipboard.writeText(newText);
+                    resolve();
+                    return;
+                }
 
                 // 現在のクリップボードを保存
                 const originalClipboard = clipboard.readText();
@@ -1969,7 +1992,7 @@ if ($process) {
     }
 
     /**
-     * アプリケーション固有の置換を試行
+     * アプリケーション固有の置換を試行（macOS専用）
      */
     tryAppSpecificReplacement(appName, originalClipboard, resolve, reject) {
         // 複数の方法でアプリケーション置換を試行
@@ -2001,7 +2024,7 @@ if ($process) {
     }
 
     /**
-     * アプリケーション名による置換を試行
+     * アプリケーション名による置換を試行（macOS専用 - AppleScript使用）
      */
     tryAppNameReplacement(appName, resolve, reject, originalClipboard) {
         const replaceScript = `
@@ -2030,7 +2053,7 @@ if ($process) {
     }
 
     /**
-     * Bundle IDによる置換を試行
+     * Bundle IDによる置換を試行（macOS専用 - AppleScript使用）
      */
     tryBundleIdReplacement(resolve, reject, originalClipboard) {
         if (!this.selectionContext.bundleId || this.selectionContext.bundleId === 'unknown') {
@@ -2065,7 +2088,7 @@ if ($process) {
     }
 
     /**
-     * 表示名による置換を試行
+     * 表示名による置換を試行（macOS専用 - AppleScript使用）
      */
     tryDisplayNameReplacement(resolve, reject, originalClipboard) {
         if (!this.selectionContext.displayName || this.selectionContext.displayName === 'unknown') {
@@ -2100,7 +2123,7 @@ if ($process) {
     }
 
     /**
-     * 汎用的な置換方法（フォールバック）
+     * 汎用的な置換方法（フォールバック・macOS専用 - AppleScript使用）
      */
     tryGenericReplacement(originalClipboard, resolve, reject) {
         const genericScript = `

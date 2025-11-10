@@ -1,14 +1,22 @@
 {
     "name": "GenGo",
-    "version": "0.8.3",
+    "version": "0.9.0",
     "description": "GenGo - Popup LLM UI for Text Processing",
     "main": "main.js",
     "type": "module",
     "scripts": {
         "start": "electron-forge start",
+        "start:win": "chcp 65001 >nul && electron-forge start",
+        "start:mac": "electron-forge start",
         "dev": "electron-forge start",
+        "dev:win": "chcp 65001 >nul && electron-forge start",
+        "dev:mac": "electron-forge start",
         "package": "electron-forge package",
         "make": "electron-forge make",
+        "make:mac": "electron-forge make --platform=darwin",
+        "make:win": "electron-forge make --platform=win32",
+        "package:mac": "electron-forge package --platform=darwin",
+        "package:win": "electron-forge package --platform=win32",
         "publish": "electron-forge publish"
     },
     "repository": {

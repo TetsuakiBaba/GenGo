@@ -24,5 +24,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // i18n関連
     getI18nData: () => ipcRenderer.invoke('get-i18n-data'),
     getTranslation: (key, options) => ipcRenderer.invoke('get-translation', key, options),
-    getCurrentLanguage: () => ipcRenderer.invoke('get-current-language')
+    getCurrentLanguage: () => ipcRenderer.invoke('get-current-language'),
+
+    // main.jsのコンソールにログ出力（同期送信）
+    mainLog: (...args) => ipcRenderer.send('main-log', ...args),
+    mainWarn: (...args) => ipcRenderer.send('main-warn', ...args),
+    mainError: (...args) => ipcRenderer.send('main-error', ...args)
 });

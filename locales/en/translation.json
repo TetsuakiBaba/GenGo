@@ -11,7 +11,7 @@
     },
     "popup": {
         "title": "Text Processing",
-        "processing": "Processing...",
+        "processing": "Processing... (Press Esc to cancel)",
         "cancel": "Cancel",
         "apply": "Apply",
         "reject": "Cancel",
@@ -19,11 +19,6 @@
             "kana_kanji": "Kana-Kanji Conversion",
             "correction": "Text Correction",
             "translation": "Translation"
-        },
-        "processing_messages": {
-            "kana_kanji": "Converting Kana to Kanji...",
-            "correction": "Correcting text...",
-            "translation": "Translating..."
         },
         "result": {
             "title": "Processing Result",

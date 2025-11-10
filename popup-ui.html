@@ -347,24 +347,14 @@
                 streamingResult.style.display = 'none';
             }
 
+            // 処理メッセージを設定（すべてpopup.processingを使用）
             let processingMessage;
             if (action === 'generation') {
                 processingMessage = t('popup.text_generation.processing') || 'テキスト生成中...';
             } else {
-                // アクションに応じた処理メッセージを取得
-                const messageKey = `popup.processing_messages.${action.replace('-', '_')}`;
-                window.electronAPI.mainLog('処理メッセージキー:', messageKey);
-                window.electronAPI.mainLog('i18nMap:', i18nMap);
-                processingMessage = t(messageKey);
-                window.electronAPI.mainLog('翻訳結果:', processingMessage);
-
-                // 翻訳が見つからない場合はデフォルトを使用
-                if (!processingMessage || processingMessage === messageKey) {
-                    processingMessage = t('popup.processing') || '処理中...';
-                    window.electronAPI.mainLog('デフォルトメッセージ使用:', processingMessage);
-                }
+                processingMessage = t('popup.processing') || '処理中...';
             }
-            window.electronAPI.mainLog('最終メッセージ:', processingMessage);
+            window.electronAPI.mainLog('処理メッセージ:', processingMessage);
             document.getElementById('processingAction').textContent = processingMessage;
         }
 

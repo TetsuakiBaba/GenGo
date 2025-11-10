@@ -11,7 +11,7 @@
     },
     "popup": {
         "title": "テキスト処理",
-        "processing": "処理中...",
+        "processing": "処理中...（Escキーでキャンセル）",
         "cancel": "キャンセル",
         "apply": "適用",
         "reject": "キャンセル",
@@ -19,11 +19,6 @@
             "kana_kanji": "かな漢字変換",
             "correction": "文章校正",
             "translation": "翻訳"
-        },
-        "processing_messages": {
-            "kana_kanji": "かな漢字変換中...",
-            "correction": "文章校正中...",
-            "translation": "処理中..."
         },
         "result": {
             "title": "処理結果",

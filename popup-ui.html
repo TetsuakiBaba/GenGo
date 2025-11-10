@@ -143,11 +143,16 @@
         // 選択されたテキストを保存するグローバル変数
         let currentSelectedText = '';
 
+        // プラットフォーム判定
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const cmdKeyDisplay = isMac ? '⌘' : 'Ctrl';
+
         async function initI18n() {
             try {
                 const i18nData = await window.electronAPI.getI18nData();
                 i18nMap = i18nData;
                 translatePage();
+                updateShortcutDisplay();  // ショートカット表示を更新
             } catch (error) {
                 console.error('i18n初期化エラー:', error);
             }
@@ -174,10 +179,23 @@
                 if (value && typeof value === 'object' && k in value) {
                     value = value[k];
                 } else {
+                    window.electronAPI.mainWarn(`翻訳キーが見つかりません: ${key} (${k}で失敗)`);
                     return key;
                 }
             }
             return value || key;
+        }
+
+        // ショートカット表示を更新
+        function updateShortcutDisplay() {
+            const buttons = document.querySelectorAll('.btn-with-shortcut[data-shortcut]');
+            buttons.forEach(btn => {
+                const shortcut = btn.getAttribute('data-shortcut');
+                if (shortcut.includes('⌘')) {
+                    const newShortcut = shortcut.replace('⌘', cmdKeyDisplay);
+                    btn.setAttribute('data-shortcut', newShortcut);
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -309,7 +327,9 @@
 
         // デバッグモード設定関数
         // 処理中画面表示
-        async function showProcessingScreen(action) {
+        function showProcessingScreen(action) {
+            window.electronAPI.mainLog('showProcessingScreen呼び出し - action:', action);
+
             // 他の全ての画面を非表示にする
             document.getElementById('resultDisplay').classList.add('d-none');
             document.getElementById('onDemandPromptInput').classList.add('d-none');
@@ -329,12 +349,22 @@
 
             let processingMessage;
             if (action === 'generation') {
-                processingMessage = 'テキスト生成中...';
+                processingMessage = t('popup.text_generation.processing') || 'テキスト生成中...';
             } else {
-                processingMessage = (window.electronAPI && await t(`popup.processing_messages.${action.replace('-', '_')}`)) ||
-                    (window.electronAPI && await t('popup.processing')) ||
-                    '処理中...';
+                // アクションに応じた処理メッセージを取得
+                const messageKey = `popup.processing_messages.${action.replace('-', '_')}`;
+                window.electronAPI.mainLog('処理メッセージキー:', messageKey);
+                window.electronAPI.mainLog('i18nMap:', i18nMap);
+                processingMessage = t(messageKey);
+                window.electronAPI.mainLog('翻訳結果:', processingMessage);
+
+                // 翻訳が見つからない場合はデフォルトを使用
+                if (!processingMessage || processingMessage === messageKey) {
+                    processingMessage = t('popup.processing') || '処理中...';
+                    window.electronAPI.mainLog('デフォルトメッセージ使用:', processingMessage);
+                }
             }
+            window.electronAPI.mainLog('最終メッセージ:', processingMessage);
             document.getElementById('processingAction').textContent = processingMessage;
         }
 

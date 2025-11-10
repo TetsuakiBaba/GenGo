@@ -4,9 +4,9 @@
 
 **GenGo** is an AI-powered text processing tool that brings the power of Large Language Models (LLMs) to your fingertips. Process text instantly with customizable shortcuts, supporting both local and remote LLM providers.
 
-[![Version](https://img.shields.io/badge/version-0.8.1-blue.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Version](https://img.shields.io/badge/version-0.8.3-blue.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
 
 ## ✨ Features
 
@@ -45,7 +45,8 @@
 ### Download Pre-built Binaries
 
 Download the latest release for your platform:
-- [macOS (DMG)](https://github.com/TetsuakiBaba/GenGo/releases)
+- **macOS**: [GenGo-{version}.dmg](https://github.com/TetsuakiBaba/GenGo/releases)
+- **Windows**: [GenGoSetup-{version}.exe](https://github.com/TetsuakiBaba/GenGo/releases)
 
 ### Build from Source
 
@@ -61,7 +62,9 @@ npm install
 npm start
 
 # Build for your platform
-npm run make
+npm run make              # Current platform
+npm run make:mac         # macOS only
+npm run make:win         # Windows only
 ```
 
 ## 🚀 Quick Start
@@ -202,6 +205,41 @@ const response = await fetch(fullEndpoint, {
   })
 });
 ```
+
+## 💻 Platform Support
+
+GenGo supports both macOS and Windows with platform-specific features:
+
+### macOS
+- Native macOS shortcuts (⌘ key)
+- AppleScript integration for text selection
+- DMG installer
+- Automatic updates via GitHub releases
+
+### Windows
+- Windows shortcuts (Ctrl key)
+- PowerShell integration for text selection
+- Squirrel installer (GenGoSetup.exe)
+- Automatic updates via GitHub releases
+
+### Building for Specific Platforms
+
+```bash
+# macOS build (requires macOS)
+npm run make:mac
+
+# Windows build (requires Windows or cross-compilation setup)
+npm run make:win
+
+# Package without creating installer
+npm run package:mac    # macOS
+npm run package:win    # Windows
+```
+
+**Note for Windows builds:**
+- Windows icon (icon.ico) is automatically generated from `icons/original.png`
+- Run `python3 create_icon.py` to regenerate if needed
+- Code signing is not required for Windows builds
 
 ## 🌐 Internationalization
 

@@ -48,7 +48,7 @@ module.exports = {
                 setupExe: 'GenGoSetup.exe',
                 setupIcon: path.resolve('./icons/icon.ico'),
                 iconUrl: 'https://raw.githubusercontent.com/TetsuakiBaba/GenGo/main/icons/icon.ico',
-                loadingGif: path.resolve('./images/installer_loading.gif'),
+                // loadingGif: path.resolve('./images/installer_loading.gif'),
                 noMsi: true
             },
             platforms: ['win32']

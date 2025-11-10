@@ -8,16 +8,6 @@ import { existsSync } from 'fs';
 import { SimpleLLMEngine } from './simple-llm-engine.js';
 import { initI18n, t, changeLanguage, getCurrentLanguage, getPackageVersion, getI18nData } from './i18n.js';
 
-// Windows環境でのコンソール文字化け対策
-if (process.platform === 'win32') {
-    try {
-        // PowerShellのコードページをUTF-8に設定
-        execSync('chcp 65001', { encoding: 'utf8' });
-    } catch (error) {
-        // エラーは無視（開発環境によっては不要な場合がある）
-    }
-}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -630,7 +620,7 @@ if ($process) {
                     keyString = modPrefix + key;
                 }
 
-                const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${keyString}')`;
+                const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("${keyString}")`;
 
                 exec(`powershell -Command "${psScript}"`, (error, stdout, stderr) => {
                     if (error) {
@@ -1364,6 +1354,19 @@ if ($process) {
             }
         });
 
+        // レンダラープロセスからのログ出力用IPCハンドラー（同期処理）
+        ipcMain.on('main-log', (event, ...args) => {
+            console.log('[Renderer]', ...args);
+        });
+
+        ipcMain.on('main-warn', (event, ...args) => {
+            console.warn('[Renderer]', ...args);
+        });
+
+        ipcMain.on('main-error', (event, ...args) => {
+            console.error('[Renderer]', ...args);
+        });
+
         console.log('IPC設定完了');
     }
 
@@ -1568,21 +1571,14 @@ if ($process) {
                     console.log('テキスト置換完了');
                 }
 
-                // macOSの場合のみ、少し待ってからウィンドウを閉じる
-                // Windows/Linuxは各処理内でウィンドウを閉じている
-                if (this.isMac()) {
-                    setTimeout(() => {
-                        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                            this.popupWindow.close();
-                        }
-                        this.isApplying = false;
-                        this.isShowingResult = false;
-                    }, 200);
-                } else {
-                    // Windows/Linuxは即座にフラグをリセット
-                    this.isApplying = false;
-                    this.isShowingResult = false;
-                }
+                // 少し待ってからウィンドウを閉じる
+                setTimeout(() => {
+                    if (this.popupWindow && !this.popupWindow.isDestroyed()) {
+                        this.popupWindow.close();
+                    }
+                    this.isApplying = false; // フラグをリセット
+                    this.isShowingResult = false; // 結果表示フラグもリセット
+                }, 200); // 少し長めに変更
 
             } catch (error) {
                 console.error('テキスト置換エラー:', error);
@@ -1910,7 +1906,7 @@ if ($process) {
 
     /**
      * テキストを置換適用（改良版・アプリケーション名正規化対応）
-     * Windows/macOS/Linux対応
+     * 注意: 現在の実装はmacOS専用です。Windows/Linuxでは動作しません。
      */
     async applyTextReplacement(newText) {
         return new Promise((resolve, reject) => {
@@ -1918,6 +1914,15 @@ if ($process) {
                 console.log('テキスト置換実行:', newText);
                 console.log('対象アプリ:', this.selectionContext.appName);
                 console.log('プラットフォーム:', process.platform);
+
+                // macOS以外では未サポート
+                if (!this.isMac()) {
+                    console.warn('テキスト置換機能は現在macOSでのみサポートされています');
+                    console.warn('代替としてクリップボードにコピーします');
+                    clipboard.writeText(newText);
+                    resolve();
+                    return;
+                }
 
                 // 現在のクリップボードを保存
                 const originalClipboard = clipboard.readText();
@@ -1936,92 +1941,18 @@ if ($process) {
                     return;
                 }
 
-                // プラットフォーム別の処理
-                if (this.isMac()) {
-                    // macOS: AppleScript使用
-                    const normalizedAppName = this.normalizeAppName(this.selectionContext.appName);
-                    console.log('正規化後のアプリ名:', normalizedAppName);
-                    this.tryAppSpecificReplacement(normalizedAppName, originalClipboard, resolve, reject);
-                } else if (process.platform === 'win32') {
-                    // Windows: PowerShellでCtrl+Vを送信
-                    this.applyTextReplacementWindows(originalClipboard, resolve, reject);
-                } else {
-                    // Linux: xdotoolを使用
-                    this.applyTextReplacementLinux(originalClipboard, resolve, reject);
-                }
+                // アプリケーション名を正規化
+                const normalizedAppName = this.normalizeAppName(this.selectionContext.appName);
+                console.log('正規化後のアプリ名:', normalizedAppName);
+
+                // 最初に特定のアプリケーションを対象にした置換を試行
+                this.tryAppSpecificReplacement(normalizedAppName, originalClipboard, resolve, reject);
 
             } catch (error) {
                 console.error('テキスト置換エラー:', error);
                 reject(error);
             }
         });
-    }
-
-    /**
-     * Windows用テキスト置換（PowerShell SendKeys使用）
-     */
-    applyTextReplacementWindows(originalClipboard, resolve, reject) {
-        // ポップアップウィンドウを先に閉じて元のアプリにフォーカスを戻す
-        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-            this.popupWindow.close();
-        }
-        
-        // 少し待ってから、選択範囲を削除してペースト
-        setTimeout(() => {
-            // PowerShellでBackspace（選択削除）→ Ctrl+V（ペースト）を送信
-            const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BS}'); Start-Sleep -Milliseconds 50; [System.Windows.Forms.SendKeys]::SendWait('^v')`;
-            
-            exec(`powershell -Command "${psScript}"`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error('Windows置換エラー:', error);
-                    // エラーでもクリップボードを復元
-                    setTimeout(() => {
-                        clipboard.writeText(originalClipboard);
-                    }, 100);
-                    reject(error);
-                } else {
-                    console.log('Windows置換成功');
-                    // 少し待ってからクリップボードを復元
-                    setTimeout(() => {
-                        clipboard.writeText(originalClipboard);
-                        resolve();
-                    }, 500);
-                }
-            });
-        }, 200); // ウィンドウが閉じてフォーカスが戻るのを待つ
-    }
-
-    /**
-     * Linux用テキスト置換（xdotool使用）
-     */
-    applyTextReplacementLinux(originalClipboard, resolve, reject) {
-        // ポップアップウィンドウを先に閉じて元のアプリにフォーカスを戻す
-        if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-            this.popupWindow.close();
-        }
-        
-        // 少し待ってから、選択範囲を削除してペースト
-        setTimeout(() => {
-            // xdotoolでBackSpace（選択削除）→ Ctrl+V（ペースト）を送信
-            exec('xdotool key --delay 50 BackSpace && xdotool key --delay 50 ctrl+v', (error, stdout, stderr) => {
-                if (error) {
-                    console.error('Linux置換エラー:', error);
-                    console.warn('xdotoolがインストールされていない可能性があります');
-                    // エラーでもクリップボードを復元
-                    setTimeout(() => {
-                        clipboard.writeText(originalClipboard);
-                    }, 100);
-                    reject(error);
-                } else {
-                    console.log('Linux置換成功');
-                    // 少し待ってからクリップボードを復元
-                    setTimeout(() => {
-                        clipboard.writeText(originalClipboard);
-                        resolve();
-                    }, 500);
-                }
-            });
-        }, 200); // ウィンドウが閉じてフォーカスが戻るのを待つ
     }
 
     /**
@@ -2205,7 +2136,7 @@ if ($process) {
     }
 
     /**
-     * 汎用的な置換方法（フォールバック・macOS専用 - AppleScript使用）
+     * 汎用的な置換方法（フォールバック）
      */
     tryGenericReplacement(originalClipboard, resolve, reject) {
         const genericScript = `
@@ -2476,10 +2407,10 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    // GenGoはバックグラウンドで動作し続けるアプリなので、
-    // ウィンドウが全て閉じられてもアプリを終了しない
-    // （トレイアイコンから明示的に終了する）
-    console.log('全てのウィンドウが閉じられました（アプリは実行継続）');
+    // macOSでは、ドックから終了しない限りアプリを実行し続ける
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
 app.on('activate', () => {

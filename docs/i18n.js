@@ -95,12 +95,12 @@ const translations = {
             }
         },
         techStack: {
-            title: '技術スタック',
-            subtitle: '最新の技術で構築',
-            electron: 'クロスプラットフォーム デスクトップアプリ',
-            llm: 'ローカル & リモート AI モデル',
-            javascript: 'モジュール対応 ES6+',
-            bootstrap: 'レスポンシブデザイン'
+            title: 'Tech Stack',
+            subtitle: 'Built with Modern Technologies',
+            electron: 'Cross-platform desktop app (macOS & Windows)',
+            llm: 'Local & Remote AI Models',
+            javascript: 'Modern ES6+ Modules',
+            bootstrap: 'Responsive Design'
         },
         download: {
             title: '始めましょう',

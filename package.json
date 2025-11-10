@@ -6,7 +6,11 @@
     "type": "module",
     "scripts": {
         "start": "electron-forge start",
+        "start:win": "chcp 65001 >nul && electron-forge start",
+        "start:mac": "electron-forge start",
         "dev": "electron-forge start",
+        "dev:win": "chcp 65001 >nul && electron-forge start",
+        "dev:mac": "electron-forge start",
         "package": "electron-forge package",
         "make": "electron-forge make",
         "make:mac": "electron-forge make --platform=darwin",

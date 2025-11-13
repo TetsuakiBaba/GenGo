@@ -993,10 +993,8 @@
                 const elements = {
                     autoApplyAndClose: document.getElementById('autoApplyAndClose'),
                     uiLanguage: document.getElementById('uiLanguage'),
-                    shortcutKey: document.getElementById('shortcutKey'),
                     onDemandShortcutKey: document.getElementById('onDemandShortcutKey'),
-                    llmEndpoint: document.getElementById('llmEndpoint'),
-                    customPrompt: document.getElementById('customPrompt')
+                    llmEndpoint: document.getElementById('llmEndpoint')
                 };
 
                 // 要素の存在確認
@@ -1009,10 +1007,12 @@
                 // 値を設定
                 elements.autoApplyAndClose.checked = resetSettingsData.autoApplyAndClose;
                 elements.uiLanguage.value = resetSettingsData.language;
-                elements.shortcutKey.value = resetSettingsData.shortcutKey;
                 elements.onDemandShortcutKey.value = resetSettingsData.onDemandShortcutKey;
                 elements.llmEndpoint.value = resetSettingsData.llmEndpoint;
-                elements.customPrompt.value = resetSettingsData.customPrompt;
+
+                // presetPromptsをリセット
+                currentPresetPrompts = resetSettingsData.presetPrompts || [];
+                renderPresetPrompts(currentPresetPrompts);
 
                 console.log('フォーム更新完了');
 

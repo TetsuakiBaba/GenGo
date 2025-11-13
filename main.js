@@ -7,6 +7,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { SimpleLLMEngine } from './simple-llm-engine.js';
 import { initI18n, t, changeLanguage, getCurrentLanguage, getPackageVersion, getI18nData } from './i18n.js';
+import { defaultSettings } from './default-settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,23 +42,8 @@ class GengoElectronMain {
         this.currentProcessingData = null;
         this.isApplying = false;
         this.isShowingResult = false;
-        this.settings = {
-            autoApplyAndClose: false,
-            language: 'en',
-            llmProvider: 'local',
-            llmEndpoint: 'http://127.0.0.1:1234/v1',
-            apiKey: '',
-            modelName: 'gpt-5-nano',
-            maxTokens: 4096,
-            onDemandShortcutKey: 'Ctrl+Shift+1',
-            presetPrompts: [
-                {
-                    shortcutKey: 'Ctrl+1',
-                    prompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。',
-                    enabled: true
-                }
-            ]
-        };
+        // デフォルト設定をインポートして使用
+        this.settings = { ...defaultSettings };
         this.settingsPath = join(app.getPath('userData'), 'settings.json');
     }
 
@@ -1207,36 +1193,23 @@ if ($process) {
 
         // 設定をリセット
         ipcMain.handle('reset-settings', async () => {
-            const defaultSettings = {
-                autoApplyAndClose: false,
-                language: 'en',
-                llmProvider: 'local',
-                llmEndpoint: 'http://127.0.0.1:1234/v1',
-                apiKey: '',
-                modelName: 'gpt-4o-mini',
-                maxTokens: 4096,
-                shortcutKey: 'Ctrl+1',
-                onDemandShortcutKey: 'Ctrl+2',
-                customPrompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。'
-            };
-
             const oldLanguage = this.settings.language;
             const oldLLMEndpoint = this.settings.llmEndpoint;
-            const oldShortcutKey = this.settings.shortcutKey;
+            const oldPresetPrompts = this.settings.presetPrompts || [];
 
             // 設定をデフォルト値に更新
             this.settings = { ...defaultSettings };
             await this.saveSettings();
 
             // UI言語がリセットされた場合、i18nの言語も変更
-            if (defaultSettings.language !== oldLanguage) {
-                await changeLanguage(defaultSettings.language);
+            if (this.settings.language !== oldLanguage) {
+                await changeLanguage(this.settings.language);
                 // トレイメニューを再作成
                 this.createTray();
             }
 
             // LLMエンドポイントがリセットされた場合、LLMエンジンを再初期化
-            if (defaultSettings.llmEndpoint !== oldLLMEndpoint) {
+            if (this.settings.llmEndpoint !== oldLLMEndpoint) {
                 this.llmEngine = new SimpleLLMEngine({
                     apiEndpoint: this.settings.llmEndpoint,
                     model: 'local-model'
@@ -1244,13 +1217,13 @@ if ($process) {
                 console.log('LLMエンドポイントをリセットしました:', this.settings.llmEndpoint);
             }
 
-            // ショートカットキーがリセットされた場合、ショートカットを再登録
-            if (defaultSettings.shortcutKey !== oldShortcutKey) {
+            // presetPromptsがリセットされた場合、ショートカットを再登録
+            if (JSON.stringify(this.settings.presetPrompts) !== JSON.stringify(oldPresetPrompts)) {
                 // 既存のショートカットを解除
                 globalShortcut.unregisterAll();
                 // 新しいショートカットを登録
                 this.registerGlobalShortcuts();
-                console.log('ショートカットキーをリセットしました:', this.settings.shortcutKey);
+                console.log('プリセットプロンプトとショートカットキーをリセットしました');
             }
 
             console.log('設定をリセットしました:', this.settings);
@@ -1288,7 +1261,7 @@ if ($process) {
 
         // デフォルトプロンプト取得のIPCハンドラー
         ipcMain.handle('get-default-prompt', () => {
-            return '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
+            return 'Please translate between Japanese and English. Automatically determine the language of the input text and translate it into the other language.';
         });
 
         // テキスト生成処理のIPCハンドラー
@@ -1737,7 +1710,7 @@ if ($process) {
             // Ctrl+1で実行 - プロンプト処理（ストリーミング）
             const customPrompt = this.settings.presetPrompts && this.settings.presetPrompts[0]
                 ? this.settings.presetPrompts[0].prompt
-                : '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。';
+                : 'Please translate between Japanese and English. Automatically determine the language of the input text and translate it into the other language.';
 
             result = await this.llmEngine.processCustomPromptStreaming(text, customPrompt, onChunk);
 
@@ -2252,7 +2225,7 @@ if ($process) {
                     loadedSettings.presetPrompts = [
                         {
                             shortcutKey: 'Ctrl+1',
-                            prompt: '日本語と英語を相互翻訳してください。入力されたテキストの言語を自動判定して、もう一方の言語に翻訳してください。',
+                            prompt: 'Please translate between Japanese and English. Automatically determine the language of the input text and translate it into the other language.',
                             enabled: true
                         }
                     ];

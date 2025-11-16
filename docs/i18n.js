@@ -4,6 +4,7 @@ const translations = {
         nav: {
             features: '機能',
             howItWorks: '使い方',
+            setupGuide: 'セットアップガイド',
             screenshots: 'スクリーンショット',
             download: 'ダウンロード'
         },
@@ -74,6 +75,70 @@ const translations = {
                 description: '設定したショートカットキーを押すだけで、即座にAI処理が開始されます。'
             }
         },
+        setupGuide: {
+            title: 'セットアップガイド',
+            subtitle: 'GenGoを始めるための完全ガイド',
+            step1: {
+                title: 'GenGoをインストール',
+                description: 'GitHubのリリースページから、お使いのOSに対応したインストーラーをダウンロードしてインストールします。',
+                tip: {
+                    title: 'ヒント:',
+                    text: 'macOSの場合はDMGファイル、Windowsの場合はインストーラー(.exe)をダウンロードしてください。'
+                },
+                downloadBtn: 'ダウンロードページへ',
+                imageCaption: 'GitHubリリースページからインストーラーをダウンロード'
+            },
+            step2: {
+                title: 'LM Studioをインストール',
+                description: 'ローカルLLMを使用するために、LM Studioをインストールします。LM Studioは無料で使いやすいLLM実行環境です。インストール時には Power UserまたはDeveloperを選択してください。',
+                tip: {
+                    title: 'ヒント:',
+                    text: 'リモートLLM（OpenAI、Anthropicなど）を使用する場合は、この手順をスキップできます。'
+                },
+                downloadBtn: 'LM Studio公式サイト',
+                imageCaption: 'LM Studio公式サイト'
+            },
+            step3: {
+                title: 'AIモデルをダウンロード',
+                description: 'LM Studioを起動し、検索バーからAIモデルを検索してダウンロードします。',
+                recommend: {
+                    title: 'おすすめモデル',
+                    gptoss: '多言語に最適化された小型高性能モデル'
+                },
+                imageCaption: 'LM StudioでAIモデルを検索・ダウンロード'
+            },
+            step4: {
+                title: 'ローカルサーバーを起動',
+                description: 'LM Studioのトレイメニューから先ほどダウンロードモデルをLoadし、その後「Start Server」ボタンをクリックします。',
+                note: {
+                    title: '注意:',
+                    text: 'デフォルトのポート番号は 1234 です。変更した場合は、GenGoの設定でエンドポイントを調整してください。'
+                },
+                imageCaption: 'LM Studioでローカルサーバーを起動'
+            },
+            step5: {
+                title: 'GenGoを設定',
+                description: 'GenGoを起動し、トレイアイコンから「Settings」を開きます。プロンプトとショートカットキーを設定します。',
+                settings: {
+                    title: '基本設定',
+                    llm: 'LLMエンドポイント: http://127.0.0.1:1234/v1',
+                    preset: '事前プロンプト: よく使う処理を最大5個登録',
+                    shortcut: 'ショートカットキー: 各プロンプトに割り当て'
+                },
+                imageCaption: 'GenGoの設定画面'
+            },
+            step6: {
+                title: '使ってみよう！',
+                description: '任意のアプリケーションでテキストを選択し、設定したショートカットキーを押してください。AI処理が開始されます！',
+                success: {
+                    title: '完了！',
+                    text: 'これでGenGoを使い始める準備が整いました。テキスト処理をお楽しみください。'
+                },
+                screenshotsBtn: 'スクリーンショットを見る',
+                githubBtn: 'GitHub',
+                imageCaption: 'GenGoでテキスト処理を実行'
+            }
+        },
         screenshots: {
             title: 'スクリーンショット',
             subtitle: 'GenGoの使用例',
@@ -125,6 +190,7 @@ const translations = {
         nav: {
             features: 'Features',
             howItWorks: 'How It Works',
+            setupGuide: 'Setup Guide',
             screenshots: 'Screenshots',
             download: 'Download'
         },
@@ -193,6 +259,70 @@ const translations = {
             step4: {
                 title: 'Execute Shortcut',
                 description: 'Simply press the configured shortcut key to instantly start AI processing.'
+            }
+        },
+        setupGuide: {
+            title: 'Setup Guide',
+            subtitle: 'Complete guide to get started with GenGo',
+            step1: {
+                title: 'Install GenGo',
+                description: 'Download and install the installer for your OS from the GitHub releases page.',
+                tip: {
+                    title: 'Tip:',
+                    text: 'Download the DMG file for macOS or the installer (.exe) for Windows.'
+                },
+                downloadBtn: 'Go to Download Page',
+                imageCaption: 'Download installer from GitHub releases page'
+            },
+            step2: {
+                title: 'Install LM Studio',
+                description: 'Install LM Studio to use local LLMs. LM Studio is a free and user-friendly LLM execution environment. During installation, select Power User or Developer.',
+                tip: {
+                    title: 'Tip:',
+                    text: 'If you use remote LLMs (OpenAI, Anthropic, etc.), you can skip this step.'
+                },
+                downloadBtn: 'LM Studio Official Site',
+                imageCaption: 'LM Studio official website'
+            },
+            step3: {
+                title: 'Download AI Model',
+                description: 'Launch LM Studio, search for an AI model in the search bar, and download it.',
+                recommend: {
+                    title: 'Recommended Model',
+                    gptoss: 'gpt-oss-20b - Compact high-performance model optimized for multiple languages'
+                },
+                imageCaption: 'Search and download AI models in LM Studio'
+            },
+            step4: {
+                title: 'Start Local Server',
+                description: 'Open LM Studio tray menu, load the previously downloaded model, and then click the "Start Server" button.',
+                note: {
+                    title: 'Note:',
+                    text: 'The default port number is 1234. If you change it, adjust the endpoint in GenGo settings.'
+                },
+                imageCaption: 'Start local server in LM Studio'
+            },
+            step5: {
+                title: 'Configure GenGo',
+                description: 'Launch GenGo, open "Settings" from the tray icon, and configure prompts and shortcut keys.',
+                settings: {
+                    title: 'Basic Settings',
+                    llm: 'LLM Endpoint: http://127.0.0.1:1234/v1',
+                    preset: 'Preset Prompts: Register up to 5 frequently used processes',
+                    shortcut: 'Shortcut Keys: Assign to each prompt'
+                },
+                imageCaption: 'GenGo settings panel'
+            },
+            step6: {
+                title: 'Try It Out!',
+                description: 'Select text in any application and press the configured shortcut key. AI processing will start!',
+                success: {
+                    title: 'Done!',
+                    text: 'You are now ready to start using GenGo. Enjoy text processing!'
+                },
+                screenshotsBtn: 'View Screenshots',
+                githubBtn: 'GitHub',
+                imageCaption: 'Execute text processing with GenGo'
             }
         },
         screenshots: {

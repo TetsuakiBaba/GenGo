@@ -42,6 +42,7 @@ class GengoElectronMain {
         this.currentProcessingData = null;
         this.isApplying = false;
         this.isShowingResult = false;
+        this.appVersion = null;
         // デフォルト設定をインポートして使用
         this.settings = { ...defaultSettings };
         this.settingsPath = join(app.getPath('userData'), 'settings.json');
@@ -56,6 +57,9 @@ class GengoElectronMain {
 
         // i18n初期化
         await initI18n(this.settings.language);
+
+        // バージョン情報を取得
+        this.appVersion = await getPackageVersion();
 
         // LLM設定を出力
         console.log('LLM設定詳細:', this.getLLMConfig());
@@ -119,21 +123,35 @@ class GengoElectronMain {
             // テキストベースの簡単なアイコンを作成
             this.tray = new Tray(path.join(__dirname, './icons/IconTemplate.png'))
             this.tray.setToolTip(t('tray.tooltip'));
+            const img_about = nativeImage
+                .createFromPath('./images/about.png')
+                .resize({ width: 16, height: 16 }) // 論理サイズ 16px として扱わせる
 
+            img_about.setTemplateImage(true)
+
+            const img_settings = nativeImage
+                .createFromPath('./images/settings.png')
+                .resize({ width: 16, height: 16 }) // 論理サイズ 16px として扱わせる
+
+            img_settings.setTemplateImage(true)
             const contextMenu = Menu.buildFromTemplate([
                 {
+                    label: `GenGo v${this.appVersion || 'loading...'}`,
+                    enabled: false
+                },
+                { type: 'separator' },
+                {
+                    icon: img_about,
                     label: t('tray.about'),
                     click: () => this.showAbout()
                 },
-                { type: 'separator' },
                 {
+                    icon: img_settings,
                     label: t('tray.settings'),
                     click: () => this.showSettings()
                 },
-                { type: 'separator' },
                 {
-                    label: t('tray.quit'),
-                    click: () => app.quit()
+                    role: 'quit',
                 }
             ]);
 
@@ -2321,16 +2339,36 @@ if ($process) {
     async showAbout() {
         try {
             const version = await getPackageVersion();
-            const versionInfo = getCurrentLanguage() === 'ja' ?
-                `バージョン: ${version}` :
-                `Version: ${version}`;
+            const currentYear = new Date().getFullYear();
 
-            dialog.showMessageBox({
+            const aboutText = getCurrentLanguage() === 'ja' ?
+                `バージョン: ${version}\n\n` +
+                `開発者: Tetsuaki Baba\n` +
+                `© ${currentYear} GenGo. All rights reserved.` :
+                `Version: ${version}\n\n` +
+                `Developer: Tetsuaki Baba\n` +
+                `© ${currentYear} GenGo. All rights reserved.`;
+
+            const result = await dialog.showMessageBox({
                 type: 'info',
                 title: t('about.title'),
                 message: `${t('about.message')} v${version}`,
-                detail: `${t('about.detail')}\n\n${versionInfo}`
+                detail: aboutText,
+                buttons: getCurrentLanguage() === 'ja' ?
+                    ['OK', 'ドキュメント', 'GitHub'] :
+                    ['OK', 'Documentation', 'GitHub']
             });
+
+            // ドキュメントボタンがクリックされた場合
+            if (result.response === 1) {
+                const { shell } = await import('electron');
+                shell.openExternal('https://tetsuakibaba.github.io/GenGo/');
+            }
+            // GitHubボタンがクリックされた場合
+            else if (result.response === 2) {
+                const { shell } = await import('electron');
+                shell.openExternal('https://github.com/TetsuakiBaba');
+            }
         } catch (error) {
             console.error('Aboutダイアログ表示エラー:', error);
             // エラーの場合はバージョン無しで表示

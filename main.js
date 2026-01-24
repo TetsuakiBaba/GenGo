@@ -121,16 +121,26 @@ class GengoElectronMain {
             }
 
             // テキストベースの簡単なアイコンを作成
+            const isDev = !app.isPackaged;
+
+            const icon_path_settings = isDev
+                ? path.join(__dirname, 'images', 'settings.png')
+                : path.join(process.resourcesPath, 'images', 'settings.png');
+
+            const icon_path_about = isDev
+                ? path.join(__dirname, 'images', 'about.png')
+                : path.join(process.resourcesPath, 'images', 'about.png');
+
             this.tray = new Tray(path.join(__dirname, './icons/IconTemplate.png'))
             this.tray.setToolTip(t('tray.tooltip'));
             const img_about = nativeImage
-                .createFromPath('./images/about.png')
+                .createFromPath(icon_path_about)
                 .resize({ width: 16, height: 16 }) // 論理サイズ 16px として扱わせる
 
             img_about.setTemplateImage(true)
 
             const img_settings = nativeImage
-                .createFromPath('./images/settings.png')
+                .createFromPath(icon_path_settings)
                 .resize({ width: 16, height: 16 }) // 論理サイズ 16px として扱わせる
 
             img_settings.setTemplateImage(true)
@@ -1375,7 +1385,7 @@ if ($process) {
                 streamingText = fullText;
                 // リアルタイムで結果を更新
                 if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    const cleanedText = this.llmEngine.cleanLLMResponse(streamingText);
+                    const cleanedText = this.llmEngine.cleanLLMResponse(streamingText, true);
                     this.popupWindow.webContents.executeJavaScript(`
                         if (typeof window.updateStreamingResult === 'function') {
                             window.updateStreamingResult(${JSON.stringify(cleanedText)});
@@ -1435,7 +1445,7 @@ if ($process) {
                 streamingText = fullText;
                 // リアルタイムで結果を更新
                 if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    const cleanedText = this.llmEngine.cleanLLMResponse(streamingText);
+                    const cleanedText = this.llmEngine.cleanLLMResponse(streamingText, true);
                     this.popupWindow.webContents.executeJavaScript(`
                         if (typeof window.updateStreamingResult === 'function') {
                             window.updateStreamingResult(${JSON.stringify(cleanedText)});
@@ -1599,7 +1609,7 @@ if ($process) {
                 streamingText = fullText;
                 // リアルタイムで結果を更新
                 if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    const cleanedText = this.llmEngine.extractCorrectedText(streamingText);
+                    const cleanedText = this.llmEngine.extractCorrectedText(streamingText, true);
                     this.popupWindow.webContents.executeJavaScript(`
                         if (typeof window.updateStreamingResult === 'function') {
                             window.updateStreamingResult(${JSON.stringify(cleanedText)});
@@ -1714,7 +1724,7 @@ if ($process) {
                 streamingText = fullText;
                 // リアルタイムで結果を更新
                 if (this.popupWindow && !this.popupWindow.isDestroyed()) {
-                    const cleanedText = this.llmEngine.extractCorrectedText(streamingText);
+                    const cleanedText = this.llmEngine.extractCorrectedText(streamingText, true);
                     this.popupWindow.webContents.executeJavaScript(`
                         if (typeof window.updateStreamingResult === 'function') {
                             window.updateStreamingResult(${JSON.stringify(cleanedText)});

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GenGo Best Practices - Tips and tricks for effective GenGo usage">
+    <title>Best Practices - GenGo</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ナビゲーション -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <img src="./original.png" alt="GenGo Logo" height="32" class="me-2">
+                <strong>GenGo</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#features" data-i18n="nav.features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#setup-guide" data-i18n="nav.setupGuide">Setup Guide</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#screenshots" data-i18n="nav.screenshots">Screenshots</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="best_practices.html" data-i18n="nav.bestPractices">Best
+                            Practices</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#download" data-i18n="nav.download">Download</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/TetsuakiBaba/GenGo" target="_blank">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-globe"></i> <span id="currentLang">日本語</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="changeLanguage('ja'); return false;">日本語</a>
+                            </li>
+                            <li><a class="dropdown-item" href="#"
+                                    onclick="changeLanguage('en'); return false;">English</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ヒーローセクション -->
+    <section class="hero-section" style="min-height: 60vh;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center" style="min-height: 60vh;">
+                <div class="col-lg-8 text-center">
+                    <h1 class="display-3 fw-bold mb-4 mt-5 animate-fade-in" data-i18n="bestPractices.title">
+                        ベストプラクティス
+                    </h1>
+                    <p class="lead mb-4 animate-fade-in-delay-1" data-i18n="bestPractices.subtitle">
+                        GenGoを効果的に使うためのヒントとコツ
+                    </p>
+                    <p class="text-muted mb-0 animate-fade-in-delay-2 mx-auto" style="max-width: 700px;"
+                        data-i18n="bestPractices.description">
+                        実際の使用経験から得られた、便利なプロンプトとショートカットの活用法をご紹介します。
+                        各プロンプトは、コピーボタンをクリックすることで、すぐに設定画面にペーストできます。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ベストプラクティスセクション -->
+    <section id="best-practices" class="section-padding bg-light">
+        <div class="container">
+            <div class="row g-4" id="practicesContainer">
+                <!-- カードはJavaScriptで自動生成されます -->
+            </div>
+
+            <!-- 使い方ガイド -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-info-circle me-2"></i><span
+                                data-i18n="bestPractices.howToUse.title">このページの使い方</span>
+                        </h5>
+                        <ol class="mb-0">
+                            <li data-i18n="bestPractices.howToUse.step1">使いたいプロンプトの「コピー」ボタンをクリック</li>
+                            <li data-i18n="bestPractices.howToUse.step2">GenGoの設定画面を開く</li>
+                            <li data-i18n="bestPractices.howToUse.step3">事前プロンプトの欄にペースト</li>
+                            <li data-i18n="bestPractices.howToUse.step4">ショートカットキーを設定して保存</li>
+                        </ol>
+                        <hr>
+                        <p class="mb-0">
+                            <strong data-i18n="bestPractices.howToUse.addNew">新しいプロンプトの追加:</strong>
+                            <code>best_practices.js</code><span
+                                data-i18n="bestPractices.howToUse.editNoteNew">ファイルにJSONデータを追記するだけで自動的に反映されます。HTMLの編集は不要です。</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3">GenGo</h5>
+                    <p class="text-muted" data-i18n="footer.description">
+                        AI-powered text processing tool for everyone.
+                        Built with ❤️ using Electron and modern web technologies.
+                    </p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3" data-i18n="footer.links">リンク</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo" class="text-muted text-decoration-none">
+                                <i class="bi bi-github"></i> <span data-i18n="footer.githubRepo">GitHubリポジトリ</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo/issues"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-bug"></i> <span data-i18n="footer.reportIssues">問題を報告</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo/releases"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-download"></i> <span data-i18n="footer.releases">リリース</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3" data-i18n="footer.support">サポート</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba/GenGo#readme"
+                                class="text-muted text-decoration-none">
+                                <i class="bi bi-book"></i> <span data-i18n="footer.documentation">ドキュメント</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="https://github.com/TetsuakiBaba" class="text-muted text-decoration-none">
+                                <i class="bi bi-person"></i> <span data-i18n="footer.author">作者: Tetsuaki Baba</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 bg-secondary">
+            <div class="text-center text-muted">
+                <small data-i18n="footer.copyright">&copy; 2025 GenGo. Licensed under MIT License.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto" data-i18n="bestPractices.toast.title">コピー成功</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+            <div class="toast-body" data-i18n="bestPractices.toast.message">
+                プロンプトをクリップボードにコピーしました
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- i18n JS -->
+    <script src="i18n.js"></script>
+    <!-- Best Practices Data -->
+    <script src="best_practices.js"></script>
+
+    <!-- Render Best Practices Cards -->
+    <script>
+        function renderPractices() {
+            const container = document.getElementById('practicesContainer');
+            const lang = currentLanguage || 'ja';
+
+            // データが空の場合は空メッセージを表示
+            if (!bestPracticesData || bestPracticesData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3 mb-0">
+                            <span data-i18n="bestPractices.emptyMessage">まだベストプラクティスが登録されていません。<br>best_practices.jsファイルにデータを追加してください。</span>
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // カードを生成
+            container.innerHTML = bestPracticesData.map(practice => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100 position-relative">
+                        <div class="feature-icon">
+                            <i class="bi ${practice.icon}"></i>
+                        </div>
+                        <h3 class="h4 mb-3">${practice.title[lang] || practice.title.ja}</h3>
+                        <p class="text-muted mb-3">${practice.description[lang] || practice.description.ja}</p>
+                        <div class="prompt-container">
+                            <pre class="prompt-text">${practice.prompt}</pre>
+                            <button class="btn btn-sm btn-outline-primary copy-btn" onclick="copyPromptDirect(this)">
+                                <i class="bi bi-clipboard"></i> <span data-i18n="bestPractices.copyBtn">コピー</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 翻訳を適用
+            applyTranslations(lang);
+        }
+
+        function copyPromptDirect(button) {
+            // Get the prompt text from the previous sibling element
+            const promptElement = button.previousElementSibling;
+            const promptText = promptElement.textContent.trim();
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(promptText).then(() => {
+                // Change button icon temporarily
+                const icon = button.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'bi bi-check-circle-fill';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-outline-primary');
+
+                // Show toast notification
+                const toastElement = document.getElementById('copyToast');
+                const toast = new bootstrap.Toast(toastElement);
+                toast.show();
+
+                // Revert button after 2 seconds
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('コピーに失敗しました');
+            });
+        }
+
+        // ページ読み込み時にカードを生成
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPractices();
+        });
+
+        // 言語変更時に再レンダリング
+        const originalChangeLanguage = window.changeLanguage;
+        window.changeLanguage = function (lang) {
+            originalChangeLanguage(lang);
+            renderPractices();
+        };
+    </script>
+
+    <style>
+        .prompt-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .prompt-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.25rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</body>
+
+</html>

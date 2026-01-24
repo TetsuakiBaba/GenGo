@@ -11,13 +11,15 @@ export class SimpleLLMEngine {
         this.maxTokens = options.maxTokens || 4096; // デフォルトは4096トークン
         this.maxRetries = options.maxRetries || 3;
         this.timeout = options.timeout || 60000; // 30秒 → 60秒に延長（長い文章処理に対応）
+        this.enable_thinking = false;
 
         console.log('SimpleLLMEngine初期化:', {
             provider: this.provider,
             endpoint: this.apiEndpoint,
             model: this.model,
             maxTokens: this.maxTokens,
-            hasApiKey: !!this.apiKey
+            hasApiKey: !!this.apiKey,
+            enable_thinking: this.enable_thinking
         });
     }
 
@@ -240,7 +242,16 @@ export class SimpleLLMEngine {
                 }
             ],
             // temperature: 0.3,
-            stream: false
+            stream: false,
+            // 思考プロセスを明示的に無効化（OpenAI o1/o3-miniやLM Studio用）
+            reasoning_effort: "none",
+            include_reasoning: false,
+            thinking: { type: "disabled" },
+            // LM Studio / GLM系 / DeepSeek系 独自のキー
+            thought: false,
+            include_thought: false,
+            enable_thinking: false,
+            enableThinking: false
         };
 
         // モデルに応じて適切なトークン制限パラメータを使用
@@ -311,9 +322,8 @@ export class SimpleLLMEngine {
                 signal: controller.signal
             });
 
-            clearTimeout(timeoutId);
-
             if (!response.ok) {
+                clearTimeout(timeoutId);
                 let errorMessage = `HTTP ${response.status} ${response.statusText}`;
                 try {
                     const errorText = await response.text();
@@ -339,9 +349,16 @@ export class SimpleLLMEngine {
             }
 
             const data = await response.json();
+            clearTimeout(timeoutId);
 
             if (data.choices && data.choices.length > 0) {
-                const responseText = data.choices[0].message.content;
+                const message = data.choices[0].message;
+                const content = message.content || '';
+                const reasoning = message.reasoning_content || '';
+
+                // 思考プロセスがある場合はタグで囲んで結合
+                const responseText = reasoning ? `<think>\n${reasoning}\n</think>\n${content}` : content;
+
                 console.log(`レスポンス長: ${responseText.length}文字`);
                 return responseText;
             }
@@ -363,17 +380,17 @@ export class SimpleLLMEngine {
     /**
      * LLM応答から校正されたテキストを抽出
      */
-    extractCorrectedText(response) {
+    extractCorrectedText(response, keepThinking = false) {
         // 新しい統一クリーニング機能を使用
-        return this.cleanLLMResponse(response);
+        return this.cleanLLMResponse(response, keepThinking);
     }
 
     /**
      * LLM応答から翻訳されたテキストを抽出
      */
-    extractTranslatedText(response) {
+    extractTranslatedText(response, keepThinking = false) {
         // 新しい統一クリーニング機能を使用
-        return this.cleanLLMResponse(response);
+        return this.cleanLLMResponse(response, keepThinking);
     }
 
     /**
@@ -534,8 +551,20 @@ export class SimpleLLMEngine {
     /**
      * LLMの回答から不要な装飾や説明を除去
      */
-    cleanLLMResponse(response) {
+    cleanLLMResponse(response, keepThinking = false) {
         let cleaned = response.trim();
+
+        if (keepThinking) {
+            // 思考プロセスを可視化（除去せず、わかりやすいラベルに変換）
+            // タグが既にある場合（DeepSeek R1など）
+            cleaned = cleaned.replace(/<think>\s*/g, '【思考中...】\n');
+            cleaned = cleaned.replace(/\s*<\/think>/g, '\n【思考完了】\n');
+        } else {
+            // <think>タグとその内容を完全に除去
+            cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '');
+            // 閉じられていない<think>タグも除去（ストリーミング中の表示用ガード）
+            cleaned = cleaned.replace(/<think>[\s\S]*/g, '');
+        }
 
         // マークダウンの見出し記号を除去
         cleaned = cleaned.replace(/^#+\s*/gm, '');
@@ -617,8 +646,19 @@ export class SimpleLLMEngine {
                     content: prompt
                 }
             ],
-            stream: true // ストリーミングを有効化
+            stream: true, // ストリーミングを有効化
+            // 思考プロセスを明示的に無効化（OpenAI o1/o3-miniやLM Studio用）
+            // reasoning: false,
+            reasoning: {
+                effort: "none"
+            },
+            // LM Studio / GLM系 / DeepSeek系 独自のキー
+            enableThinking: false,
+            enable_thinking: false,
+            thinking: { type: "disabled" },
+
         };
+        console.log(requestBody);
 
         // トークン制限パラメータの設定
         const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
@@ -665,9 +705,8 @@ export class SimpleLLMEngine {
                 signal: controller.signal
             });
 
-            clearTimeout(timeoutId);
-
             if (!response.ok) {
+                clearTimeout(timeoutId);
                 const errorText = await response.text();
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
@@ -676,47 +715,68 @@ export class SimpleLLMEngine {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullText = '';
+            let fullReasoning = ''; // 思考プロセスを保持
             let buffer = '';
 
-            while (true) {
-                const { done, value } = await reader.read();
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
 
-                if (done) {
-                    break;
-                }
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || ''; // 最後の不完全な行を保持
-
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || trimmedLine === 'data: [DONE]') {
-                        continue;
+                    if (done) {
+                        break;
                     }
 
-                    if (trimmedLine.startsWith('data: ')) {
-                        const jsonStr = trimmedLine.substring(6);
-                        try {
-                            const data = JSON.parse(jsonStr);
-                            const content = data.choices?.[0]?.delta?.content;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // 最後の不完全な行を保持
 
-                            if (content) {
-                                fullText += content;
-                                // コールバックを呼び出してチャンクを渡す
-                                if (onChunk) {
-                                    onChunk(content, fullText);
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine || trimmedLine === 'data: [DONE]') {
+                            continue;
+                        }
+
+                        if (trimmedLine.startsWith('data: ')) {
+                            const jsonStr = trimmedLine.substring(6);
+                            try {
+                                const data = JSON.parse(jsonStr);
+                                const delta = data.choices?.[0]?.delta;
+                                const content = delta?.content;
+                                const reasoning = delta?.reasoning_content;
+
+                                // 思考プロセスが送られてきた場合
+                                if (reasoning) {
+                                    fullReasoning += reasoning;
+                                    // 思考内容を含めてUIを更新
+                                    if (onChunk) {
+                                        const combinedText = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
+                                        onChunk('', combinedText);
+                                    }
                                 }
+
+                                if (content) {
+                                    fullText += content;
+                                    // コールバックを呼び出してチャンクを渡す
+                                    if (onChunk) {
+                                        const combinedText = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
+                                        onChunk(content, combinedText);
+                                    }
+                                }
+                            } catch (parseError) {
+                                console.error('JSON parse error:', parseError, 'Line:', jsonStr);
                             }
-                        } catch (parseError) {
-                            console.error('JSON parse error:', parseError, 'Line:', jsonStr);
                         }
                     }
                 }
+            } finally {
+                clearTimeout(timeoutId);
+                reader.releaseLock();
             }
 
-            console.log('ストリーミング完了:', fullText.substring(0, 100) + '...');
-            return fullText;
+            // 最終的なレスポンスにも思考プロセスを含める
+            const finalResult = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
+            console.log('ストリーミング完了:', finalResult.substring(0, 100) + '...');
+            return finalResult;
 
         } catch (error) {
             clearTimeout(timeoutId);

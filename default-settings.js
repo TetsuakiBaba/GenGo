@@ -3,9 +3,11 @@ export const defaultSettings = {
     autoApplyAndClose: false,
     language: 'en',
     llmProvider: 'local',
-    llmEndpoint: 'http://127.0.0.1:1234/v1',
+    llmEndpoint: 'http://127.0.0.1:1234',
     apiKey: '',
     modelName: 'gpt-4o-mini',
+    localModelInstanceId: '',
+    localReasoningUnsupportedModels: [],
     maxTokens: 4096,
     onDemandShortcutKey: 'Ctrl+Shift+1',
     presetPrompts: [

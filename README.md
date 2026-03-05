@@ -65,6 +65,7 @@ npm start
 npm run make              # Current platform
 npm run make:mac         # macOS only
 npm run make:win         # Windows only
+npm run make -- --arch=x64,arm64  # Build for multiple architectures
 ```
 
 ## 🚀 Quick Start
@@ -115,7 +116,8 @@ All LLM settings are configured through the **Settings Panel** (accessible from 
 
 **Local LLM Configuration:**
 - Provider: Select "Local"
-- Endpoint URL: `http://localhost:1234/v1` (LM Studio default)
+- Endpoint URL: `http://localhost:1234` (LM Studio default base URL)
+- Loaded Model: Select from models already loaded in LM Studio
 - Max Tokens: 4096 (adjustable: 256-32768)
 
 **Remote LLM Configuration:**
@@ -174,18 +176,18 @@ GenGo/
 ### Supported LLM Providers
 
 #### Local
-- **LM Studio**: `http://localhost:1234/v1`
+- **LM Studio**: `http://localhost:1234` (uses `/api/v1/models` and `/api/v1/chat`)
 
 #### Remote
 - **OpenAI**: `https://api.openai.com/v1`
 - **Custom Endpoints**: Any OpenAI-compatible API base URL
 
-*Note: `/chat/completions` is automatically appended to the endpoint URL*
+*Note: Remote provider uses `/chat/completions`; Local (LM Studio) uses `/api/v1/*` endpoints automatically.*
 
 ### Example API Call
 
 ```javascript
-// endpoint is automatically appended with /chat/completions
+// Remote endpoint is automatically appended with /chat/completions
 const fullEndpoint = `${endpoint}/chat/completions`;
 
 const response = await fetch(fullEndpoint, {

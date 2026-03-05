@@ -405,10 +405,9 @@
                 <!-- エンドポイントURL（共通） -->
                 <div class="mb-3">
                     <label for="llmEndpoint" class="form-label" id="llm-endpoint-label">APIエンドポイント</label>
-                    <input type="text" class="form-control" id="llmEndpoint" placeholder="http://127.0.0.1:1234/v1">
+                    <input type="text" class="form-control" id="llmEndpoint" placeholder="http://127.0.0.1:1234">
                     <small class="text-muted" id="llm-endpoint-description">
-                        ベースURL（例: http://127.0.0.1:1234/v1 または https://api.openai.com/v1）。/chat/completions
-                        は自動で追加されます
+                        ベースURL（例: http://127.0.0.1:1234 または https://api.openai.com/v1）。プロバイダーに応じて必要なAPIパスは自動で追加されます
                     </small>
                 </div>
 
@@ -428,6 +427,25 @@
                         <small class="text-muted" id="model-name-description">
                             使用するモデル名（例: gpt-4o-mini, gpt-4, claude-3-5-sonnet-20241022）
                         </small>
+                    </div>
+                </div>
+
+                <!-- ローカル接続用設定 -->
+                <div id="localSettings">
+                    <div class="mb-3">
+                        <label for="localModelInstanceId" class="form-label" id="local-model-label">ロード済みモデル</label>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="localModelInstanceId">
+                                <option value="" id="local-model-placeholder">ロード済みモデルを取得してください</option>
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" id="refreshLocalModels">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted" id="local-model-description">
+                            LM Studioでロード済みのモデルを使用します。複数ある場合はここで選択できます。
+                        </small>
+                        <div class="mt-2" id="localModelStatus"></div>
                     </div>
                 </div>
 
@@ -528,6 +546,16 @@
 
             // LLMプロバイダー変更イベント
             document.getElementById('llmProvider').addEventListener('change', handleProviderChange);
+
+            document.getElementById('refreshLocalModels').addEventListener('click', async () => {
+                await loadLocalModels();
+            });
+
+            document.getElementById('llmEndpoint').addEventListener('blur', async () => {
+                if (document.getElementById('llmProvider').value === 'local') {
+                    await loadLocalModels();
+                }
+            });
 
             // LLM接続テストイベント
             document.getElementById('testLLMConnection').addEventListener('click', testLLMConnection);
@@ -645,6 +673,16 @@
                 document.getElementById('model-name-description').textContent =
                     await window.electronAPI.getTranslation('settings.llm.model_name_description');
 
+                // ローカルモデル選択関連
+                document.getElementById('local-model-label').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.local_model') || 'ロード済みモデル';
+                document.getElementById('local-model-description').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.local_model_description') || 'LM Studioでロード済みのモデルを使用します。';
+                document.getElementById('local-model-placeholder').textContent =
+                    await window.electronAPI.getTranslation('settings.llm.local_model_placeholder') || 'ロード済みモデルを取得してください';
+                document.getElementById('refreshLocalModels').innerHTML =
+                    `<i class="bi bi-arrow-repeat"></i> ${await window.electronAPI.getTranslation('settings.llm.local_model_refresh') || '更新'}`;
+
                 // 最大トークン数関連
                 document.getElementById('max-tokens-label').textContent =
                     await window.electronAPI.getTranslation('settings.llm.max_tokens');
@@ -741,7 +779,7 @@
 
                 // LLM設定
                 document.getElementById('llmProvider').value = settings.llmProvider || 'local';
-                document.getElementById('llmEndpoint').value = settings.llmEndpoint || 'http://127.0.0.1:1234/v1';
+                document.getElementById('llmEndpoint').value = settings.llmEndpoint || 'http://127.0.0.1:1234';
 
                 if (settings.apiKey) {
                     document.getElementById('apiKey').value = settings.apiKey;
@@ -755,7 +793,11 @@
                 document.getElementById('maxTokens').value = settings.maxTokens || 4096;
 
                 // プロバイダー設定に応じてUI表示を切り替え
-                handleProviderChange();
+                await handleProviderChange();
+
+                if (settings.llmProvider === 'local') {
+                    await loadLocalModels(settings.localModelInstanceId || '');
+                }
 
                 // 統合された自動適用・閉じる設定
                 document.getElementById('autoApplyAndClose').checked = settings.autoApplyAndClose || false;
@@ -942,8 +984,15 @@
                     llmEndpoint: document.getElementById('llmEndpoint').value,
                     apiKey: document.getElementById('apiKey').value,
                     modelName: document.getElementById('modelName').value,
+                    localModelInstanceId: document.getElementById('localModelInstanceId').value,
                     maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096
                 };
+
+                if (settings.llmProvider === 'local' && !settings.localModelInstanceId) {
+                    const noModelMessage = await window.electronAPI.getTranslation('settings.llm.local_model_required')
+                        || 'ローカルLLMではロード済みモデルの選択が必要です。';
+                    throw new Error(noModelMessage);
+                }
 
                 await window.electronAPI.saveSettings(settings);
 
@@ -994,7 +1043,11 @@
                     autoApplyAndClose: document.getElementById('autoApplyAndClose'),
                     uiLanguage: document.getElementById('uiLanguage'),
                     onDemandShortcutKey: document.getElementById('onDemandShortcutKey'),
-                    llmEndpoint: document.getElementById('llmEndpoint')
+                    llmProvider: document.getElementById('llmProvider'),
+                    llmEndpoint: document.getElementById('llmEndpoint'),
+                    apiKey: document.getElementById('apiKey'),
+                    modelName: document.getElementById('modelName'),
+                    maxTokens: document.getElementById('maxTokens')
                 };
 
                 // 要素の存在確認
@@ -1008,7 +1061,16 @@
                 elements.autoApplyAndClose.checked = resetSettingsData.autoApplyAndClose;
                 elements.uiLanguage.value = resetSettingsData.language;
                 elements.onDemandShortcutKey.value = resetSettingsData.onDemandShortcutKey;
+                elements.llmProvider.value = resetSettingsData.llmProvider || 'local';
                 elements.llmEndpoint.value = resetSettingsData.llmEndpoint;
+                elements.apiKey.value = resetSettingsData.apiKey || '';
+                elements.modelName.value = resetSettingsData.modelName || '';
+                elements.maxTokens.value = resetSettingsData.maxTokens || 4096;
+
+                await handleProviderChange();
+                if (elements.llmProvider.value === 'local') {
+                    await loadLocalModels(resetSettingsData.localModelInstanceId || '');
+                }
 
                 // presetPromptsをリセット
                 currentPresetPrompts = resetSettingsData.presetPrompts || [];
@@ -1042,11 +1104,13 @@
         async function handleProviderChange() {
             const provider = document.getElementById('llmProvider').value;
             const remoteSettings = document.getElementById('remoteSettings');
+            const localSettings = document.getElementById('localSettings');
             const endpointInput = document.getElementById('llmEndpoint');
             const endpointDescription = document.getElementById('llm-endpoint-description');
 
             if (provider === 'remote') {
                 remoteSettings.style.display = 'block';
+                localSettings.style.display = 'none';
                 endpointInput.placeholder = 'https://api.openai.com/v1';
                 try {
                     const description = await window.electronAPI.getTranslation('settings.llm.endpoint_description');
@@ -1056,13 +1120,73 @@
                 }
             } else {
                 remoteSettings.style.display = 'none';
-                endpointInput.placeholder = 'http://127.0.0.1:1234/v1';
+                localSettings.style.display = 'block';
+                endpointInput.placeholder = 'http://127.0.0.1:1234';
                 try {
-                    const description = await window.electronAPI.getTranslation('settings.llm.endpoint_description');
-                    endpointDescription.textContent = description || 'ベースURL（例: http://127.0.0.1:1234/v1）。/chat/completions は自動で追加されます';
+                    const description = await window.electronAPI.getTranslation('settings.llm.endpoint_description_local');
+                    endpointDescription.textContent = description || 'ベースURL（例: http://127.0.0.1:1234）。LM Studioでは /api/v1 が自動で追加されます';
                 } catch (error) {
-                    endpointDescription.textContent = 'ベースURL（例: http://127.0.0.1:1234/v1）。/chat/completions は自動で追加されます';
+                    endpointDescription.textContent = 'ベースURL（例: http://127.0.0.1:1234）。LM Studioでは /api/v1 が自動で追加されます';
                 }
+
+                await loadLocalModels(document.getElementById('localModelInstanceId').value || '');
+            }
+        }
+
+        async function loadLocalModels(preferredModelId = '') {
+            const provider = document.getElementById('llmProvider').value;
+            if (provider !== 'local') {
+                return;
+            }
+
+            const endpoint = document.getElementById('llmEndpoint').value;
+            const select = document.getElementById('localModelInstanceId');
+            const status = document.getElementById('localModelStatus');
+
+            status.innerHTML = '';
+            select.innerHTML = `<option value="">${await window.electronAPI.getTranslation('settings.llm.local_model_loading') || 'ロード済みモデルを取得中...'}</option>`;
+
+            try {
+                const result = await window.electronAPI.getLocalModels(endpoint);
+
+                if (!result.success) {
+                    throw new Error(result.error || 'モデル一覧の取得に失敗しました');
+                }
+
+                const loadedInstances = result.loadedInstances || [];
+                select.innerHTML = '';
+
+                if (loadedInstances.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = await window.electronAPI.getTranslation('settings.llm.local_model_none') || 'ロード済みモデルがありません';
+                    select.appendChild(option);
+
+                    const noLoadedMessage = await window.electronAPI.getTranslation('settings.llm.local_model_none_help')
+                        || 'LM Studioでモデルをロードしてから、更新ボタンで再取得してください。';
+                    status.innerHTML = `<div class="alert alert-warning alert-sm mb-0">${noLoadedMessage}</div>`;
+                    return;
+                }
+
+                loadedInstances.forEach((instance) => {
+                    const option = document.createElement('option');
+                    option.value = instance.id;
+                    option.textContent = `${instance.displayName} (${instance.id})`;
+                    select.appendChild(option);
+                });
+
+                const targetId = preferredModelId || select.value;
+                const hasTarget = loadedInstances.some(instance => instance.id === targetId);
+                select.value = hasTarget ? targetId : loadedInstances[0].id;
+
+                const loadedMessage = await window.electronAPI.getTranslation('settings.llm.local_model_loaded')
+                    || '{{count}} 件のロード済みモデルを検出しました';
+                status.innerHTML = `<div class="alert alert-success alert-sm mb-0">${loadedMessage.replace('{{count}}', String(loadedInstances.length))}</div>`;
+            } catch (error) {
+                const failedMessage = await window.electronAPI.getTranslation('settings.llm.local_model_failed')
+                    || 'ロード済みモデルの取得に失敗しました: {{error}}';
+                select.innerHTML = `<option value="">${await window.electronAPI.getTranslation('settings.llm.local_model_placeholder') || 'ロード済みモデルを取得してください'}</option>`;
+                status.innerHTML = `<div class="alert alert-danger alert-sm mb-0">${failedMessage.replace('{{error}}', error.message)}</div>`;
             }
         }
 
@@ -1083,7 +1207,8 @@
                     provider: provider,
                     endpoint: document.getElementById('llmEndpoint').value,
                     apiKey: provider === 'remote' ? document.getElementById('apiKey').value : '',
-                    modelName: provider === 'remote' ? document.getElementById('modelName').value : 'local-model',
+                    modelName: provider === 'remote' ? document.getElementById('modelName').value : '',
+                    localModelInstanceId: provider === 'local' ? document.getElementById('localModelInstanceId').value : '',
                     maxTokens: parseInt(document.getElementById('maxTokens').value) || 4096
                 };
 

@@ -30,6 +30,73 @@
             opacity: 1;
         }
 
+        #processing {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            z-index: 1050;
+            background-color: rgba(255, 255, 255, 0.94);
+        }
+
+        #processing .processing-card {
+            -webkit-app-region: no-drag;
+            width: 100%;
+            max-width: 680px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            padding: 16px;
+        }
+
+        #processingAction {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #343a40;
+        }
+
+        #streamingResult {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            text-align: left;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            max-height: min(46vh, 300px);
+            overflow-y: auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #212529;
+        }
+
+        #streamingResult:empty::before {
+            content: 'Waiting for streamed response...';
+            color: #6c757d;
+        }
+
+        #streamingResult::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #streamingResult::-webkit-scrollbar-thumb {
+            background: rgba(108, 117, 125, 0.45);
+            border-radius: 999px;
+        }
+
+        #originalText,
+        #processedText {
+            max-height: min(42vh, 300px);
+            overflow-y: auto;
+        }
+
         /* ボタンにホバー時のポジション調整 */
         .btn-with-shortcut {
             position: relative;
@@ -40,9 +107,8 @@
 <body>
     <div class="container-fluid">
         <!-- AI処理中画面 -->
-        <div id="processing"
-            style="position:absolute; top:0; left:0; width:100%; height:100%; display:none; align-items:center; justify-content:center; padding:1rem; z-index:1050; background-color:rgba(255,255,255,0.95);">
-            <div class="text-center" style="-webkit-app-region: no-drag; min-width:220px; width:100%; max-width:600px;">
+        <div id="processing">
+            <div class="text-center processing-card">
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
@@ -51,8 +117,7 @@
                 </div>
 
                 <!-- ストリーミング結果表示エリア -->
-                <div id="streamingResult" class="mt-4 p-3 text-start"
-                    style="display:none; background-color:rgba(255,255,255,0.8); border-radius:8px; max-height:300px; overflow-y:auto; word-wrap:break-word; white-space:pre-wrap; font-size:0.9rem; color:#333;">
+                <div id="streamingResult">
                 </div>
             </div>
         </div>
@@ -79,7 +144,7 @@
                 </div>
             </div>
 
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
+            <div id="resultActionRow" class="d-grid gap-2 d-sm-flex justify-content-sm-end mb-2">
                 <button class="btn btn-outline-dark btn-with-shortcut" id="applyBtn" data-i18n="popup.apply"
                     data-shortcut="⌘+Enter">適用</button>
                 <button class="btn btn-secondary btn-with-shortcut" id="rejectBtn" data-i18n="popup.reject"
@@ -344,7 +409,7 @@
             const streamingResult = document.getElementById('streamingResult');
             if (streamingResult) {
                 streamingResult.textContent = '';
-                streamingResult.style.display = 'none';
+                streamingResult.style.display = 'block';
             }
 
             // 処理メッセージを設定（すべてpopup.processingを使用）
@@ -411,6 +476,7 @@
                 applyBtn.className = 'btn btn-outline-dark';
                 console.log('適用ボタン設定完了:', applyText);
             }
+
             console.log('showResultScreen完了');
         }
 
@@ -535,6 +601,7 @@
 
             // 結果表示画面を表示
             document.getElementById('resultDisplay').classList.remove('d-none');
+
         };
     </script>
 </body>

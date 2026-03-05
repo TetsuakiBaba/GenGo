@@ -65,7 +65,7 @@ class GengoElectronMain {
         console.log('LLM設定詳細:', this.getLLMConfig());
 
         // LLMエンジン初期化
-        this.llmEngine = new SimpleLLMEngine(this.getLLMConfig());
+        this.llmEngine = this.createLLMEngine();
 
         // システムトレイを作成
         this.createTray();
@@ -188,10 +188,110 @@ class GengoElectronMain {
             return {
                 provider: 'local',
                 apiEndpoint: this.settings.llmEndpoint,
-                model: 'local-model',
+                model: this.settings.localModelInstanceId || '',
                 maxTokens: this.settings.maxTokens || 4096
             };
         }
+    }
+
+    async rememberLocalReasoningUnsupportedModel(modelId) {
+        if (!modelId) {
+            return;
+        }
+
+        const current = Array.isArray(this.settings.localReasoningUnsupportedModels)
+            ? this.settings.localReasoningUnsupportedModels
+            : [];
+
+        if (current.includes(modelId)) {
+            return;
+        }
+
+        this.settings.localReasoningUnsupportedModels = [...current, modelId];
+
+        try {
+            await writeFile(this.settingsPath, JSON.stringify(this.settings, null, 2));
+            console.log('reasoning非対応モデルを保存しました:', modelId);
+        } catch (error) {
+            console.error('reasoning非対応モデル保存エラー:', error);
+        }
+    }
+
+    createLLMEngine(config = null) {
+        const llmConfig = config || this.getLLMConfig();
+        return new SimpleLLMEngine({
+            ...llmConfig,
+            localReasoningUnsupportedModels: this.settings.localReasoningUnsupportedModels || [],
+            onLocalReasoningUnsupportedModel: async (modelId) => {
+                await this.rememberLocalReasoningUnsupportedModel(modelId);
+            }
+        });
+    }
+
+    normalizeLocalEndpoint(endpoint) {
+        let base = (endpoint || '').trim();
+
+        if (!base) {
+            return 'http://127.0.0.1:1234';
+        }
+
+        if (base.endsWith('/')) {
+            base = base.slice(0, -1);
+        }
+
+        if (base.endsWith('/api/v1')) {
+            return base.slice(0, -7);
+        }
+
+        if (base.endsWith('/v1')) {
+            return base.slice(0, -3);
+        }
+
+        return base;
+    }
+
+    buildLocalApiBase(endpoint) {
+        return `${this.normalizeLocalEndpoint(endpoint)}/api/v1`;
+    }
+
+    async fetchLocalModels(endpoint) {
+        const apiBase = this.buildLocalApiBase(endpoint || this.settings.llmEndpoint);
+        const response = await fetch(`${apiBase}/models`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch local models: ${response.status} ${errorText}`);
+        }
+
+        const payload = await response.json();
+        const models = Array.isArray(payload?.models)
+            ? payload.models
+            : (Array.isArray(payload?.data) ? payload.data : []);
+
+        const loadedInstances = [];
+        models.forEach((model) => {
+            const instances = Array.isArray(model?.loaded_instances) ? model.loaded_instances : [];
+            instances.forEach((instance) => {
+                if (instance?.id) {
+                    loadedInstances.push({
+                        id: instance.id,
+                        modelKey: model.key || '',
+                        displayName: model.display_name || model.key || instance.id
+                    });
+                }
+            });
+        });
+
+        return {
+            apiBase,
+            models,
+            loadedInstances
+        };
     }
 
     /**
@@ -698,7 +798,7 @@ if ($process) {
             }
             : {
                 width: 600,
-                height: 300,
+                height: 250,
                 minWidth: 400,
                 minHeight: 200,
                 maxWidth: 1000,
@@ -1124,7 +1224,8 @@ if ($process) {
             'get-default-prompt',
             'process-text-generation',
             'restart-app',
-            'test-llm-connection'
+            'test-llm-connection',
+            'get-local-models'
         ];
 
         handlers.forEach(handler => {
@@ -1165,6 +1266,21 @@ if ($process) {
             const oldLLMConfig = JSON.stringify(this.getLLMConfig());
             const oldShortcutKey = this.settings.shortcutKey;
 
+            if (newSettings.llmProvider === 'local' && newSettings.llmEndpoint) {
+                newSettings.llmEndpoint = this.normalizeLocalEndpoint(newSettings.llmEndpoint);
+            }
+
+            if (newSettings.llmProvider === 'local' && (!newSettings.localModelInstanceId || !newSettings.localModelInstanceId.trim())) {
+                try {
+                    const modelData = await this.fetchLocalModels(newSettings.llmEndpoint || this.settings.llmEndpoint);
+                    if (modelData.loadedInstances.length > 0) {
+                        newSettings.localModelInstanceId = modelData.loadedInstances[0].id;
+                    }
+                } catch (error) {
+                    console.warn('ローカルモデル自動選択に失敗:', error.message);
+                }
+            }
+
             await this.saveSettings(newSettings);
 
             // UI言語が変更された場合、i18nの言語も変更
@@ -1177,7 +1293,7 @@ if ($process) {
             // LLM設定が変更された場合、LLMエンジンを再初期化
             const newLLMConfig = JSON.stringify(this.getLLMConfig());
             if (newLLMConfig !== oldLLMConfig) {
-                this.llmEngine = new SimpleLLMEngine(this.getLLMConfig());
+                this.llmEngine = this.createLLMEngine();
                 console.log('LLM設定を更新しました:', this.getLLMConfig());
             }
 
@@ -1209,9 +1325,11 @@ if ($process) {
                 autoApplyAndClose: false,
                 language: 'en',
                 llmProvider: 'local',
-                llmEndpoint: 'http://127.0.0.1:1234/v1',
+                llmEndpoint: 'http://127.0.0.1:1234',
                 apiKey: '',
                 modelName: 'gpt-4o-mini',
+                localModelInstanceId: '',
+                localReasoningUnsupportedModels: [],
                 maxTokens: 4096,
                 shortcutKey: 'Ctrl+Space',
                 processingMode: 'translation',
@@ -1222,7 +1340,7 @@ if ($process) {
         // 設定をリセット
         ipcMain.handle('reset-settings', async () => {
             const oldLanguage = this.settings.language;
-            const oldLLMEndpoint = this.settings.llmEndpoint;
+            const oldLLMConfig = JSON.stringify(this.getLLMConfig());
             const oldPresetPrompts = this.settings.presetPrompts || [];
 
             // 設定をデフォルト値に更新
@@ -1236,13 +1354,11 @@ if ($process) {
                 this.createTray();
             }
 
-            // LLMエンドポイントがリセットされた場合、LLMエンジンを再初期化
-            if (this.settings.llmEndpoint !== oldLLMEndpoint) {
-                this.llmEngine = new SimpleLLMEngine({
-                    apiEndpoint: this.settings.llmEndpoint,
-                    model: 'local-model'
-                });
-                console.log('LLMエンドポイントをリセットしました:', this.settings.llmEndpoint);
+            // LLM設定がリセットされた場合、LLMエンジンを再初期化
+            const newLLMConfig = JSON.stringify(this.getLLMConfig());
+            if (newLLMConfig !== oldLLMConfig) {
+                this.llmEngine = this.createLLMEngine();
+                console.log('LLM設定をリセットしました:', this.getLLMConfig());
             }
 
             // presetPromptsがリセットされた場合、ショートカットを再登録
@@ -1328,16 +1444,25 @@ if ($process) {
             try {
                 console.log('LLM接続テスト開始:', config);
 
+                let resolvedModel = config.modelName || '';
+                if (config.provider === 'local') {
+                    const modelData = await this.fetchLocalModels(config.endpoint);
+                    if (modelData.loadedInstances.length === 0) {
+                        return { success: false, error: 'LM Studioでロード済みモデルが見つかりません。' };
+                    }
+                    resolvedModel = config.localModelInstanceId || modelData.loadedInstances[0].id;
+                }
+
                 // 一時的なLLMエンジンを作成してテスト
                 const testConfig = {
                     provider: config.provider,
                     apiEndpoint: config.endpoint,
                     apiKey: config.apiKey,
-                    model: config.modelName || 'local-model',
+                    model: resolvedModel,
                     maxTokens: config.maxTokens || 4096
                 };
 
-                const testEngine = new SimpleLLMEngine(testConfig);
+                const testEngine = this.createLLMEngine(testConfig);
 
                 // 簡単なテストプロンプトを実行
                 const result = await testEngine.processCustomPrompt('Hello', 'Say "Connection successful" in response.');
@@ -1352,6 +1477,27 @@ if ($process) {
             } catch (error) {
                 console.error('LLM接続テストエラー:', error);
                 return { success: false, error: error.message };
+            }
+        });
+
+        ipcMain.handle('get-local-models', async (event, endpoint) => {
+            try {
+                const modelData = await this.fetchLocalModels(endpoint || this.settings.llmEndpoint);
+                return {
+                    success: true,
+                    apiBase: modelData.apiBase,
+                    models: modelData.models,
+                    loadedInstances: modelData.loadedInstances
+                };
+            } catch (error) {
+                console.error('ローカルモデル一覧取得エラー:', error);
+                return {
+                    success: false,
+                    error: error.message,
+                    apiBase: this.buildLocalApiBase(endpoint || this.settings.llmEndpoint),
+                    models: [],
+                    loadedInstances: []
+                };
             }
         });
 
@@ -2244,10 +2390,19 @@ if ($process) {
 
                 // 新しい設定項目がない場合はデフォルト値を設定
                 if (!loadedSettings.llmEndpoint) {
-                    loadedSettings.llmEndpoint = 'http://127.0.0.1:1234/v1';
+                    loadedSettings.llmEndpoint = 'http://127.0.0.1:1234';
+                }
+                if ((loadedSettings.llmProvider || 'local') === 'local') {
+                    loadedSettings.llmEndpoint = this.normalizeLocalEndpoint(loadedSettings.llmEndpoint);
                 }
                 if (!loadedSettings.onDemandShortcutKey) {
                     loadedSettings.onDemandShortcutKey = 'Ctrl+Shift+1';
+                }
+                if (!loadedSettings.localModelInstanceId) {
+                    loadedSettings.localModelInstanceId = '';
+                }
+                if (!Array.isArray(loadedSettings.localReasoningUnsupportedModels)) {
+                    loadedSettings.localReasoningUnsupportedModels = [];
                 }
                 if (!loadedSettings.presetPrompts || loadedSettings.presetPrompts.length === 0) {
                     loadedSettings.presetPrompts = [

@@ -5,13 +5,15 @@
 export class SimpleLLMEngine {
     constructor(options = {}) {
         this.provider = options.provider || 'local';
-        this.apiEndpoint = options.apiEndpoint || 'http://127.0.0.1:1234/v1';
+        this.apiEndpoint = options.apiEndpoint || 'http://127.0.0.1:1234';
         this.apiKey = options.apiKey;
-        this.model = options.model || 'local-model';
+        this.model = options.model || '';
         this.maxTokens = options.maxTokens || 4096; // デフォルトは4096トークン
         this.maxRetries = options.maxRetries || 3;
         this.timeout = options.timeout || 60000; // 30秒 → 60秒に延長（長い文章処理に対応）
         this.enable_thinking = false;
+        this.localReasoningUnsupportedModels = new Set(options.localReasoningUnsupportedModels || []);
+        this.onLocalReasoningUnsupportedModel = options.onLocalReasoningUnsupportedModel || null;
 
         console.log('SimpleLLMEngine初期化:', {
             provider: this.provider,
@@ -19,8 +21,46 @@ export class SimpleLLMEngine {
             model: this.model,
             maxTokens: this.maxTokens,
             hasApiKey: !!this.apiKey,
-            enable_thinking: this.enable_thinking
+            enable_thinking: this.enable_thinking,
+            localReasoningUnsupportedModels: Array.from(this.localReasoningUnsupportedModels)
         });
+    }
+
+    isReasoningUnsupportedApiError(errorData, fallbackMessage = '') {
+        const message = String(errorData?.error?.message || fallbackMessage || '').toLowerCase();
+        const code = String(errorData?.error?.code || '').toLowerCase();
+
+        if (!message.includes('reasoning')) {
+            return false;
+        }
+
+        return (
+            code.includes('unrecognized') ||
+            code.includes('invalid') ||
+            message.includes('unrecognized') ||
+            message.includes('unknown') ||
+            message.includes('invalid')
+        );
+    }
+
+    async rememberLocalReasoningUnsupportedModel(modelId) {
+        if (!modelId) {
+            return;
+        }
+
+        if (this.localReasoningUnsupportedModels.has(modelId)) {
+            return;
+        }
+
+        this.localReasoningUnsupportedModels.add(modelId);
+
+        if (typeof this.onLocalReasoningUnsupportedModel === 'function') {
+            try {
+                await this.onLocalReasoningUnsupportedModel(modelId);
+            } catch (error) {
+                console.error('reasoning非対応モデルの保存に失敗:', error);
+            }
+        }
     }
 
     /**
@@ -222,93 +262,337 @@ export class SimpleLLMEngine {
 修正されたテキストのみを出力してください。説明や追加の文章は不要です。`;
     }
 
-    /**
-     * LLM APIを呼び出し
-     */
-    async callLLM(prompt) {
-        // 設定されたmaxTokensを使用（ユーザーが設定画面で指定可能）
-        const maxTokens = this.maxTokens;
-        const promptLength = prompt.length;
+    normalizeLocalEndpoint(endpoint) {
+        let base = (endpoint || '').trim();
 
-        console.log(`プロンプト長: ${promptLength}文字, max_tokens: ${maxTokens}`);
-
-        // リクエストボディを構築
-        const requestBody = {
-            model: this.model,
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            // temperature: 0.3,
-            stream: false,
-            // 思考プロセスを明示的に無効化（OpenAI o1/o3-miniやLM Studio用）
-            reasoning_effort: "none",
-            include_reasoning: false,
-            thinking: { type: "disabled" },
-            // LM Studio / GLM系 / DeepSeek系 独自のキー
-            thought: false,
-            include_thought: false,
-            enable_thinking: false,
-            enableThinking: false
-        };
-
-        // モデルに応じて適切なトークン制限パラメータを使用
-        // OpenAI API (gpt-*), Anthropic (claude-*) などリモートプロバイダーは max_completion_tokens を優先
-        // ローカルモデルは max_tokens を使用
-        console.log(`モデル判定 - provider: "${this.provider}", model: "${this.model}", type: ${typeof this.model}`);
-
-        const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
-            this.model.startsWith('gpt-') ||
-            this.model.includes('o1') ||
-            this.model.includes('o3') ||
-            this.model.includes('o4')
-        );
-
-        console.log(`useMaxCompletionTokens: ${useMaxCompletionTokens}`);
-
-        if (useMaxCompletionTokens) {
-            requestBody.max_completion_tokens = maxTokens;
-            console.log(`max_completion_tokens を使用: ${maxTokens}`);
-        } else {
-            requestBody.max_tokens = maxTokens;
-            console.log(`max_tokens を使用: ${maxTokens}`);
+        if (!base) {
+            return 'http://127.0.0.1:1234';
         }
 
-        // ヘッダーを構築（プロバイダーに応じて認証を設定）
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-
-        // リモートプロバイダーの場合はAPIキーを追加
-        if (this.provider === 'remote' && this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-            console.log('リモートプロバイダー認証ヘッダーを設定');
-        } else if (this.provider === 'local') {
-            console.log('ローカルプロバイダー（認証なし）');
+        if (base.endsWith('/')) {
+            base = base.slice(0, -1);
         }
 
-        // エンドポイントURLを構築（既に/chat/completionsが含まれている場合は追加しない）
+        if (base.endsWith('/api/v1')) {
+            return base.slice(0, -7);
+        }
+
+        if (base.endsWith('/v1')) {
+            return base.slice(0, -3);
+        }
+
+        return base;
+    }
+
+    buildApiUrl(path) {
+        if (this.provider === 'local') {
+            return `${this.normalizeLocalEndpoint(this.apiEndpoint)}/api/v1${path}`;
+        }
+
         let apiUrl = this.apiEndpoint;
-
-        // 末尾のスラッシュを削除
         if (apiUrl.endsWith('/')) {
             apiUrl = apiUrl.slice(0, -1);
         }
-
-        // /chat/completionsが含まれていない場合のみ追加
         if (!apiUrl.endsWith('/chat/completions')) {
             apiUrl = `${apiUrl}/chat/completions`;
         }
 
+        return apiUrl;
+    }
+
+    async fetchLocalModels() {
+        const response = await fetch(this.buildApiUrl('/models'), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`LM Studio models API error: ${response.status} ${errorText}`);
+        }
+
+        const payload = await response.json();
+        const models = Array.isArray(payload?.models)
+            ? payload.models
+            : (Array.isArray(payload?.data) ? payload.data : []);
+
+        const loadedInstances = [];
+        models.forEach((model) => {
+            const instances = Array.isArray(model?.loaded_instances) ? model.loaded_instances : [];
+            instances.forEach((instance) => {
+                if (instance?.id) {
+                    loadedInstances.push(instance.id);
+                }
+            });
+        });
+
+        return { models, loadedInstances };
+    }
+
+    async resolveLocalModelId() {
+        if (this.provider !== 'local') {
+            return this.model;
+        }
+
+        if (this.model && this.model.trim()) {
+            return this.model.trim();
+        }
+
+        const modelData = await this.fetchLocalModels();
+        if (modelData.loadedInstances.length === 0) {
+            throw new Error('LM Studioでロード済みモデルが見つかりません。設定画面でモデルをロードして選択してください。');
+        }
+
+        this.model = modelData.loadedInstances[0];
+        return this.model;
+    }
+
+    extractLocalChatOutput(data) {
+        const outputs = Array.isArray(data?.output)
+            ? data.output
+            : (Array.isArray(data?.response?.output)
+                ? data.response.output
+                : (Array.isArray(data?.result?.output) ? data.result.output : []));
+        if (outputs.length === 0) {
+            return '';
+        }
+
+        const chunks = outputs
+            .filter(item => item?.type === 'message' && item?.content)
+            .map((item) => {
+                if (typeof item.content === 'string') {
+                    return item.content;
+                }
+
+                if (Array.isArray(item.content)) {
+                    return item.content.map(part => part?.text || '').join('');
+                }
+
+                if (item.content && typeof item.content === 'object') {
+                    if (typeof item.content.text === 'string') {
+                        return item.content.text;
+                    }
+                    if (Array.isArray(item.content.parts)) {
+                        return item.content.parts.map(part => part?.text || '').join('');
+                    }
+                }
+
+                return '';
+            })
+            .filter(Boolean);
+
+        return chunks.join('\n').trim();
+    }
+
+    extractResponseTextFromJson(data) {
+        if (this.provider === 'local') {
+            const directOutputText = typeof data?.output_text === 'string'
+                ? data.output_text
+                : (typeof data?.response?.output_text === 'string' ? data.response.output_text : '');
+
+            const localText = directOutputText || this.extractLocalChatOutput(data);
+            return localText || '';
+        }
+
+        if (data?.choices && data.choices.length > 0) {
+            const message = data.choices[0].message;
+            const content = message?.content || '';
+            const reasoning = message?.reasoning_content || '';
+            return reasoning ? `<think>\n${reasoning}\n</think>\n${content}` : content;
+        }
+
+        return '';
+    }
+
+    async callLLMFallbackNonStream(prompt, modelToUse, headers, apiUrl, onChunk = null, options = {}) {
+        const omitLocalReasoning = options.omitLocalReasoning === true;
+        const shouldIncludeLocalReasoning = this.provider === 'local'
+            && !omitLocalReasoning
+            && !this.localReasoningUnsupportedModels.has(modelToUse);
+
+        const fallbackBody = this.provider === 'local'
+            ? {
+                model: modelToUse,
+                input: prompt,
+                stream: false,
+                ...(shouldIncludeLocalReasoning ? { reasoning: "off" } : {}),
+            }
+            : {
+                model: modelToUse,
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                stream: false,
+                reasoning: "off",
+                enable_thinking: false
+            };
+
+        if (this.provider === 'remote') {
+            const useMaxCompletionTokens = modelToUse && (
+                modelToUse.startsWith('gpt-') ||
+                modelToUse.includes('o1') ||
+                modelToUse.includes('o3') ||
+                modelToUse.includes('o4')
+            );
+
+            if (useMaxCompletionTokens) {
+                fallbackBody.max_completion_tokens = this.maxTokens;
+            } else {
+                fallbackBody.max_tokens = this.maxTokens;
+            }
+        }
+
+        const fallbackResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(fallbackBody)
+        });
+
+        if (!fallbackResponse.ok) {
+            const fallbackErrorText = await fallbackResponse.text();
+            let fallbackErrorData = null;
+            try {
+                fallbackErrorData = JSON.parse(fallbackErrorText);
+            } catch {
+            }
+
+            const fallbackErrorMessage = fallbackErrorData?.error?.message || fallbackErrorText;
+
+            if (
+                this.provider === 'local'
+                && shouldIncludeLocalReasoning
+                && this.isReasoningUnsupportedApiError(fallbackErrorData, fallbackErrorMessage)
+            ) {
+                console.warn(`モデル ${modelToUse} は reasoning 非対応。フォールバック再試行時は reasoning を省略します。`);
+                await this.rememberLocalReasoningUnsupportedModel(modelToUse);
+                return this.callLLMFallbackNonStream(prompt, modelToUse, headers, apiUrl, onChunk, { omitLocalReasoning: true });
+            }
+
+            throw new Error(`LLM API フォールバック失敗: HTTP ${fallbackResponse.status} ${fallbackErrorMessage}`);
+        }
+
+        const fallbackData = await fallbackResponse.json();
+        const fallbackText = this.extractResponseTextFromJson(fallbackData);
+        if (!fallbackText || !fallbackText.trim()) {
+            throw new Error('LLM APIフォールバック応答が空です');
+        }
+
+        if (onChunk) {
+            onChunk(fallbackText, fallbackText);
+        }
+
+        return fallbackText;
+    }
+
+    extractStreamPayloadText(data) {
+        const delta = data?.choices?.[0]?.delta;
+        const choiceMessage = data?.choices?.[0]?.message;
+
+        const openAIContentChunk = typeof delta?.content === 'string' ? delta.content : '';
+        const openAIReasoningChunk = typeof delta?.reasoning_content === 'string' ? delta.reasoning_content : '';
+        const openAIMessageContent = typeof choiceMessage?.content === 'string' ? choiceMessage.content : '';
+        const openAIMessageReasoning = typeof choiceMessage?.reasoning_content === 'string' ? choiceMessage.reasoning_content : '';
+
+        const eventType = String(data?.type || data?.event || '');
+
+        const localDelta = typeof data?.delta === 'string'
+            ? data.delta
+            : (typeof data?.output_text === 'string'
+                ? data.output_text
+                : (typeof data?.response?.output_text === 'string' ? data.response.output_text : ''));
+
+        const localMessageDelta = eventType === 'message.delta' && typeof data?.content === 'string'
+            ? data.content
+            : '';
+
+        const typedDelta = eventType.includes('output_text.delta')
+            ? (data?.delta || data?.text || data?.content || '')
+            : '';
+
+        const localFullText = this.extractLocalChatOutput(data);
+
+        return {
+            contentChunk: openAIContentChunk || localMessageDelta || typedDelta || localDelta || '',
+            reasoningChunk: openAIReasoningChunk || '',
+            absoluteContent: openAIMessageContent || localFullText || '',
+            absoluteReasoning: openAIMessageReasoning || ''
+        };
+    }
+
+    /**
+     * LLM APIを呼び出し（常時ストリーミング）
+     */
+    async callLLM(prompt, onChunk = null, options = {}) {
+        console.log('callLLM() - ストリーミング実行 - プロンプト:', prompt);
+
+        const maxTokens = this.maxTokens;
+        const promptLength = prompt.length;
+        const modelToUse = options.modelOverride || (this.provider === 'local' ? await this.resolveLocalModelId() : this.model);
+        const omitLocalReasoning = options.omitLocalReasoning === true;
+        const shouldIncludeLocalReasoning = this.provider === 'local'
+            && !omitLocalReasoning
+            && !this.localReasoningUnsupportedModels.has(modelToUse);
+
+        const requestBody = this.provider === 'local'
+            ? {
+                model: modelToUse,
+                input: prompt,
+                stream: true,
+                ...(shouldIncludeLocalReasoning ? { reasoning: "off" } : {}),
+            }
+            : {
+                model: modelToUse,
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                stream: true,
+                reasoning: "off",
+                enable_thinking: false
+            };
+
+        const useMaxCompletionTokens = this.provider === 'remote' && modelToUse && (
+            modelToUse.startsWith('gpt-') ||
+            modelToUse.includes('o1') ||
+            modelToUse.includes('o3') ||
+            modelToUse.includes('o4')
+        );
+
+        if (this.provider === 'local') {
+            console.log('ローカルプロバイダーのためトークン制限キーは送信しません');
+        } else if (useMaxCompletionTokens) {
+            requestBody.max_completion_tokens = maxTokens;
+        } else {
+            requestBody.max_tokens = maxTokens;
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+
+        if (this.provider === 'remote' && this.apiKey) {
+            headers['Authorization'] = `Bearer ${this.apiKey}`;
+        }
+
+        const apiUrl = this.provider === 'local'
+            ? this.buildApiUrl('/chat')
+            : this.buildApiUrl('/chat/completions');
+
         console.log(`LLM API呼び出し詳細:`, {
             provider: this.provider,
             url: apiUrl,
-            model: this.model,
+            model: modelToUse,
             hasApiKey: !!this.apiKey,
-            promptLength: promptLength,
-            maxTokens: maxTokens
+            promptLength,
+            maxTokens,
+            stream: true
         });
 
         const controller = new AbortController();
@@ -317,7 +601,7 @@ export class SimpleLLMEngine {
         try {
             const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: headers,
+                headers,
                 body: JSON.stringify(requestBody),
                 signal: controller.signal
             });
@@ -325,19 +609,18 @@ export class SimpleLLMEngine {
             if (!response.ok) {
                 clearTimeout(timeoutId);
                 let errorMessage = `HTTP ${response.status} ${response.statusText}`;
+                let errorData = null;
                 try {
                     const errorText = await response.text();
-                    console.error(`LLM API エラー詳細: ${response.status} ${response.statusText}`, errorText);
-
-                    // JSONエラーレスポンスをパース
                     try {
-                        const errorData = JSON.parse(errorText);
-                        if (errorData.error && errorData.error.message) {
+                        errorData = JSON.parse(errorText);
+                        if (errorData?.error?.message) {
                             errorMessage = errorData.error.message;
+                        } else if (errorText && errorText.length < 300) {
+                            errorMessage = errorText;
                         }
-                    } catch (parseError) {
-                        // JSON解析失敗の場合はテキストをそのまま使用
-                        if (errorText && errorText.length < 200) {
+                    } catch {
+                        if (errorText && errorText.length < 300) {
                             errorMessage = errorText;
                         }
                     }
@@ -345,33 +628,150 @@ export class SimpleLLMEngine {
                     console.error('エラーレスポンスの読み取りに失敗:', textError);
                 }
 
+                if (
+                    this.provider === 'local'
+                    && shouldIncludeLocalReasoning
+                    && this.isReasoningUnsupportedApiError(errorData, errorMessage)
+                ) {
+                    console.warn(`モデル ${modelToUse} は reasoning 非対応。以後 reasoning なしで送信します。`);
+                    await this.rememberLocalReasoningUnsupportedModel(modelToUse);
+                    return this.callLLM(prompt, onChunk, { omitLocalReasoning: true, modelOverride: modelToUse });
+                }
+
                 throw new Error(`LLM API エラー: ${errorMessage}`);
             }
 
-            const data = await response.json();
-            clearTimeout(timeoutId);
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            const isEventStream = contentType.includes('text/event-stream') && !!response.body;
 
-            if (data.choices && data.choices.length > 0) {
-                const message = data.choices[0].message;
-                const content = message.content || '';
-                const reasoning = message.reasoning_content || '';
+            if (!isEventStream) {
+                const data = await response.json();
+                clearTimeout(timeoutId);
 
-                // 思考プロセスがある場合はタグで囲んで結合
-                const responseText = reasoning ? `<think>\n${reasoning}\n</think>\n${content}` : content;
+                const responseText = this.extractResponseTextFromJson(data);
+                if (responseText && responseText.trim()) {
+                    if (onChunk) {
+                        onChunk(responseText, responseText);
+                    }
+                    return responseText;
+                }
 
-                console.log(`レスポンス長: ${responseText.length}文字`);
-                return responseText;
+                throw new Error('LLM APIからの応答形式が不正です');
             }
 
-            throw new Error('LLM APIからの応答形式が不正です');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let fullText = '';
+            let fullReasoning = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop() || '';
+
+                    for (const eventText of events) {
+                        const dataLines = eventText
+                            .split('\n')
+                            .map(line => line.trimEnd())
+                            .filter(line => line.startsWith('data:'))
+                            .map(line => line.slice(5).trimStart());
+
+                        if (dataLines.length === 0) {
+                            continue;
+                        }
+
+                        const payloadText = dataLines.join('\n').trim();
+                        if (!payloadText || payloadText === '[DONE]') {
+                            continue;
+                        }
+
+                        try {
+                            const data = JSON.parse(payloadText);
+                            const parsed = this.extractStreamPayloadText(data);
+
+                            if (parsed.reasoningChunk) {
+                                fullReasoning += parsed.reasoningChunk;
+                            }
+
+                            if (parsed.contentChunk) {
+                                fullText += parsed.contentChunk;
+                            } else if (parsed.absoluteContent && !fullText) {
+                                fullText = parsed.absoluteContent;
+                            }
+
+                            if (parsed.absoluteReasoning && !fullReasoning) {
+                                fullReasoning = parsed.absoluteReasoning;
+                            }
+
+                            if (onChunk && (parsed.reasoningChunk || parsed.contentChunk || parsed.absoluteContent)) {
+                                const combinedText = fullReasoning
+                                    ? `<think>\n${fullReasoning}\n</think>\n${fullText}`
+                                    : fullText;
+                                onChunk(parsed.contentChunk || parsed.absoluteContent || '', combinedText);
+                            }
+                        } catch (parseError) {
+                            if (payloadText) {
+                                fullText += payloadText;
+                                if (onChunk) {
+                                    const combinedText = fullReasoning
+                                        ? `<think>\n${fullReasoning}\n</think>\n${fullText}`
+                                        : fullText;
+                                    onChunk(payloadText, combinedText);
+                                }
+                            } else {
+                                console.error('JSON parse error:', parseError, 'Payload:', payloadText);
+                            }
+                        }
+                    }
+                }
+
+                const trailing = buffer.trim();
+                if (trailing.startsWith('data:')) {
+                    const payloadText = trailing.slice(5).trimStart();
+                    if (payloadText && payloadText !== '[DONE]') {
+                        try {
+                            const data = JSON.parse(payloadText);
+                            const parsed = this.extractStreamPayloadText(data);
+                            if (parsed.reasoningChunk) {
+                                fullReasoning += parsed.reasoningChunk;
+                            }
+                            if (parsed.contentChunk) {
+                                fullText += parsed.contentChunk;
+                            } else if (parsed.absoluteContent && !fullText) {
+                                fullText = parsed.absoluteContent;
+                            }
+                        } catch {
+                            fullText += payloadText;
+                        }
+                    }
+                }
+            } finally {
+                clearTimeout(timeoutId);
+                reader.releaseLock();
+            }
+
+            const finalResult = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
+            if (finalResult && finalResult.trim()) {
+                return finalResult;
+            }
+
+            console.warn('ストリーミング応答が空のため、非ストリーミングで再試行します');
+            return await this.callLLMFallbackNonStream(prompt, modelToUse, headers, apiUrl, onChunk, {
+                omitLocalReasoning: !shouldIncludeLocalReasoning
+            });
 
         } catch (error) {
             clearTimeout(timeoutId);
-
             if (error.name === 'AbortError') {
                 throw new Error('LLM API呼び出しがタイムアウトしました');
             }
-
             console.error('LLM API呼び出しエラー:', error);
             throw error;
         }
@@ -398,7 +798,11 @@ export class SimpleLLMEngine {
      */
     async testConnection() {
         try {
-            const response = await fetch(`${this.apiEndpoint}/models`, {
+            const url = this.provider === 'local'
+                ? this.buildApiUrl('/models')
+                : `${this.apiEndpoint}/models`;
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -632,157 +1036,7 @@ export class SimpleLLMEngine {
      * @returns {Promise<string>} - 完全なレスポンステキスト
      */
     async callLLMStreaming(prompt, onChunk) {
-        const maxTokens = this.maxTokens;
-        const promptLength = prompt.length;
-
-        console.log(`ストリーミングモード - プロンプト長: ${promptLength}文字, max_tokens: ${maxTokens}`);
-
-        // リクエストボディを構築
-        const requestBody = {
-            model: this.model,
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            stream: true, // ストリーミングを有効化
-            // 思考プロセスを明示的に無効化（OpenAI o1/o3-miniやLM Studio用）
-            // reasoning: false,
-            reasoning: {
-                effort: "none"
-            },
-            // LM Studio / GLM系 / DeepSeek系 独自のキー
-            enableThinking: false,
-            enable_thinking: false,
-            thinking: { type: "disabled" },
-
-        };
-        console.log(requestBody);
-
-        // トークン制限パラメータの設定
-        const useMaxCompletionTokens = this.provider === 'remote' && this.model && (
-            this.model.startsWith('gpt-') ||
-            this.model.includes('o1') ||
-            this.model.includes('o3') ||
-            this.model.includes('o4')
-        );
-
-        if (useMaxCompletionTokens) {
-            requestBody.max_completion_tokens = maxTokens;
-        } else {
-            requestBody.max_tokens = maxTokens;
-        }
-
-        // ヘッダーを構築
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-
-        if (this.provider === 'remote' && this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-        }
-
-        // エンドポイントURLを構築
-        let apiUrl = this.apiEndpoint;
-        if (apiUrl.endsWith('/')) {
-            apiUrl = apiUrl.slice(0, -1);
-        }
-        if (!apiUrl.endsWith('/chat/completions')) {
-            apiUrl = `${apiUrl}/chat/completions`;
-        }
-
-        console.log('ストリーミングAPI呼び出し:', apiUrl);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(requestBody),
-                signal: controller.signal
-            });
-
-            if (!response.ok) {
-                clearTimeout(timeoutId);
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-            }
-
-            // ストリーミングレスポンスを処理
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let fullText = '';
-            let fullReasoning = ''; // 思考プロセスを保持
-            let buffer = '';
-
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-
-                    if (done) {
-                        break;
-                    }
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || ''; // 最後の不完全な行を保持
-
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        if (!trimmedLine || trimmedLine === 'data: [DONE]') {
-                            continue;
-                        }
-
-                        if (trimmedLine.startsWith('data: ')) {
-                            const jsonStr = trimmedLine.substring(6);
-                            try {
-                                const data = JSON.parse(jsonStr);
-                                const delta = data.choices?.[0]?.delta;
-                                const content = delta?.content;
-                                const reasoning = delta?.reasoning_content;
-
-                                // 思考プロセスが送られてきた場合
-                                if (reasoning) {
-                                    fullReasoning += reasoning;
-                                    // 思考内容を含めてUIを更新
-                                    if (onChunk) {
-                                        const combinedText = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
-                                        onChunk('', combinedText);
-                                    }
-                                }
-
-                                if (content) {
-                                    fullText += content;
-                                    // コールバックを呼び出してチャンクを渡す
-                                    if (onChunk) {
-                                        const combinedText = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
-                                        onChunk(content, combinedText);
-                                    }
-                                }
-                            } catch (parseError) {
-                                console.error('JSON parse error:', parseError, 'Line:', jsonStr);
-                            }
-                        }
-                    }
-                }
-            } finally {
-                clearTimeout(timeoutId);
-                reader.releaseLock();
-            }
-
-            // 最終的なレスポンスにも思考プロセスを含める
-            const finalResult = fullReasoning ? `<think>\n${fullReasoning}\n</think>\n${fullText}` : fullText;
-            console.log('ストリーミング完了:', finalResult.substring(0, 100) + '...');
-            return finalResult;
-
-        } catch (error) {
-            clearTimeout(timeoutId);
-            console.error('ストリーミングAPI呼び出しエラー:', error);
-            throw error;
-        }
+        return this.callLLM(prompt, onChunk);
     }
 
     /**

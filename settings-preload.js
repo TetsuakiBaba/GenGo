@@ -32,5 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     restartApp: () => ipcRenderer.invoke('restart-app'),
 
     // LLM接続テスト
-    testLLMConnection: (config) => ipcRenderer.invoke('test-llm-connection', config)
+    testLLMConnection: (config) => ipcRenderer.invoke('test-llm-connection', config),
+
+    // ローカルモデル一覧取得（LM Studio）
+    getLocalModels: (endpoint) => ipcRenderer.invoke('get-local-models', endpoint)
 });

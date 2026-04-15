@@ -1,0 +1,110 @@
+name: Swift macOS Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional version override (defaults to package.json or tag value)
+        required: false
+        type: string
+  push:
+    tags:
+      - "swift-v*"
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" && "${GITHUB_REF_NAME}" == swift-v* ]]; then
+            VERSION="${GITHUB_REF_NAME#swift-v}"
+          elif [[ -n "${INPUT_VERSION:-}" ]]; then
+            VERSION="${INPUT_VERSION}"
+          else
+            VERSION="$(/usr/bin/plutil -extract version raw -o - package.json)"
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${MACOS_CERTIFICATE_P12_BASE64}" || -z "${MACOS_CERTIFICATE_PASSWORD}" || -z "${MACOS_KEYCHAIN_PASSWORD}" ]]; then
+            echo "Required signing secrets are missing." >&2
+            exit 1
+          fi
+
+          CERT_PATH="${RUNNER_TEMP}/developer-id.p12"
+          KEYCHAIN_PATH="${RUNNER_TEMP}/build.keychain-db"
+
+          echo "${MACOS_CERTIFICATE_P12_BASE64}" | base64 -D > "${CERT_PATH}"
+
+          security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" "${HOME}/Library/Keychains/login.keychain-db"
+          security default-keychain -d user -s "${KEYCHAIN_PATH}"
+          security import "${CERT_PATH}" \
+            -k "${KEYCHAIN_PATH}" \
+            -P "${MACOS_CERTIFICATE_PASSWORD}" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "${MACOS_KEYCHAIN_PASSWORD}" \
+            "${KEYCHAIN_PATH}"
+          security find-identity -v -p codesigning "${KEYCHAIN_PATH}"
+
+      - name: Build signed release artifacts
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.version }}
+          SHORT_VERSION: ${{ steps.version.outputs.version }}
+          SIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          NOTARIZE_TARGET: both
+        run: |
+          set -euo pipefail
+          chmod +x swift/scripts/package-macos-app.sh swift/scripts/release-macos.sh
+          swift/scripts/release-macos.sh
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gengo-swift-macos-${{ steps.version.outputs.version }}
+          path: |
+            swift/dist/*.zip
+            swift/dist/*.dmg
+            swift/dist/*-sha256.txt
+
+      - name: Publish draft GitHub release
+        if: startsWith(github.ref, 'refs/tags/swift-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            swift/dist/*.zip
+            swift/dist/*.dmg
+            swift/dist/*-sha256.txt

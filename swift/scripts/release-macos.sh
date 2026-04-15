@@ -13,6 +13,7 @@ NOTARIZE_TARGET="${NOTARIZE_TARGET:-none}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-${DEVELOPER_ID_APPLICATION:-}}"
 BUILD_ARCHS="${BUILD_ARCHS:-$(uname -m)}"
 BUNDLE_EXECUTABLE_NAME="${BUNDLE_EXECUTABLE_NAME:-${APP_NAME}}"
+SIGN_KEYCHAIN="${SIGN_KEYCHAIN:-}"
 
 if [[ -f "${REPO_ROOT}/package.json" ]]; then
     DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${REPO_ROOT}/package.json" 2>/dev/null || true)"
@@ -44,6 +45,10 @@ sign_path() {
         cmd+=(--timestamp)
     fi
 
+    if [[ -n "${SIGN_KEYCHAIN}" ]]; then
+        cmd+=(--keychain "${SIGN_KEYCHAIN}")
+    fi
+
     "${cmd[@]}" "${path}"
 }
 
@@ -54,6 +59,11 @@ sign_app_bundle() {
     if [[ ! -n "${SIGN_IDENTITY}" ]]; then
         echo "SIGN_IDENTITY is required for signing." >&2
         exit 1
+    fi
+
+    if [[ -n "${SIGN_KEYCHAIN}" ]]; then
+        echo "Checking signing identities in ${SIGN_KEYCHAIN}..."
+        security find-identity -v -p codesigning "${SIGN_KEYCHAIN}" || true
     fi
 
     if [[ -d "${frameworks_dir}" ]]; then
@@ -127,6 +137,10 @@ create_release_dmg() {
 
         if [[ "${SIGN_IDENTITY}" != "-" ]]; then
             dmg_sign_cmd+=(--timestamp)
+        fi
+
+        if [[ -n "${SIGN_KEYCHAIN}" ]]; then
+            dmg_sign_cmd+=(--keychain "${SIGN_KEYCHAIN}")
         fi
 
         /usr/bin/xattr -cr "${DMG_PATH}"

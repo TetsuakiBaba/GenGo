@@ -62,6 +62,7 @@ jobs:
           security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           security list-keychains -d user -s "${KEYCHAIN_PATH}" "${HOME}/Library/Keychains/login.keychain-db"
           security default-keychain -d user -s "${KEYCHAIN_PATH}"
+          echo "SIGN_KEYCHAIN=${KEYCHAIN_PATH}" >> "${GITHUB_ENV}"
           security import "${CERT_PATH}" \
             -k "${KEYCHAIN_PATH}" \
             -P "${MACOS_CERTIFICATE_PASSWORD}" \
@@ -73,6 +74,26 @@ jobs:
             -k "${MACOS_KEYCHAIN_PASSWORD}" \
             "${KEYCHAIN_PATH}"
           security find-identity -v -p codesigning "${KEYCHAIN_PATH}"
+
+      - name: Validate signing identity
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SIGN_KEYCHAIN:-}" ]]; then
+            echo "SIGN_KEYCHAIN was not exported from the import step." >&2
+            exit 1
+          fi
+
+          if [[ -z "${MACOS_SIGNING_IDENTITY}" ]]; then
+            echo "MACOS_SIGNING_IDENTITY secret is missing." >&2
+            exit 1
+          fi
+
+          printf 'Expected signing identity: %s\n' "${MACOS_SIGNING_IDENTITY}"
+          security find-identity -v -p codesigning "${SIGN_KEYCHAIN}"
+          security find-identity -v -p codesigning "${SIGN_KEYCHAIN}" | grep -F "${MACOS_SIGNING_IDENTITY}" >/dev/null
 
       - name: Build signed release artifacts
         env:

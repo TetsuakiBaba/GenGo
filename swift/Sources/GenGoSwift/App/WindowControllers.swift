@@ -39,11 +39,9 @@ final class PopupWindowController: NSWindowController {
         guard let window else { return }
 
         if window.isVisible {
-            let currentSize = window.frame.size
+            let currentSize = window.contentLayoutRect.size
             if currentSize != size {
-                var frame = window.frame
-                frame.size = size
-                window.setFrame(frame, display: true, animate: false)
+                window.setContentSize(size)
             }
         } else {
             position(window: window, size: size)

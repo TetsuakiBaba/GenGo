@@ -15,7 +15,7 @@ struct PopupView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             header
 
             if let notice = viewModel.notice {
@@ -36,8 +36,8 @@ struct PopupView: View {
             }
         }
         .font(AppTypography.body)
-        .padding(22)
-        .frame(minWidth: 560, idealWidth: 760, minHeight: 320, idealHeight: 480)
+        .padding(16)
+        .frame(minWidth: 480, idealWidth: 620, minHeight: 220)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             updateFocus()
@@ -48,12 +48,12 @@ struct PopupView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.title)
                     .font(AppTypography.windowTitle)
 
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     if !viewModel.sourceText.isEmpty, viewModel.presentationMode != .result {
                         headerPill(title: "対象文字数 \(viewModel.sourceText.count)", systemImage: "textformat.size")
                     }
@@ -72,7 +72,7 @@ struct PopupView: View {
                 Image(systemName: "xmark")
                     .font(AppTypography.closeIcon)
                     .foregroundStyle(.secondary)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 26, height: 26)
                     .background(
                         Circle()
                             .fill(Color(nsColor: .controlBackgroundColor))
@@ -92,11 +92,11 @@ struct PopupView: View {
     }
 
     private var onDemandInputSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             cardContainer {
                 sectionTitle("処理指示")
                 editorSurface(text: $viewModel.promptText, focus: .onDemandPrompt)
-                    .frame(height: 116)
+                    .frame(height: 64)
             }
 
             actionRow(primaryTitle: "処理実行") {
@@ -106,11 +106,11 @@ struct PopupView: View {
     }
 
     private var textGenerationSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             cardContainer {
                 sectionTitle("生成指示")
                 editorSurface(text: $viewModel.promptText, focus: .generationPrompt)
-                    .frame(minHeight: 170)
+                    .frame(height: 64)
             }
 
             actionRow(primaryTitle: "テキスト生成") {
@@ -120,9 +120,9 @@ struct PopupView: View {
     }
 
     private var processingSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             cardContainer {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     ProgressView()
                         .controlSize(.regular)
                     VStack(alignment: .leading, spacing: 4) {
@@ -141,9 +141,9 @@ struct PopupView: View {
 
                 if !viewModel.streamingText.isEmpty {
                     scrollText(viewModel.streamingText)
-                        .frame(minHeight: 220)
+                        .frame(minHeight: 150)
                 } else {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("応答を待っています。")
                             .font(AppTypography.label)
                         Text("モデルの初回トークン生成中は数秒かかることがあります。")
@@ -151,7 +151,7 @@ struct PopupView: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
+                    .padding(12)
                     .background(surfaceBackground)
                 }
             }
@@ -159,27 +159,11 @@ struct PopupView: View {
     }
 
     private var resultSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if isTextGenerationMode {
-                cardContainer {
-                    sectionTitle("生成結果")
-                    scrollText(viewModel.resultText)
-                        .frame(minHeight: 260)
-                }
-            } else {
-                HStack(alignment: .top, spacing: 16) {
-                    cardContainer {
-                        sectionTitle("元のテキスト")
-                        scrollText(viewModel.sourceText)
-                            .frame(minHeight: 240)
-                    }
-
-                    cardContainer {
-                        sectionTitle("処理結果")
-                        scrollText(viewModel.resultText)
-                            .frame(minHeight: 240)
-                    }
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            cardContainer {
+                sectionTitle(isTextGenerationMode ? "生成結果" : "処理結果")
+                scrollText(viewModel.resultText)
+                    .frame(minHeight: 130)
             }
 
             actionRow(primaryTitle: isTextGenerationMode ? "カーソル位置に挿入" : "適用") {
@@ -205,8 +189,8 @@ struct PopupView: View {
             Text(notice.text)
                 .font(AppTypography.callout)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -220,11 +204,11 @@ struct PopupView: View {
     }
 
     private func cardContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
@@ -246,7 +230,7 @@ struct PopupView: View {
             .focused($focusedField, equals: focus)
             .font(AppTypography.monoEmphasis)
             .scrollContentBackground(.hidden)
-            .padding(10)
+            .padding(8)
             .background(surfaceBackground)
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -260,7 +244,7 @@ struct PopupView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
                 .font(AppTypography.monoBody)
-                .padding(14)
+                .padding(10)
         }
         .background(surfaceBackground)
         .overlay(
@@ -279,7 +263,7 @@ struct PopupView: View {
             }
             .font(AppTypography.button)
             .buttonStyle(.bordered)
-            .controlSize(.large)
+            .controlSize(.regular)
 
             Button(primaryTitle) {
                 action()
@@ -287,15 +271,15 @@ struct PopupView: View {
             .font(AppTypography.button)
             .keyboardShortcut(.return, modifiers: [.command])
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .controlSize(.regular)
         }
     }
 
     private func headerPill(title: String, systemImage: String) -> some View {
         Label(title, systemImage: systemImage)
             .font(AppTypography.meta)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
             .background(
                 Capsule(style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))

@@ -14,8 +14,8 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
     private func configure() {
         if let button = statusItem.button {
             button.toolTip = "GenGo"
-            button.image = NSImage(systemSymbolName: "text.badge.star", accessibilityDescription: "GenGo")
-            button.image?.isTemplate = true
+            button.image = Self.statusIcon()
+            button.imagePosition = .imageOnly
         }
 
         let menu = NSMenu()
@@ -29,6 +29,34 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
         menu.addItem(.separator())
         menu.addItem(withTitle: "終了", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
+    }
+
+    private static func statusIcon() -> NSImage? {
+        let iconURLs = [
+            Bundle.main.url(forResource: "GenGo", withExtension: "icns"),
+            Bundle.main.resourceURL?.appendingPathComponent("GenGo.icns"),
+            URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                .appendingPathComponent("../icons/icon.icns")
+                .standardizedFileURL,
+            URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                .appendingPathComponent("icons/icon.icns")
+                .standardizedFileURL
+        ].compactMap { $0 }
+
+        for iconURL in iconURLs {
+            guard let image = NSImage(contentsOf: iconURL) else {
+                continue
+            }
+
+            image.size = NSSize(width: 18, height: 18)
+            image.isTemplate = true
+            image.accessibilityDescription = "GenGo"
+            return image
+        }
+
+        let fallbackImage = NSImage(systemSymbolName: "text.badge.star", accessibilityDescription: "GenGo")
+        fallbackImage?.isTemplate = true
+        return fallbackImage
     }
 
     @objc private func openSettings() {

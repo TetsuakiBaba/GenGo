@@ -326,16 +326,16 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     private func showPopup(for mode: PopupPresentationMode) {
         let size: NSSize
-        let sharedWorkflowSize = NSSize(width: 840, height: 520)
+        let sharedWorkflowSize = NSSize(width: 640, height: 380)
 
         switch mode {
         case .hidden:
             popupWindowController?.dismiss()
             return
         case .onDemandInput:
-            size = NSSize(width: 700, height: 360)
+            size = NSSize(width: 560, height: 320)
         case .textGenerationInput:
-            size = NSSize(width: 700, height: 420)
+            size = NSSize(width: 560, height: 320)
         case .processing:
             size = sharedWorkflowSize
         case .result:

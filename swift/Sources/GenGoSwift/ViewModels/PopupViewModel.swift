@@ -30,7 +30,7 @@ final class PopupViewModel: ObservableObject {
         promptText = ""
         streamingText = ""
         resultText = ""
-        notice = InlineNotice(text: "選択テキストが見つからなかったため、生成モードで待機しています。", kind: .info)
+        notice = nil
         processingMode = .textGeneration
     }
 

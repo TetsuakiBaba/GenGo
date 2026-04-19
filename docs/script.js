@@ -85,40 +85,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Add particle effect to hero section (optional)
-    createParticles();
-
     // Counter animation for stats (if you want to add stats)
     animateCounters();
 
     // Add hover effect to images
     addImageHoverEffect();
 });
-
-// Particle effect for hero section
-function createParticles() {
-    const heroSection = document.querySelector('.hero-section');
-    if (!heroSection) return;
-
-    const particleCount = 30;
-
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.cssText = `
-            position: absolute;
-            width: ${Math.random() * 5 + 2}px;
-            height: ${Math.random() * 5 + 2}px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            left: ${Math.random() * 100}%;
-            top: ${Math.random() * 100}%;
-            animation: float ${Math.random() * 10 + 10}s infinite ease-in-out;
-            animation-delay: ${Math.random() * 5}s;
-        `;
-        heroSection.appendChild(particle);
-    }
-}
 
 // Counter animation
 function animateCounters() {
@@ -170,34 +142,13 @@ function addImageHoverEffect() {
     });
 }
 
-// Add CSS for particle animation
+// Add CSS for active navigation state
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes float {
-        0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0;
-        }
-        10% {
-            opacity: 1;
-        }
-        90% {
-            opacity: 1;
-        }
-        50% {
-            transform: translateY(-100px) translateX(50px);
-        }
-    }
-
-    .particle {
-        pointer-events: none;
-        z-index: 0;
-    }
-
     .navbar-nav .nav-link.active {
-        color: #fff !important;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
+        color: #111111 !important;
+        background: #eeeeee;
+        border-radius: 8px;
         padding: 0.5rem 1rem;
     }
 `;
@@ -242,10 +193,10 @@ document.addEventListener('keydown', function (e) {
 function activateEasterEgg() {
     const heroSection = document.querySelector('.hero-section');
     if (heroSection) {
-        heroSection.style.background = 'linear-gradient(135deg, #ff0080 0%, #ff8c00 100%)';
+        heroSection.style.background = '#eeeeee';
         setTimeout(() => {
-            heroSection.style.background = 'linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%)';
+            heroSection.style.background = '#f7f7f7';
         }, 3000);
     }
-    console.log('🎉 Easter egg activated! GenGo rocks! 🎉');
+    console.log('Easter egg activated. GenGo rocks.');
 }

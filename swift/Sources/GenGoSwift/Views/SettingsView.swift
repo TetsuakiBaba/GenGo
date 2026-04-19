@@ -55,7 +55,7 @@ struct SettingsView: View {
                 Text("GenGo")
                     .font(AppTypography.heroTitle)
 
-                Text("Electron 実装を基準に、ショートカット処理と LLM 接続を macOS ネイティブに整える設定画面です。")
+                Text("ショートカット処理と LLM 接続を macOS ネイティブに整える設定画面です。")
                     .font(AppTypography.callout)
                     .foregroundStyle(.secondary)
 
@@ -186,7 +186,7 @@ struct SettingsView: View {
     private var shortcutSection: some View {
         settingsCard(
             title: "Shortcuts",
-            subtitle: "Electron 版と同じくプリセットとオンデマンドの両方をグローバルショートカットで呼び出せます。",
+            subtitle: "プリセットとオンデマンドの両方をグローバルショートカットで呼び出せます。",
             systemImage: "command"
         ) {
             VStack(alignment: .leading, spacing: 18) {

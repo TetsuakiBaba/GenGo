@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="GenGo - AI-powered multilingual text processing tool with local and remote LLM support">
-    <title>GenGo - AI-Powered Text Processing Tool</title>
+        content="GenGo - macOS native AI text processing tool with LM Studio and OpenAI-compatible API support">
+    <title>GenGo - macOS Native AI Text Processing</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -29,9 +29,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features" data-i18n="nav.features">Features</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
                     </li>
@@ -88,7 +85,7 @@
                     </video>
                     <p class="text-muted mb-5 animate-fade-in-delay-2 mx-auto" style="max-width: 600px;"
                         data-i18n="hero.description">
-                        ローカルまたはリモートLLMを活用した、スマートなテキスト処理アプリケーション。
+                        LM Studio または OpenAI 互換 API を活用した、macOS ネイティブのテキスト処理アプリケーション。
                         翻訳、校正、カスタムプロンプト処理を、ショートカットキー一つで実行できます。
                     </p>
                     <div class="d-flex gap-3 justify-content-center animate-fade-in-delay-3">
@@ -99,144 +96,6 @@
                             target="_blank">
                             <i class="bi bi-github"></i> <span data-i18n="hero.githubBtn">View on GitHub</span>
                         </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 特徴セクション -->
-    <section id="features" class="section-padding bg-light">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3" data-i18n="features.title">主な機能</h2>
-                <p class="lead text-muted" data-i18n="features.subtitle">GenGoが提供する強力な機能</p>
-            </div>
-
-            <div class="row g-4">
-                <!-- Feature 1 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-cpu-fill"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.dualLlm.title">デュアルLLM対応</h3>
-                        <p class="text-muted" data-i18n="features.dualLlm.description">
-                            ローカルLLM（LM Studio, Ollama）とリモートLLM（OpenAI, Anthropic）の両方に対応。
-                            用途に応じて柔軟に切り替え可能。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-list-stars"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.presetPrompts.title">複数の事前プロンプト</h3>
-                        <p class="text-muted" data-i18n="features.presetPrompts.description">
-                            最大5個の事前プロンプトを登録可能。翻訳、校正、要約など、
-                            よく使う処理をショートカットキーで即座に実行。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-keyboard"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.shortcuts.title">カスタマイズ可能なショートカット</h3>
-                        <p class="text-muted" data-i18n="features.shortcuts.description">
-                            各事前プロンプトとオンデマンドプロンプトに、
-                            自由にショートカットキーを割り当て可能。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 4 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-lightning-fill"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.ondemand.title">オンデマンドプロンプト</h3>
-                        <p class="text-muted" data-i18n="features.ondemand.description">
-                            ショートカット実行時にその場でプロンプトを入力。
-                            柔軟な処理が必要な場合に最適。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-translate"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.translation.title">スマート翻訳</h3>
-                        <p class="text-muted" data-i18n="features.translation.description">
-                            入力されたテキストの言語を自動判定し、設定した言語間で相互翻訳。
-                            自然で読みやすい翻訳を実現。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-globe"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.multilingual.title">多言語UI</h3>
-                        <p class="text-muted" data-i18n="features.multilingual.description">
-                            日本語・英語に対応したユーザーインターフェース。
-                            10以上の言語間での翻訳をサポート。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 7 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.privacy.title">プライバシー優先</h3>
-                        <p class="text-muted" data-i18n="features.privacy.description">
-                            ローカルLLMを使用すれば、すべての処理をオフラインで完結。
-                            データは外部に送信されません。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 8 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-arrow-repeat"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.streaming.title">リアルタイムストリーミング</h3>
-                        <p class="text-muted" data-i18n="features.streaming.description">
-                            LLMの応答をリアルタイムで表示。
-                            処理の進行状況を視覚的に確認できます。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Feature 9 -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-magic"></i>
-                        </div>
-                        <h3 class="h4 mb-3" data-i18n="features.autoApply.title">自動適用機能</h3>
-                        <p class="text-muted" data-i18n="features.autoApply.description">
-                            処理完了後、結果を自動的に適用してウィンドウを閉じる設定が可能。
-                            シームレスなワークフローを実現。
-                        </p>
                     </div>
                 </div>
             </div>
@@ -258,8 +117,8 @@
                         <div class="step-number mx-auto mb-4">1</div>
                         <h3 class="h4 mb-3" data-i18n="howItWorks.step1.title">LLM設定</h3>
                         <p class="text-muted" data-i18n="howItWorks.step1.description">
-                            ローカルLLM（LM Studio, Ollama等）を起動するか、
-                            リモートLLMのAPIキーを設定します。
+                            LM Studio にモデルをロードするか、
+                            OpenAI 互換 API の接続情報を設定します。
                         </p>
                     </div>
                 </div>
@@ -318,13 +177,13 @@
                         <h3 class="mb-0" data-i18n="setupGuide.step1.title">GenGoをインストール</h3>
                     </div>
                     <p class="text-muted mb-3" data-i18n="setupGuide.step1.description">
-                        GitHubのリリースページから、お使いのOSに対応したインストーラーをダウンロードしてインストールします。
+                        GitHubのリリースページから、macOS用のDMGまたはZIPをダウンロードしてインストールします。
                     </p>
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
                         <strong data-i18n="setupGuide.step1.tip.title">ヒント:</strong>
                         <span
-                            data-i18n="setupGuide.step1.tip.text">macOSの場合はDMGファイル、Windowsの場合はインストーラー(.exe)をダウンロードしてください。</span>
+                            data-i18n="setupGuide.step1.tip.text">初回起動時に確認ダイアログが表示された場合は、macOSの案内に従って開いてください。</span>
                     </div>
                     <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest" class="btn btn-primary"
                         target="_blank">
@@ -336,7 +195,7 @@
                     <div class="screenshot-card">
                         <!-- 画像指示: GenGoのGitHubリリースページのスクリーンショット -->
                         <!-- ファイル名: setup-step1-download.png -->
-                        <!-- 内容: macOS版とWindows版のダウンロードボタンが表示されているリリースページ -->
+                        <!-- 内容: macOS版のDMG/ZIPダウンロードが表示されているリリースページ -->
                         <img src="./images/getting01.png" alt="GenGo Download" class="img-fluid">
                         <div class="p-3 bg-light">
                             <small class="text-muted"
@@ -361,7 +220,7 @@
                         <i class="bi bi-info-circle me-2"></i>
                         <strong data-i18n="setupGuide.step2.tip.title">ヒント:</strong>
                         <span
-                            data-i18n="setupGuide.step2.tip.text">リモートLLM（OpenAI、Anthropicなど）を使用する場合は、この手順をスキップできます。</span>
+                            data-i18n="setupGuide.step2.tip.text">OpenAI 互換 APIを使用する場合は、この手順をスキップできます。</span>
                     </div>
                     <a href="https://lmstudio.ai/" class="btn btn-primary" target="_blank">
                         <i class="bi bi-box-arrow-up-right me-2"></i><span data-i18n="setupGuide.step2.downloadBtn">LM
@@ -395,8 +254,9 @@
                         <i class="bi bi-star-fill me-2"></i>
                         <strong data-i18n="setupGuide.step3.recommend.title">おすすめモデル:</strong>
                         <ul class="mb-0 mt-2">
-                            <li><code>gpt-oss-20b</code> - <span
-                                    data-i18n="setupGuide.step3.recommend.gptoss">多言語に最適化された小型高性能モデル</span></li>
+                            <li><code>Qwen3.5-9b</code></li>
+                            <li><code>gpt-oss-20b</code></li>
+                            <li><code>gemma-4-26b-a4b</code></li>
                         </ul>
                     </div>
                 </div>
@@ -428,8 +288,8 @@
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong data-i18n="setupGuide.step4.note.title">注意:</strong>
-                        <span data-i18n="setupGuide.step4.note.text">デフォルトのポート番号は <code>1234</code>
-                            です。変更した場合は、GenGoの設定でエンドポイントを調整してください。</span>
+                        <span data-i18n="setupGuide.step4.note.prefix">デフォルトのポート番号は</span><code>1234</code><span
+                            data-i18n="setupGuide.step4.note.suffix">です。変更した場合は、GenGoの設定でエンドポイントを調整してください。</span>
                     </div>
                 </div>
                 <div class="col-lg-6 order-lg-1">
@@ -465,13 +325,14 @@
                         </div>
                         <div class="card-body">
                             <ul class="mb-0">
-                                <li data-i18n="setupGuide.step5.settings.llm"><strong>LLMエンドポイント:</strong>
-                                    <code>http://127.0.0.1:1234/v1</code>
+                                <li><strong data-i18n="setupGuide.step5.settings.llmLabel">LLMエンドポイント:</strong>
+                                    <code>http://127.0.0.1:1234</code>
                                 </li>
-                                <li data-i18n="setupGuide.step5.settings.preset"><strong>事前プロンプト:</strong> よく使う処理を最大5個登録
+                                <li><strong data-i18n="setupGuide.step5.settings.presetLabel">事前プロンプト:</strong>
+                                    <span data-i18n="setupGuide.step5.settings.presetText">よく使う処理を最大5個登録</span>
                                 </li>
-                                <li data-i18n="setupGuide.step5.settings.shortcut"><strong>ショートカットキー:</strong>
-                                    各プロンプトに割り当て</li>
+                                <li><strong data-i18n="setupGuide.step5.settings.shortcutLabel">ショートカットキー:</strong>
+                                    <span data-i18n="setupGuide.step5.settings.shortcutText">各プロンプトに割り当て</span></li>
                             </ul>
                         </div>
                     </div>
@@ -604,30 +465,30 @@
             <div class="row g-4 justify-content-center">
                 <div class="col-md-3 col-sm-6">
                     <div class="tech-card text-center">
-                        <i class="bi bi-window-desktop tech-icon"></i>
-                        <h5>Electron</h5>
-                        <p class="text-muted small" data-i18n="techStack.electron">クロスプラットフォーム デスクトップアプリ</p>
+                        <i class="bi bi-apple tech-icon"></i>
+                        <h5>Swift</h5>
+                        <p class="text-muted small" data-i18n="techStack.swift">macOS 13+ ネイティブアプリ</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="tech-card text-center">
+                        <i class="bi bi-window-sidebar tech-icon"></i>
+                        <h5>SwiftUI</h5>
+                        <p class="text-muted small" data-i18n="techStack.swiftui">軽量なメニューバーUI</p>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
                     <div class="tech-card text-center">
                         <i class="bi bi-cpu tech-icon"></i>
-                        <h5>LLM Integration</h5>
-                        <p class="text-muted small" data-i18n="techStack.llm">ローカル & リモート AI モデル</p>
+                        <h5>LLM API</h5>
+                        <p class="text-muted small" data-i18n="techStack.llm">LM Studio / OpenAI 互換 API</p>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
                     <div class="tech-card text-center">
-                        <i class="bi bi-code-slash tech-icon"></i>
-                        <h5>Modern JavaScript</h5>
-                        <p class="text-muted small" data-i18n="techStack.javascript">モジュール対応 ES6+</p>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="tech-card text-center">
-                        <i class="bi bi-bootstrap tech-icon"></i>
-                        <h5>Bootstrap UI</h5>
-                        <p class="text-muted small" data-i18n="techStack.bootstrap">レスポンシブデザイン</p>
+                        <i class="bi bi-arrow-repeat tech-icon"></i>
+                        <h5>Sparkle</h5>
+                        <p class="text-muted small" data-i18n="techStack.sparkle">署名済みアップデート配信</p>
                     </div>
                 </div>
             </div>
@@ -641,20 +502,16 @@
                 <div class="col-lg-8 mx-auto text-center">
                     <h2 class="display-5 fw-bold mb-4" data-i18n="download.title">始めましょう</h2>
                     <p class="lead mb-5" data-i18n="download.subtitle">
-                        GenGoをダウンロードして、AI-powered text processingを体験してください。
+                        GenGo for macOSをダウンロードして、AI-powered text processingを体験してください。
                     </p>
                     <div class="d-flex gap-3 justify-content-center flex-wrap">
                         <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest" class="btn btn-light btn-lg"
                             target="_blank">
-                            <i class="bi bi-apple"></i> <span data-i18n="download.macBtn">ダウンロード</span>
-                        </a>
-                        <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest"
-                            class="btn btn-outline-light btn-lg" target="_blank">
-                            <i class="bi bi-windows"></i> <span data-i18n="download.winBtn">Windows版をダウンロード</span>
+                            <i class="bi bi-apple"></i> <span data-i18n="download.macBtn">macOS版をダウンロード</span>
                         </a>
                     </div>
                     <p class="mt-4 mb-0">
-                        <small data-i18n="download.version">Version 0.7.1 | MIT License | オープンソース</small>
+                        <small data-i18n="download.version">Version 0.10.4 | macOS 13+ | MIT License | オープンソース</small>
                     </p>
                 </div>
             </div>
@@ -671,7 +528,7 @@
                     </h5>
                     <p class="text-muted" data-i18n="footer.description">
                         AI-powered text processing tool for everyone.
-                        Built with ❤️ using Electron and modern web technologies.
+                        Built as a native macOS app with Swift and SwiftUI.
                     </p>
                 </div>
                 <div class="col-md-4 mb-4 mb-md-0">
@@ -715,7 +572,7 @@
             </div>
             <hr class="my-4 bg-secondary">
             <div class="text-center text-muted">
-                <small data-i18n="footer.copyright">&copy; 2025 GenGo. Licensed under MIT License.</small>
+                <small data-i18n="footer.copyright">&copy; 2026 GenGo. Licensed under MIT License.</small>
             </div>
         </div>
     </footer>
@@ -724,8 +581,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- i18n JS -->
     <script src="i18n.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/TetsuakiBaba/placeholderable@main/placeholderable.js"
-        crossorigin="anonymous" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/gh/TetsuakiBaba/placeholderable@main/placeholderable.js"
         crossorigin="anonymous" type="text/javascript"></script>
     <!-- Custom JS -->

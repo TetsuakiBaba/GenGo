@@ -199,13 +199,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- docs/swift/appcast.xml; then
+          git add docs/swift/appcast.xml
+
+          if git diff --cached --quiet -- docs/swift/appcast.xml; then
             echo "No appcast changes to publish."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/swift/appcast.xml
           git commit -m "Update Swift appcast for ${TAG_NAME}"
           git push origin "HEAD:${DEFAULT_BRANCH}"

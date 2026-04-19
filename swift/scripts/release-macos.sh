@@ -71,6 +71,12 @@ sign_app_bundle() {
             sign_path "${library_path}"
         done < <(find "${frameworks_dir}" -type f \( -name "*.dylib" -o -name "*.so" \) -print0 | sort -z)
 
+        while IFS= read -r -d '' nested_executable_path; do
+            if [[ -x "${nested_executable_path}" ]]; then
+                sign_path "${nested_executable_path}"
+            fi
+        done < <(find "${frameworks_dir}" -type f -print0 | sort -z)
+
         while IFS= read -r -d '' bundle_path; do
             sign_path "${bundle_path}"
         done < <(find "${frameworks_dir}" -depth -type d \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" \) -print0)
@@ -108,12 +114,30 @@ notarytool_args() {
 notarize_archive() {
     local archive_path="$1"
     local -a args
+    local log_path="${archive_path}.notarytool.json"
+    local submission_id=""
+    local status=""
 
     while IFS= read -r -d '' arg; do
         args+=("${arg}")
     done < <(notarytool_args)
 
-    xcrun notarytool submit "${archive_path}" "${args[@]}" --wait
+    if ! xcrun notarytool submit "${archive_path}" "${args[@]}" --wait --output-format json > "${log_path}"; then
+        cat "${log_path}" >&2 || true
+        exit 1
+    fi
+
+    submission_id="$(/usr/bin/plutil -extract id raw -o - "${log_path}" 2>/dev/null || true)"
+    status="$(/usr/bin/plutil -extract status raw -o - "${log_path}" 2>/dev/null || true)"
+    cat "${log_path}"
+
+    if [[ "${status}" != "Accepted" ]]; then
+        echo "Notarization failed for ${archive_path} with status: ${status:-unknown}" >&2
+        if [[ -n "${submission_id}" ]]; then
+            xcrun notarytool log "${submission_id}" "${args[@]}" --output-format json >&2 || true
+        fi
+        exit 1
+    fi
 }
 
 create_release_zip() {

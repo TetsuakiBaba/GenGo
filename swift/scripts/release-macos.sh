@@ -39,7 +39,7 @@ NOTARIZE_ZIP_PATH="${DIST_DIR}/${ARTIFACT_PREFIX}-notarize.zip"
 
 sign_path() {
     local path="$1"
-    local -a cmd=(codesign --force --options runtime --sign "${SIGN_IDENTITY}")
+    local -a cmd=(codesign --force --options runtime --preserve-metadata=entitlements --sign "${SIGN_IDENTITY}")
 
     if [[ "${SIGN_IDENTITY}" != "-" ]]; then
         cmd+=(--timestamp)
@@ -70,6 +70,10 @@ sign_app_bundle() {
         while IFS= read -r -d '' library_path; do
             sign_path "${library_path}"
         done < <(find "${frameworks_dir}" -type f \( -name "*.dylib" -o -name "*.so" \) -print0 | sort -z)
+
+        while IFS= read -r -d '' bundle_path; do
+            sign_path "${bundle_path}"
+        done < <(find "${frameworks_dir}" -depth -type d \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" \) -print0)
     fi
 
     sign_path "${executable_path}"

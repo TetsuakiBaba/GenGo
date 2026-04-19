@@ -16,6 +16,9 @@ BUILD_ARCHS="${BUILD_ARCHS:-$(uname -m)}"
 ICON_SOURCE="${ICON_SOURCE:-${REPO_ROOT}/icons/icon.icns}"
 DIST_DIR="${DIST_DIR:-${SWIFT_DIR}/dist}"
 APP_DIR="${APP_DIR:-${DIST_DIR}/${APP_NAME}.app}"
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
+SPARKLE_PUBLIC_ED_KEY="${SPARKLE_PUBLIC_ED_KEY:-}"
+SPARKLE_FRAMEWORK_SOURCE="${SPARKLE_FRAMEWORK_SOURCE:-}"
 
 if [[ -f "${REPO_ROOT}/package.json" ]]; then
     DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${REPO_ROOT}/package.json" 2>/dev/null || true)"
@@ -65,6 +68,24 @@ mkdir -p \
 cp "${EXECUTABLE_SOURCE}" "${EXECUTABLE_DESTINATION}"
 chmod 755 "${EXECUTABLE_DESTINATION}"
 
+if otool -L "${EXECUTABLE_DESTINATION}" | grep -q "Sparkle.framework"; then
+    if [[ -z "${SPARKLE_FRAMEWORK_SOURCE}" ]]; then
+        while IFS= read -r candidate; do
+            SPARKLE_FRAMEWORK_SOURCE="${candidate}"
+            break
+        done < <(find "${SWIFT_DIR}/.build" -type d -name "Sparkle.framework" -print | sort)
+    fi
+
+    if [[ ! -d "${SPARKLE_FRAMEWORK_SOURCE}" ]]; then
+        echo "Sparkle.framework was linked but could not be found under ${SWIFT_DIR}/.build." >&2
+        echo "Set SPARKLE_FRAMEWORK_SOURCE to the built Sparkle.framework path if needed." >&2
+        exit 1
+    fi
+
+    echo "Embedding Sparkle.framework..."
+    ditto "${SPARKLE_FRAMEWORK_SOURCE}" "${APP_DIR}/Contents/Frameworks/Sparkle.framework"
+fi
+
 if [[ -f "${ICON_SOURCE}" ]]; then
     cp "${ICON_SOURCE}" "${ICON_DESTINATION}"
 fi
@@ -112,6 +133,14 @@ cat > "${INFO_PLIST_PATH}" <<EOF
 </dict>
 </plist>
 EOF
+
+if [[ -n "${SPARKLE_PUBLIC_ED_KEY}" ]]; then
+    SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://tetsuakibaba.github.io/GenGo/swift/appcast.xml}"
+    /usr/bin/plutil -insert SUFeedURL -string "${SPARKLE_FEED_URL}" "${INFO_PLIST_PATH}"
+    /usr/bin/plutil -insert SUPublicEDKey -string "${SPARKLE_PUBLIC_ED_KEY}" "${INFO_PLIST_PATH}"
+elif [[ -n "${SPARKLE_FEED_URL}" ]]; then
+    echo "Skipping Sparkle Info.plist keys because SPARKLE_PUBLIC_ED_KEY is missing." >&2
+fi
 
 if ! otool -l "${EXECUTABLE_DESTINATION}" | grep -q "@executable_path/../Frameworks"; then
     install_name_tool -add_rpath "@executable_path/../Frameworks" "${EXECUTABLE_DESTINATION}"

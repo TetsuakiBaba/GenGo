@@ -38,16 +38,7 @@ struct PopupView: View {
         .font(AppTypography.body)
         .padding(22)
         .frame(minWidth: 560, idealWidth: 760, minHeight: 320, idealHeight: 480)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(nsColor: .windowBackgroundColor),
-                    Color(nsColor: .underPageBackgroundColor)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             updateFocus()
         }
@@ -84,7 +75,7 @@ struct PopupView: View {
                     .frame(width: 30, height: 30)
                     .background(
                         Circle()
-                            .fill(Color.primary.opacity(0.06))
+                            .fill(Color(nsColor: .controlBackgroundColor))
                     )
             }
             .buttonStyle(.plain)
@@ -218,8 +209,12 @@ struct PopupView: View {
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(color.opacity(0.12))
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                )
         )
         .foregroundStyle(color)
     }
@@ -231,13 +226,12 @@ struct PopupView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(.regularMaterial)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.07), radius: 20, y: 8)
         )
     }
 
@@ -255,8 +249,8 @@ struct PopupView: View {
             .padding(10)
             .background(surfaceBackground)
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
             )
     }
 
@@ -270,10 +264,10 @@ struct PopupView: View {
         }
         .background(surfaceBackground)
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private func actionRow(primaryTitle: String, action: @escaping () -> Void) -> some View {
@@ -304,12 +298,12 @@ struct PopupView: View {
             .padding(.vertical, 7)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color(nsColor: .controlBackgroundColor))
             )
     }
 
     private var surfaceBackground: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(Color(nsColor: .textBackgroundColor))
     }
 

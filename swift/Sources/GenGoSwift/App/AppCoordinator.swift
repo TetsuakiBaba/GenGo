@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Sparkle
 
 @MainActor
 final class AppCoordinator: NSObject, ObservableObject {
@@ -11,6 +12,7 @@ final class AppCoordinator: NSObject, ObservableObject {
     private var statusItemController: StatusItemController?
     private var popupWindowController: PopupWindowController?
     private var settingsWindowController: SettingsWindowController?
+    private var updaterController: SPUStandardUpdaterController?
 
     let popupViewModel = PopupViewModel()
 
@@ -21,8 +23,17 @@ final class AppCoordinator: NSObject, ObservableObject {
         settingsStore.settings
     }
 
+    var supportsSoftwareUpdates: Bool {
+        updaterController != nil
+    }
+
+    var canCheckForUpdates: Bool {
+        updaterController?.updater.canCheckForUpdates ?? false
+    }
+
     func start() {
         settingsStore.load()
+        configureSoftwareUpdater()
         popupWindowController = PopupWindowController(coordinator: self, viewModel: popupViewModel)
         statusItemController = StatusItemController(coordinator: self)
         registerShortcuts()
@@ -41,6 +52,15 @@ final class AppCoordinator: NSObject, ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindowController?.showWindow(nil)
         settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    func checkForUpdates(_ sender: Any?) {
+        guard let updaterController else {
+            presentError("このビルドでは自動アップデートが設定されていません。")
+            return
+        }
+
+        updaterController.checkForUpdates(sender)
     }
 
     func dismissPopup() {
@@ -132,6 +152,31 @@ final class AppCoordinator: NSObject, ObservableObject {
                 self?.handleOnDemandTrigger()
             }
         }
+    }
+
+    private func configureSoftwareUpdater() {
+        guard Self.hasSparkleConfiguration else {
+            return
+        }
+
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
+    }
+
+    private static var hasSparkleConfiguration: Bool {
+        guard
+            let feedURL = Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String,
+            !feedURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            let publicKey = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
+            !publicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return false
+        }
+
+        return true
     }
 
     private func handlePresetTrigger(index: Int) {

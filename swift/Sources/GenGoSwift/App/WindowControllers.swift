@@ -15,13 +15,13 @@ final class PopupWindowController: NSWindowController {
             defer: false
         )
         panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
+        panel.titlebarAppearsTransparent = false
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.collectionBehavior = [.moveToActiveSpace, .transient]
         panel.isMovableByWindowBackground = true
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
+        panel.isOpaque = true
+        panel.backgroundColor = .windowBackgroundColor
         panel.standardWindowButton(.zoomButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.contentViewController = hostingController
@@ -97,7 +97,7 @@ final class SettingsWindowController: NSWindowController {
         window.title = "GenGo Settings"
         window.center()
         window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
+        window.titlebarAppearsTransparent = false
         window.toolbarStyle = .unified
         window.isMovableByWindowBackground = true
         window.contentViewController = hostingController

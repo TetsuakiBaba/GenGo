@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class StatusItemController: NSObject {
+final class StatusItemController: NSObject, NSMenuItemValidation {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private weak var coordinator: AppCoordinator?
 
@@ -22,6 +22,9 @@ final class StatusItemController: NSObject {
         menu.addItem(withTitle: "GenGo", action: nil, keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "設定…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        if coordinator?.supportsSoftwareUpdates == true {
+            menu.addItem(withTitle: "アップデートを確認…", action: #selector(checkForUpdates), keyEquivalent: "").target = self
+        }
         menu.addItem(withTitle: "About", action: #selector(showAbout), keyEquivalent: "").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "終了", action: #selector(quit), keyEquivalent: "q").target = self
@@ -36,7 +39,19 @@ final class StatusItemController: NSObject {
         coordinator?.showAbout()
     }
 
+    @objc private func checkForUpdates(_ sender: NSMenuItem) {
+        coordinator?.checkForUpdates(sender)
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(checkForUpdates(_:)) {
+            return coordinator?.canCheckForUpdates ?? false
+        }
+
+        return true
     }
 }

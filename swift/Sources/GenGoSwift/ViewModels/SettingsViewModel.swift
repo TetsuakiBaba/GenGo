@@ -13,24 +13,7 @@ final class SettingsViewModel: ObservableObject {
         case missingModel
 
         var errorDescription: String? {
-            switch self {
-            case .noPresetPrompts:
-                return "最低 1 つのプリセットを設定してください。"
-            case .tooManyPresetPrompts:
-                return "プリセットは最大 5 件までです。"
-            case .emptyPresetShortcut(let index):
-                return "プリセット \(index + 1) のショートカットを入力してください。"
-            case .invalidPresetShortcut(let index, let value):
-                return "プリセット \(index + 1) のショートカット形式が不正です: \(value)"
-            case .duplicateShortcut(let value):
-                return "ショートカットが重複しています: \(value)"
-            case .emptyOnDemandShortcut:
-                return "オンデマンド実行のショートカットを入力してください。"
-            case .invalidOnDemandShortcut(let value):
-                return "オンデマンド実行のショートカット形式が不正です: \(value)"
-            case .missingModel:
-                return "利用するモデルを 1 つ選択してください。"
-            }
+            AppStrings(language: .ja).validationErrorMessage(self)
         }
     }
 
@@ -43,6 +26,10 @@ final class SettingsViewModel: ObservableObject {
     private let maxPresetCount = 5
     private var lastProvider: LLMProvider
     private var endpointByProvider: [LLMProvider: String]
+
+    private var strings: AppStrings {
+        AppStrings(languageCode: draft.language)
+    }
 
     init(settings: AppSettings, coordinator: AppCoordinator) {
         self.draft = settings
@@ -68,7 +55,7 @@ final class SettingsViewModel: ObservableObject {
 
     func addPresetPrompt() {
         guard draft.presetPrompts.count < maxPresetCount else {
-            notice = InlineNotice(text: "プリセットは最大 5 件まで追加できます。", kind: .info)
+            notice = InlineNotice(text: strings.maxPresetsNotice, kind: .info)
             return
         }
 
@@ -101,10 +88,10 @@ final class SettingsViewModel: ObservableObject {
                 draft.localModelInstanceId = models.first?.id ?? ""
             }
 
-            notice = InlineNotice(text: "\(provider.displayName) から利用可能なモデルを取得しました。", kind: .success)
+            notice = InlineNotice(text: strings.fetchedModelsNotice(provider: provider), kind: .success)
         } catch {
             localModels = []
-            notice = InlineNotice(text: error.localizedDescription, kind: .error)
+            notice = InlineNotice(text: strings.errorMessage(error), kind: .error)
         }
     }
 
@@ -112,9 +99,9 @@ final class SettingsViewModel: ObservableObject {
         do {
             let candidate = try validatedDraft(requireSelectedLocalModel: false)
             try await coordinator.testConnection(using: candidate)
-            notice = InlineNotice(text: "接続テストに成功しました。", kind: .success)
+            notice = InlineNotice(text: strings.connectionTestSucceededNotice, kind: .success)
         } catch {
-            notice = InlineNotice(text: error.localizedDescription, kind: .error)
+            notice = InlineNotice(text: strings.errorMessage(error), kind: .error)
         }
     }
 
@@ -123,9 +110,9 @@ final class SettingsViewModel: ObservableObject {
             let candidate = try validatedDraft()
             try coordinator.saveSettings(candidate)
             draft = candidate
-            notice = InlineNotice(text: "設定を保存しました。", kind: .success)
+            notice = InlineNotice(text: strings.settingsSavedNotice, kind: .success)
         } catch {
-            notice = InlineNotice(text: error.localizedDescription, kind: .error)
+            notice = InlineNotice(text: strings.errorMessage(error), kind: .error)
         }
     }
 
@@ -134,7 +121,7 @@ final class SettingsViewModel: ObservableObject {
         localModels = []
         lastProvider = draft.llmProvider
         endpointByProvider = Self.defaultEndpointsByProvider(overriding: draft)
-        notice = InlineNotice(text: "デフォルト設定に戻しました。", kind: .info)
+        notice = InlineNotice(text: strings.resetToDefaultsNotice, kind: .info)
     }
 
     func handleProviderChange() {

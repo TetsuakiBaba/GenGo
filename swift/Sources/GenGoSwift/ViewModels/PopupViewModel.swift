@@ -3,55 +3,55 @@ import Foundation
 @MainActor
 final class PopupViewModel: ObservableObject {
     @Published var presentationMode: PopupPresentationMode = .hidden
-    @Published var title: String = "GenGo"
     @Published var sourceText: String = ""
     @Published var promptText: String = ""
     @Published var streamingText: String = ""
     @Published var resultText: String = ""
     @Published var notice: InlineNotice?
+    @Published var llmProvider: LLMProvider?
 
     var processingMode: ProcessingMode?
 
     func prepareOnDemandInput(selectedText: String) {
         presentationMode = .onDemandInput
-        title = "オンデマンドプロンプト"
         sourceText = selectedText
         promptText = ""
         streamingText = ""
         resultText = ""
         notice = nil
+        llmProvider = nil
         processingMode = .onDemand
     }
 
     func prepareTextGenerationInput() {
         presentationMode = .textGenerationInput
-        title = "テキスト生成"
         sourceText = ""
         promptText = ""
         streamingText = ""
         resultText = ""
         notice = nil
+        llmProvider = nil
         processingMode = .textGeneration
     }
 
-    func showProcessing(title: String, sourceText: String, promptText: String, mode: ProcessingMode) {
+    func showProcessing(sourceText: String, promptText: String, mode: ProcessingMode, provider: LLMProvider) {
         presentationMode = .processing
-        self.title = title
         self.sourceText = sourceText
         self.promptText = promptText
         self.streamingText = ""
         self.resultText = ""
         self.notice = nil
+        self.llmProvider = provider
         self.processingMode = mode
     }
 
     func showResult(originalText: String, resultText: String, mode: ProcessingMode) {
         presentationMode = .result
-        title = "処理結果"
         sourceText = originalText
         self.resultText = resultText
         self.streamingText = ""
         self.notice = nil
+        self.llmProvider = nil
         self.processingMode = mode
     }
 
@@ -65,12 +65,12 @@ final class PopupViewModel: ObservableObject {
 
     func reset() {
         presentationMode = .hidden
-        title = "GenGo"
         sourceText = ""
         promptText = ""
         streamingText = ""
         resultText = ""
         notice = nil
+        llmProvider = nil
         processingMode = nil
     }
 }

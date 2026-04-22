@@ -126,6 +126,10 @@ struct AppSettings: Codable {
     static let `default` = AppSettings()
 
     mutating func normalize() {
+        if AppLanguage(rawValue: language) == nil {
+            language = AppLanguage.ja.rawValue
+        }
+
         llmEndpoint = Self.normalizeEndpoint(llmEndpoint, provider: llmProvider)
         maxTokens = min(max(maxTokens, 128), 32768)
         presetPrompts = Array(presetPrompts.prefix(5))

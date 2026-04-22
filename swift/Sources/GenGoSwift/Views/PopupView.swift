@@ -14,6 +14,14 @@ struct PopupView: View {
         viewModel.processingMode == .textGeneration
     }
 
+    private var text: AppStrings {
+        coordinator.strings
+    }
+
+    private var activeProvider: LLMProvider {
+        viewModel.llmProvider ?? coordinator.settings.llmProvider
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
@@ -50,12 +58,12 @@ struct PopupView: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(viewModel.title)
+                Text(displayTitle)
                     .font(AppTypography.windowTitle)
 
                 HStack(spacing: 8) {
                     if !viewModel.sourceText.isEmpty, viewModel.presentationMode != .result {
-                        headerPill(title: "対象文字数 \(viewModel.sourceText.count)", systemImage: "textformat.size")
+                        headerPill(title: text.selectedCharacterCount(viewModel.sourceText.count), systemImage: "textformat.size")
                     }
 
                     if let mode = viewModel.processingMode {
@@ -85,7 +93,7 @@ struct PopupView: View {
 
     private var placeholderSection: some View {
         cardContainer {
-            Text("待機中です")
+            Text(text.standbyText)
                 .font(AppTypography.callout)
                 .foregroundStyle(.secondary)
         }
@@ -94,12 +102,12 @@ struct PopupView: View {
     private var onDemandInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardContainer {
-                sectionTitle("処理指示")
+                sectionTitle(text.processingInstructionTitle)
                 editorSurface(text: $viewModel.promptText, focus: .onDemandPrompt)
                     .frame(height: 64)
             }
 
-            actionRow(primaryTitle: "処理実行") {
+            actionRow(primaryTitle: text.runProcessingButtonTitle) {
                 coordinator.submitOnDemandPrompt()
             }
         }
@@ -108,12 +116,12 @@ struct PopupView: View {
     private var textGenerationSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardContainer {
-                sectionTitle("生成指示")
+                sectionTitle(text.generationInstructionTitle)
                 editorSurface(text: $viewModel.promptText, focus: .generationPrompt)
                     .frame(height: 64)
             }
 
-            actionRow(primaryTitle: "テキスト生成") {
+            actionRow(primaryTitle: text.generateTextButtonTitle) {
                 coordinator.submitTextGeneration()
             }
         }
@@ -126,9 +134,9 @@ struct PopupView: View {
                     ProgressView()
                         .controlSize(.regular)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(isTextGenerationMode ? "テキストを生成しています..." : "LM Studio に問い合わせています...")
+                        Text(isTextGenerationMode ? text.generatingTextStatus : text.contactingModelStatus(provider: activeProvider))
                             .font(AppTypography.subsectionTitle)
-                        Text("ストリーミング応答を受け取り次第、ここにリアルタイム表示します。")
+                        Text(text.streamingStatusHelp)
                             .font(AppTypography.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -137,16 +145,16 @@ struct PopupView: View {
             }
 
             cardContainer {
-                sectionTitle(viewModel.streamingText.isEmpty ? "応答待ち" : "ストリーミング結果")
+                sectionTitle(viewModel.streamingText.isEmpty ? text.waitingForResponseTitle : text.streamingResultTitle)
 
                 if !viewModel.streamingText.isEmpty {
                     scrollText(viewModel.streamingText)
                         .frame(minHeight: 150)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("応答を待っています。")
+                        Text(text.waitingForResponseText)
                             .font(AppTypography.label)
-                        Text("モデルの初回トークン生成中は数秒かかることがあります。")
+                        Text(text.firstTokenHelp)
                             .font(AppTypography.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -161,12 +169,12 @@ struct PopupView: View {
     private var resultSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardContainer {
-                sectionTitle(isTextGenerationMode ? "生成結果" : "処理結果")
+                sectionTitle(isTextGenerationMode ? text.generationResultTitle : text.processingResultTitle)
                 scrollText(viewModel.resultText)
                     .frame(minHeight: 130)
             }
 
-            actionRow(primaryTitle: isTextGenerationMode ? "カーソル位置に挿入" : "適用") {
+            actionRow(primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle) {
                 coordinator.applyCurrentResult()
             }
         }
@@ -258,7 +266,7 @@ struct PopupView: View {
         HStack {
             Spacer()
 
-            Button("閉じる") {
+            Button(text.closeButtonTitle) {
                 coordinator.dismissPopup()
             }
             .font(AppTypography.button)
@@ -291,15 +299,32 @@ struct PopupView: View {
             .fill(Color(nsColor: .textBackgroundColor))
     }
 
-    private func modeTitle(_ mode: ProcessingMode) -> String {
-        switch mode {
-        case .preset:
-            return "プリセット"
-        case .onDemand:
-            return "オンデマンド"
-        case .textGeneration:
-            return "生成"
+    private var displayTitle: String {
+        switch viewModel.presentationMode {
+        case .hidden:
+            return "GenGo"
+        case .onDemandInput:
+            return text.onDemandPromptTitle
+        case .textGenerationInput:
+            return text.textGenerationTitle
+        case .processing:
+            switch viewModel.processingMode {
+            case .preset:
+                return text.presetProcessingTitle
+            case .onDemand:
+                return text.onDemandProcessingTitle
+            case .textGeneration:
+                return text.textGenerationProcessingTitle
+            case nil:
+                return text.processingResultTitle
+            }
+        case .result:
+            return isTextGenerationMode ? text.generationResultTitle : text.processingResultTitle
         }
+    }
+
+    private func modeTitle(_ mode: ProcessingMode) -> String {
+        text.modeTitle(mode)
     }
 
     private func modeSymbol(_ mode: ProcessingMode) -> String {

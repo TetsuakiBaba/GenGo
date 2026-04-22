@@ -11,7 +11,13 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
         configure()
     }
 
+    func reloadMenu() {
+        configure()
+    }
+
     private func configure() {
+        let strings = coordinator?.strings ?? AppStrings(language: .ja)
+
         if let button = statusItem.button {
             button.toolTip = "GenGo"
             button.image = Self.statusIcon()
@@ -21,13 +27,13 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
         let menu = NSMenu()
         menu.addItem(withTitle: "GenGo", action: nil, keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "設定…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: strings.settingsMenuTitle, action: #selector(openSettings), keyEquivalent: ",").target = self
         if coordinator?.supportsSoftwareUpdates == true {
-            menu.addItem(withTitle: "アップデートを確認…", action: #selector(checkForUpdates), keyEquivalent: "").target = self
+            menu.addItem(withTitle: strings.checkForUpdatesMenuTitle, action: #selector(checkForUpdates), keyEquivalent: "").target = self
         }
-        menu.addItem(withTitle: "About", action: #selector(showAbout), keyEquivalent: "").target = self
+        menu.addItem(withTitle: strings.aboutMenuTitle, action: #selector(showAbout), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "終了", action: #selector(quit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: strings.quitMenuTitle, action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
     }
 

@@ -92,7 +92,7 @@ final class SettingsWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "GenGo Settings"
+        window.title = coordinator.strings.settingsWindowTitle
         window.center()
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = false
@@ -111,5 +111,6 @@ final class SettingsWindowController: NSWindowController {
 
     func reload(with settings: AppSettings) {
         viewModel.reload(from: settings)
+        window?.title = AppStrings(languageCode: settings.language).settingsWindowTitle
     }
 }

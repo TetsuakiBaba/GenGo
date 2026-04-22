@@ -3,10 +3,13 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
 
-    private let supportedLanguages: [(code: String, label: String)] = [
-        ("ja", "日本語"),
-        ("en", "English")
-    ]
+    private var supportedLanguages: [AppLanguage] {
+        AppLanguage.allCases
+    }
+
+    private var text: AppStrings {
+        AppStrings(languageCode: viewModel.draft.language)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,7 +58,7 @@ struct SettingsView: View {
                 Text("GenGo")
                     .font(AppTypography.heroTitle)
 
-                Text("ショートカット処理と LLM 接続を macOS ネイティブに整える設定画面です。")
+                Text(text.settingsHeroSubtitle)
                     .font(AppTypography.callout)
                     .foregroundStyle(.secondary)
 
@@ -80,12 +83,12 @@ struct SettingsView: View {
     private var llmSection: some View {
         settingsCard(
             title: "LLM",
-            subtitle: "LM Studio、Ollama、OpenAI 互換 API のどれでも同じ操作感で使えるように整えます。",
+            subtitle: text.llmSectionSubtitle,
             systemImage: "cpu"
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                labeledField("Provider") {
-                    Picker("Provider", selection: $viewModel.draft.llmProvider) {
+                labeledField(text.providerLabel) {
+                    Picker(text.providerLabel, selection: $viewModel.draft.llmProvider) {
                         ForEach(LLMProvider.allCases) { provider in
                             Text(provider.displayName).tag(provider)
                         }
@@ -95,7 +98,7 @@ struct SettingsView: View {
                     .controlSize(.large)
                 }
 
-                labeledField("Endpoint") {
+                labeledField(text.endpointLabel) {
                     TextField(
                         endpointPlaceholder,
                         text: $viewModel.draft.llmEndpoint
@@ -111,9 +114,9 @@ struct SettingsView: View {
 
                 if viewModel.draft.llmProvider.usesModelCatalog {
                     VStack(alignment: .leading, spacing: 10) {
-                        labeledField("モデル") {
+                        labeledField(text.modelLabel) {
                             Picker(modelPickerTitle, selection: $viewModel.draft.localModelInstanceId) {
-                                Text("自動選択").tag("")
+                                Text(text.autoSelectModelLabel).tag("")
                                 ForEach(viewModel.localModels) { model in
                                     Text(modelLabel(model)).tag(model.id)
                                 }
@@ -123,7 +126,7 @@ struct SettingsView: View {
                             .controlSize(.large)
 
                             HStack(spacing: 12) {
-                                Button(viewModel.isLoadingModels ? "読込中..." : "更新") {
+                                Button(viewModel.isLoadingModels ? text.loadingLabel : text.refreshButtonTitle) {
                                     Task {
                                         await viewModel.refreshLocalModels()
                                     }
@@ -133,7 +136,7 @@ struct SettingsView: View {
                                 .controlSize(.large)
 
                                 if !viewModel.localModels.isEmpty {
-                                    Text("\(viewModel.localModels.count) 件のモデルを利用可能")
+                                    Text(text.availableModelCount(viewModel.localModels.count))
                                         .font(AppTypography.helper)
                                         .foregroundStyle(.secondary)
                                 }
@@ -141,13 +144,13 @@ struct SettingsView: View {
                         }
 
                         if viewModel.draft.llmProvider == .ollama {
-                            labeledField("モデル名を直接指定") {
+                            labeledField(text.manualModelNameLabel) {
                                 TextField("llama3.2", text: $viewModel.draft.localModelInstanceId)
                                     .font(AppTypography.monoBody)
                                     .textFieldStyle(.roundedBorder)
                                     .controlSize(.large)
 
-                                Text("一覧にないモデル名も指定できます。ローカルモデルは `ollama pull <model>` の後に更新すると一覧へ表示されます。")
+                                Text(text.manualModelNameHelp)
                                     .font(AppTypography.helper)
                                     .foregroundStyle(.secondary)
                             }
@@ -161,7 +164,7 @@ struct SettingsView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .controlSize(.large)
 
-                            Text("OpenAI 互換 API で認証が必要な場合のみ設定します。")
+                            Text(text.apiKeyHelp)
                                 .font(AppTypography.helper)
                                 .foregroundStyle(.secondary)
                         }
@@ -178,7 +181,7 @@ struct SettingsView: View {
                 labeledField("Max Tokens") {
                     HStack(spacing: 14) {
                         Stepper(value: $viewModel.draft.maxTokens, in: 128...32768, step: 128) {
-                            Text("出力上限を調整")
+                            Text(text.maxTokensStepperLabel)
                                 .font(AppTypography.body)
                         }
                         .controlSize(.large)
@@ -197,17 +200,17 @@ struct SettingsView: View {
     private var shortcutSection: some View {
         settingsCard(
             title: "Shortcuts",
-            subtitle: "プリセットとオンデマンドの両方をグローバルショートカットで呼び出せます。",
+            subtitle: text.shortcutsSectionSubtitle,
             systemImage: "command"
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                labeledField("オンデマンド実行") {
+                labeledField(text.onDemandShortcutLabel) {
                     TextField("Ctrl+Shift+1", text: $viewModel.draft.onDemandShortcutKey)
                         .font(AppTypography.monoBody)
                         .textFieldStyle(.roundedBorder)
                         .controlSize(.large)
 
-                    Text("例: `Ctrl+Shift+1`, `Cmd+1`, `Alt+Space`")
+                    Text(text.shortcutExampleHelp)
                         .font(AppTypography.helper)
                         .foregroundStyle(.secondary)
                 }
@@ -216,16 +219,16 @@ struct SettingsView: View {
 
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("プリセット")
+                        Text(text.presetsTitle)
                             .font(AppTypography.subsectionTitle)
-                        Text("最大 5 件まで。保存時に重複とショートカット形式を検証します。")
+                        Text(text.presetsHelp)
                             .font(AppTypography.helper)
                             .foregroundStyle(.secondary)
                     }
 
                     Spacer()
 
-                    Button("プリセットを追加") {
+                    Button(text.addPresetButtonTitle) {
                         viewModel.addPresetPrompt()
                     }
                     .font(AppTypography.button)
@@ -243,25 +246,25 @@ struct SettingsView: View {
     private var behaviorSection: some View {
         settingsCard(
             title: "Behavior",
-            subtitle: "Apple らしい最小限の操作で流れるように使えるよう、挙動まわりをまとめています。",
+            subtitle: text.behaviorSectionSubtitle,
             systemImage: "slider.horizontal.3"
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                Toggle("プリセット実行後に自動で適用して閉じる", isOn: $viewModel.draft.autoApplyAndClose)
+                Toggle(text.autoApplyAndCloseLabel, isOn: $viewModel.draft.autoApplyAndClose)
                     .font(AppTypography.body)
                     .toggleStyle(.switch)
 
-                labeledField("UI Language") {
-                    Picker("UI Language", selection: $viewModel.draft.language) {
+                labeledField(text.uiLanguageLabel) {
+                    Picker(text.uiLanguageLabel, selection: $viewModel.draft.language) {
                         ForEach(supportedLanguages, id: \.code) { language in
-                            Text(language.label).tag(language.code)
+                            Text(language.displayName).tag(language.code)
                         }
                     }
                     .font(AppTypography.body)
                     .pickerStyle(.menu)
                     .controlSize(.large)
 
-                    Text("現状の Swift 版では日本語 / English の設定値を保持します。")
+                    Text(text.uiLanguageHelp)
                         .font(AppTypography.helper)
                         .foregroundStyle(.secondary)
                 }
@@ -274,20 +277,20 @@ struct SettingsView: View {
             if let notice = viewModel.notice {
                 noticeView(notice)
             } else {
-                Text("変更は保存後にショートカット登録へ反映されます。")
+                Text(text.footerHelp)
                     .font(AppTypography.callout)
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 12)
 
-            Button("デフォルトに戻す") {
+            Button(text.resetButtonTitle) {
                 viewModel.reset()
             }
             .font(AppTypography.button)
             .controlSize(.large)
 
-            Button("接続テスト") {
+            Button(text.testConnectionButtonTitle) {
                 Task {
                     await viewModel.testConnection()
                 }
@@ -295,7 +298,7 @@ struct SettingsView: View {
             .font(AppTypography.button)
             .controlSize(.large)
 
-            Button("保存") {
+            Button(text.saveButtonTitle) {
                 viewModel.save()
             }
             .font(AppTypography.button)
@@ -310,27 +313,27 @@ struct SettingsView: View {
     private func presetCard(preset: Binding<PresetPrompt>) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Toggle("有効", isOn: preset.enabled)
+                Toggle(text.enabledLabel, isOn: preset.enabled)
                     .font(AppTypography.body)
                     .toggleStyle(.switch)
 
                 Spacer()
 
-                Button("削除", role: .destructive) {
+                Button(text.deleteButtonTitle, role: .destructive) {
                     viewModel.removePresetPrompt(id: preset.wrappedValue.id)
                 }
                 .font(AppTypography.button)
                 .controlSize(.regular)
             }
 
-            labeledField("ショートカット") {
+            labeledField(text.shortcutLabel) {
                 TextField("Ctrl+1", text: preset.shortcutKey)
                     .font(AppTypography.monoBody)
                     .textFieldStyle(.roundedBorder)
                     .controlSize(.large)
             }
 
-            labeledField("プロンプト") {
+            labeledField(text.promptLabel) {
                 TextEditor(text: preset.prompt)
                     .font(AppTypography.monoBody)
                     .frame(minHeight: 110)
@@ -450,25 +453,11 @@ struct SettingsView: View {
     }
 
     private var endpointHelpText: String {
-        switch viewModel.draft.llmProvider {
-        case .local:
-            return "LM Studio のベース URL を指定します。API パスは自動で補完されます。"
-        case .ollama:
-            return "Ollama のベース URL を指定します。`/api/chat` と `/api/tags` は自動で補完されます。"
-        case .remote:
-            return "OpenAI 互換 API のベース URL を指定します。`/chat/completions` は自動で補完されます。"
-        }
+        text.endpointHelpText(for: viewModel.draft.llmProvider)
     }
 
     private var modelPickerTitle: String {
-        switch viewModel.draft.llmProvider {
-        case .local:
-            return "LM Studio モデル"
-        case .ollama:
-            return "Ollama モデル"
-        case .remote:
-            return "モデル"
-        }
+        text.modelPickerTitle(for: viewModel.draft.llmProvider)
     }
 
     private func modelLabel(_ model: LocalModelInstance) -> String {

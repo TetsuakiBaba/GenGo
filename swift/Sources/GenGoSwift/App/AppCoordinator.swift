@@ -15,6 +15,7 @@ final class AppCoordinator: NSObject, ObservableObject {
     private var updaterController: SPUStandardUpdaterController?
 
     let popupViewModel = PopupViewModel()
+    @Published private(set) var activeLanguage: AppLanguage = .ja
 
     private var currentSelectionContext: SelectionContext?
     private var isProcessing = false
@@ -27,12 +28,17 @@ final class AppCoordinator: NSObject, ObservableObject {
         updaterController != nil
     }
 
+    var strings: AppStrings {
+        AppStrings(language: activeLanguage)
+    }
+
     var canCheckForUpdates: Bool {
         updaterController?.updater.canCheckForUpdates ?? false
     }
 
     func start() {
         settingsStore.load()
+        activeLanguage = settings.appLanguage
         configureSoftwareUpdater()
         popupWindowController = PopupWindowController(coordinator: self, viewModel: popupViewModel)
         statusItemController = StatusItemController(coordinator: self)
@@ -56,7 +62,7 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func checkForUpdates(_ sender: Any?) {
         guard let updaterController else {
-            presentError("このビルドでは自動アップデートが設定されていません。")
+            presentError(strings.softwareUpdatesUnavailable)
             return
         }
 
@@ -71,7 +77,7 @@ final class AppCoordinator: NSObject, ObservableObject {
     func showAbout() {
         let alert = NSAlert()
         alert.messageText = "GenGo"
-        alert.informativeText = "LM Studio、Ollama、OpenAI 互換 API と連携し、選択テキストをその場で処理できる macOS ネイティブ版です。"
+        alert.informativeText = strings.aboutText
         alert.runModal()
     }
 
@@ -87,7 +93,9 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func saveSettings(_ newSettings: AppSettings) throws {
         try settingsStore.save(newSettings)
+        activeLanguage = settingsStore.settings.appLanguage
         registerShortcuts()
+        statusItemController?.reloadMenu()
         settingsWindowController?.reload(with: settingsStore.settings)
     }
 
@@ -102,7 +110,7 @@ final class AppCoordinator: NSObject, ObservableObject {
         let selectedText = popupViewModel.sourceText
 
         guard !prompt.isEmpty else {
-            popupViewModel.setNotice("処理指示を入力してください。", kind: .error)
+            popupViewModel.setNotice(strings.onDemandPromptRequired, kind: .error)
             return
         }
 
@@ -111,8 +119,7 @@ final class AppCoordinator: NSObject, ObservableObject {
                 selectedText: selectedText,
                 prompt: prompt,
                 mode: .onDemand,
-                allowAutoApply: false,
-                title: "オンデマンド処理中"
+                allowAutoApply: false
             )
         }
     }
@@ -121,7 +128,7 @@ final class AppCoordinator: NSObject, ObservableObject {
         let prompt = popupViewModel.promptText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !prompt.isEmpty else {
-            popupViewModel.setNotice("生成指示を入力してください。", kind: .error)
+            popupViewModel.setNotice(strings.generationPromptRequired, kind: .error)
             return
         }
 
@@ -130,8 +137,7 @@ final class AppCoordinator: NSObject, ObservableObject {
                 selectedText: "",
                 prompt: prompt,
                 mode: .textGeneration,
-                allowAutoApply: false,
-                title: "テキスト生成中"
+                allowAutoApply: false
             )
         }
     }
@@ -200,15 +206,14 @@ final class AppCoordinator: NSObject, ObservableObject {
                         selectedText: selectedText,
                         prompt: preset.prompt,
                         mode: .preset(index: index),
-                        allowAutoApply: settings.autoApplyAndClose,
-                        title: "プリセット処理中"
+                        allowAutoApply: settings.autoApplyAndClose
                     )
                 } else {
                     popupViewModel.prepareTextGenerationInput()
                     showPopup(for: .textGenerationInput)
                 }
             } catch {
-                presentError(error.localizedDescription)
+                presentError(strings.errorMessage(error))
             }
         }
     }
@@ -225,14 +230,14 @@ final class AppCoordinator: NSObject, ObservableObject {
                 currentSelectionContext = capture.context
 
                 guard let selectedText = capture.selectedText else {
-                    presentError("テキストを選択してからオンデマンド処理を実行してください。")
+                    presentError(strings.selectedTextRequired)
                     return
                 }
 
                 popupViewModel.prepareOnDemandInput(selectedText: selectedText)
                 showPopup(for: .onDemandInput)
             } catch {
-                presentError(error.localizedDescription)
+                presentError(strings.errorMessage(error))
             }
         }
     }
@@ -241,15 +246,20 @@ final class AppCoordinator: NSObject, ObservableObject {
         selectedText: String,
         prompt: String,
         mode: ProcessingMode,
-        allowAutoApply: Bool,
-        title: String
+        allowAutoApply: Bool
     ) async {
         guard !isProcessing else {
             return
         }
 
         isProcessing = true
-        popupViewModel.showProcessing(title: title, sourceText: selectedText, promptText: prompt, mode: mode)
+        let currentSettings = settings
+        popupViewModel.showProcessing(
+            sourceText: selectedText,
+            promptText: prompt,
+            mode: mode,
+            provider: currentSettings.llmProvider
+        )
         showPopup(for: .processing)
 
         defer { isProcessing = false }
@@ -258,7 +268,7 @@ final class AppCoordinator: NSObject, ObservableObject {
             let result = try await llmService.processCustomPromptStreaming(
                 inputText: selectedText,
                 customPrompt: prompt,
-                settings: settings
+                settings: currentSettings
             ) { [weak self] preview in
                 self?.popupViewModel.setStreamingPreview(preview)
             } onLocalReasoningUnsupportedModel: { [weak self] modelId in
@@ -266,7 +276,7 @@ final class AppCoordinator: NSObject, ObservableObject {
             }
 
             if result == selectedText && mode != .textGeneration {
-                popupViewModel.setNotice("変換結果が元テキストと同じだったため、変更はありません。", kind: .info)
+                popupViewModel.setNotice(strings.unchangedResultNotice, kind: .info)
                 popupViewModel.showResult(originalText: selectedText, resultText: result, mode: mode)
                 showPopup(for: .result)
                 return
@@ -279,7 +289,7 @@ final class AppCoordinator: NSObject, ObservableObject {
                 await applyCurrentResultAsync()
             }
         } catch {
-            popupViewModel.setNotice(error.localizedDescription, kind: .error)
+            popupViewModel.setNotice(strings.errorMessage(error), kind: .error)
             showPopup(for: .processing)
         }
     }
@@ -300,7 +310,7 @@ final class AppCoordinator: NSObject, ObservableObject {
                 try await selectionService.applyReplacement(resultText, context: currentSelectionContext)
             }
         } catch {
-            presentError(error.localizedDescription)
+            presentError(strings.errorMessage(error))
         }
     }
 
@@ -320,7 +330,7 @@ final class AppCoordinator: NSObject, ObservableObject {
             try settingsStore.save(updated)
             settingsWindowController?.reload(with: settingsStore.settings)
         } catch {
-            print("reasoning非対応モデルの保存に失敗しました: \(error.localizedDescription)")
+            print("Failed to save reasoning-unsupported model: \(error.localizedDescription)")
         }
     }
 

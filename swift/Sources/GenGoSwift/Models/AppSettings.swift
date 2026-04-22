@@ -2,6 +2,7 @@ import Foundation
 
 enum LLMProvider: String, Codable, CaseIterable, Identifiable {
     case local
+    case ollama
     case remote
 
     var id: String { rawValue }
@@ -10,8 +11,41 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .local:
             return "LM Studio"
+        case .ollama:
+            return "Ollama"
         case .remote:
             return "OpenAI Compatible"
+        }
+    }
+
+    var defaultEndpoint: String {
+        switch self {
+        case .local:
+            return "http://127.0.0.1:1234"
+        case .ollama:
+            return "http://127.0.0.1:11434"
+        case .remote:
+            return "https://api.openai.com/v1"
+        }
+    }
+
+    var usesModelCatalog: Bool {
+        switch self {
+        case .local, .ollama:
+            return true
+        case .remote:
+            return false
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .local:
+            return "macwindow"
+        case .ollama:
+            return "terminal"
+        case .remote:
+            return "cloud"
         }
     }
 }
@@ -113,23 +147,33 @@ struct AppSettings: Codable {
         let trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmed.isEmpty else {
-            return provider == .local ? "http://127.0.0.1:1234" : "https://api.openai.com/v1"
-        }
-
-        guard provider == .local else {
-            return trimmed.hasSuffix("/") ? String(trimmed.dropLast()) : trimmed
+            return provider.defaultEndpoint
         }
 
         var base = trimmed
         if base.hasSuffix("/") {
             base.removeLast()
         }
-        if base.hasSuffix("/api/v1") {
-            return String(base.dropLast(7))
+
+        switch provider {
+        case .local:
+            if base.hasSuffix("/api/v1") {
+                return String(base.dropLast(7))
+            }
+            if base.hasSuffix("/v1") {
+                return String(base.dropLast(3))
+            }
+            return base
+        case .ollama:
+            if base.hasSuffix("/api") {
+                return String(base.dropLast(4))
+            }
+            if base.hasSuffix("/v1") {
+                return String(base.dropLast(3))
+            }
+            return base
+        case .remote:
+            return base
         }
-        if base.hasSuffix("/v1") {
-            return String(base.dropLast(3))
-        }
-        return base
     }
 }

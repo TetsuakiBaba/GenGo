@@ -10,7 +10,7 @@ final class SettingsViewModel: ObservableObject {
         case duplicateShortcut(String)
         case emptyOnDemandShortcut
         case invalidOnDemandShortcut(String)
-        case missingLocalModel
+        case missingModel
 
         var errorDescription: String? {
             switch self {
@@ -28,8 +28,8 @@ final class SettingsViewModel: ObservableObject {
                 return "オンデマンド実行のショートカットを入力してください。"
             case .invalidOnDemandShortcut(let value):
                 return "オンデマンド実行のショートカット形式が不正です: \(value)"
-            case .missingLocalModel:
-                return "LM Studio でロード済みモデルを 1 つ選択してください。"
+            case .missingModel:
+                return "利用するモデルを 1 つ選択してください。"
             }
         }
     }
@@ -41,19 +41,25 @@ final class SettingsViewModel: ObservableObject {
 
     private unowned let coordinator: AppCoordinator
     private let maxPresetCount = 5
+    private var lastProvider: LLMProvider
+    private var endpointByProvider: [LLMProvider: String]
 
     init(settings: AppSettings, coordinator: AppCoordinator) {
         self.draft = settings
         self.coordinator = coordinator
+        self.lastProvider = settings.llmProvider
+        self.endpointByProvider = Self.defaultEndpointsByProvider(overriding: settings)
     }
 
     func reload(from settings: AppSettings) {
         draft = settings
+        lastProvider = settings.llmProvider
+        endpointByProvider[settings.llmProvider] = settings.llmEndpoint
         notice = nil
     }
 
     func handleAppear() {
-        if draft.llmProvider == .local {
+        if draft.llmProvider.usesModelCatalog {
             Task {
                 await refreshLocalModels()
             }
@@ -83,14 +89,19 @@ final class SettingsViewModel: ObservableObject {
         defer { isLoadingModels = false }
 
         do {
-            let models = try await coordinator.fetchLocalModels(endpoint: draft.llmEndpoint)
+            let provider = draft.llmProvider
+            let models = try await coordinator.fetchModels(endpoint: draft.llmEndpoint, provider: provider)
+            guard provider == draft.llmProvider else {
+                return
+            }
+
             localModels = models
 
             if draft.localModelInstanceId.isEmpty {
                 draft.localModelInstanceId = models.first?.id ?? ""
             }
 
-            notice = InlineNotice(text: "LM Studio からロード済みモデルを取得しました。", kind: .success)
+            notice = InlineNotice(text: "\(provider.displayName) から利用可能なモデルを取得しました。", kind: .success)
         } catch {
             localModels = []
             notice = InlineNotice(text: error.localizedDescription, kind: .error)
@@ -121,13 +132,24 @@ final class SettingsViewModel: ObservableObject {
     func reset() {
         draft = .default
         localModels = []
+        lastProvider = draft.llmProvider
+        endpointByProvider = Self.defaultEndpointsByProvider(overriding: draft)
         notice = InlineNotice(text: "デフォルト設定に戻しました。", kind: .info)
     }
 
     func handleProviderChange() {
         notice = nil
+        let selectedProvider = draft.llmProvider
 
-        if draft.llmProvider == .local {
+        if selectedProvider != lastProvider {
+            endpointByProvider[lastProvider] = draft.llmEndpoint
+            draft.llmEndpoint = endpointByProvider[selectedProvider] ?? selectedProvider.defaultEndpoint
+            draft.localModelInstanceId = ""
+            localModels = []
+            lastProvider = selectedProvider
+        }
+
+        if selectedProvider.usesModelCatalog {
             Task {
                 await refreshLocalModels()
             }
@@ -153,6 +175,12 @@ final class SettingsViewModel: ObservableObject {
 
         let nextNumber = (1...maxPresetCount).first { !usedNumbers.contains($0) } ?? (draft.presetPrompts.count + 1)
         return "Ctrl+\(nextNumber)"
+    }
+
+    private static func defaultEndpointsByProvider(overriding settings: AppSettings) -> [LLMProvider: String] {
+        var endpoints = Dictionary(uniqueKeysWithValues: LLMProvider.allCases.map { ($0, $0.defaultEndpoint) })
+        endpoints[settings.llmProvider] = settings.llmEndpoint
+        return endpoints
     }
 
     private func validatedDraft(requireSelectedLocalModel: Bool = true) throws -> AppSettings {
@@ -198,13 +226,13 @@ final class SettingsViewModel: ObservableObject {
             throw ValidationError.duplicateShortcut(onDemandShortcut)
         }
 
-        if candidate.llmProvider == .local {
+        if candidate.llmProvider.usesModelCatalog {
             if candidate.localModelInstanceId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 candidate.localModelInstanceId = localModels.first?.id ?? ""
             }
 
             if requireSelectedLocalModel && candidate.localModelInstanceId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                throw ValidationError.missingLocalModel
+                throw ValidationError.missingModel
             }
         }
 

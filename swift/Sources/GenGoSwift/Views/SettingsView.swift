@@ -62,7 +62,7 @@ struct SettingsView: View {
                 HStack(spacing: 10) {
                     statusPill(
                         title: viewModel.draft.llmProvider.displayName,
-                        systemImage: viewModel.draft.llmProvider == .local ? "macwindow" : "cloud"
+                        systemImage: viewModel.draft.llmProvider.systemImage
                     )
                     statusPill(
                         title: "Max \(viewModel.draft.maxTokens)",
@@ -80,7 +80,7 @@ struct SettingsView: View {
     private var llmSection: some View {
         settingsCard(
             title: "LLM",
-            subtitle: "LM Studio と OpenAI 互換 API のどちらでも同じ操作感で使えるように整えます。",
+            subtitle: "LM Studio、Ollama、OpenAI 互換 API のどれでも同じ操作感で使えるように整えます。",
             systemImage: "cpu"
         ) {
             VStack(alignment: .leading, spacing: 18) {
@@ -97,27 +97,25 @@ struct SettingsView: View {
 
                 labeledField("Endpoint") {
                     TextField(
-                        viewModel.draft.llmProvider == .local ? "http://127.0.0.1:1234" : "https://api.openai.com/v1",
+                        endpointPlaceholder,
                         text: $viewModel.draft.llmEndpoint
                     )
                     .font(AppTypography.body)
                     .textFieldStyle(.roundedBorder)
                     .controlSize(.large)
 
-                    Text(viewModel.draft.llmProvider == .local
-                         ? "LM Studio のベース URL を指定します。API パスは自動で補完されます。"
-                         : "OpenAI 互換 API のベース URL を指定します。`/chat/completions` は自動で補完されます。")
+                    Text(endpointHelpText)
                     .font(AppTypography.helper)
                     .foregroundStyle(.secondary)
                 }
 
-                if viewModel.draft.llmProvider == .local {
+                if viewModel.draft.llmProvider.usesModelCatalog {
                     VStack(alignment: .leading, spacing: 10) {
-                        labeledField("ロード済みモデル") {
-                            Picker("LM Studio モデル", selection: $viewModel.draft.localModelInstanceId) {
+                        labeledField("モデル") {
+                            Picker(modelPickerTitle, selection: $viewModel.draft.localModelInstanceId) {
                                 Text("自動選択").tag("")
                                 ForEach(viewModel.localModels) { model in
-                                    Text("\(model.displayName) (\(model.id))").tag(model.id)
+                                    Text(modelLabel(model)).tag(model.id)
                                 }
                             }
                             .font(AppTypography.body)
@@ -139,6 +137,19 @@ struct SettingsView: View {
                                         .font(AppTypography.helper)
                                         .foregroundStyle(.secondary)
                                 }
+                            }
+                        }
+
+                        if viewModel.draft.llmProvider == .ollama {
+                            labeledField("モデル名を直接指定") {
+                                TextField("llama3.2", text: $viewModel.draft.localModelInstanceId)
+                                    .font(AppTypography.monoBody)
+                                    .textFieldStyle(.roundedBorder)
+                                    .controlSize(.large)
+
+                                Text("一覧にないモデル名も指定できます。ローカルモデルは `ollama pull <model>` の後に更新すると一覧へ表示されます。")
+                                    .font(AppTypography.helper)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -432,6 +443,40 @@ struct SettingsView: View {
         case .success:
             return "checkmark.circle.fill"
         }
+    }
+
+    private var endpointPlaceholder: String {
+        viewModel.draft.llmProvider.defaultEndpoint
+    }
+
+    private var endpointHelpText: String {
+        switch viewModel.draft.llmProvider {
+        case .local:
+            return "LM Studio のベース URL を指定します。API パスは自動で補完されます。"
+        case .ollama:
+            return "Ollama のベース URL を指定します。`/api/chat` と `/api/tags` は自動で補完されます。"
+        case .remote:
+            return "OpenAI 互換 API のベース URL を指定します。`/chat/completions` は自動で補完されます。"
+        }
+    }
+
+    private var modelPickerTitle: String {
+        switch viewModel.draft.llmProvider {
+        case .local:
+            return "LM Studio モデル"
+        case .ollama:
+            return "Ollama モデル"
+        case .remote:
+            return "モデル"
+        }
+    }
+
+    private func modelLabel(_ model: LocalModelInstance) -> String {
+        if viewModel.draft.llmProvider == .ollama {
+            return model.displayName
+        }
+
+        return model.displayName == model.id ? model.id : "\(model.displayName) (\(model.id))"
     }
 
     private var cardBackground: some View {

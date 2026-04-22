@@ -71,12 +71,12 @@ final class AppCoordinator: NSObject, ObservableObject {
     func showAbout() {
         let alert = NSAlert()
         alert.messageText = "GenGo"
-        alert.informativeText = "LM Studio や OpenAI 互換 API と連携し、選択テキストをその場で処理できる macOS ネイティブ版です。"
+        alert.informativeText = "LM Studio、Ollama、OpenAI 互換 API と連携し、選択テキストをその場で処理できる macOS ネイティブ版です。"
         alert.runModal()
     }
 
-    func fetchLocalModels(endpoint: String) async throws -> [LocalModelInstance] {
-        try await llmService.fetchLocalModels(endpoint: endpoint)
+    func fetchModels(endpoint: String, provider: LLMProvider) async throws -> [LocalModelInstance] {
+        try await llmService.fetchModels(endpoint: endpoint, provider: provider)
     }
 
     func testConnection(using draft: AppSettings) async throws {

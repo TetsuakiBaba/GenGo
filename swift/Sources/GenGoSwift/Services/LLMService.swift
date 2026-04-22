@@ -12,7 +12,7 @@ struct LLMService {
             case .invalidEndpoint:
                 return "LLM エンドポイントが不正です。"
             case .noLoadedModel:
-                return "LM Studio でロード済みモデルが見つかりません。"
+                return "利用可能なローカルモデルが見つかりません。"
             case .invalidResponse(let message):
                 return message
             case .httpError(let statusCode, let message):
@@ -22,6 +22,17 @@ struct LLMService {
     }
 
     private let session: URLSession = .shared
+
+    func fetchModels(endpoint: String, provider: LLMProvider) async throws -> [LocalModelInstance] {
+        switch provider {
+        case .local:
+            return try await fetchLocalModels(endpoint: endpoint)
+        case .ollama:
+            return try await fetchOllamaModels(endpoint: endpoint)
+        case .remote:
+            return []
+        }
+    }
 
     func fetchLocalModels(endpoint: String) async throws -> [LocalModelInstance] {
         let normalized = AppSettings.normalizeEndpoint(endpoint, provider: .local)
@@ -77,6 +88,48 @@ struct LLMService {
         }
 
         return instances
+    }
+
+    func fetchOllamaModels(endpoint: String) async throws -> [LocalModelInstance] {
+        let normalized = AppSettings.normalizeEndpoint(endpoint, provider: .ollama)
+        guard let url = URL(string: "\(normalized)/api/tags") else {
+            throw LLMError.invalidEndpoint
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, response) = try await session.data(for: request)
+        try validate(response: response, data: data)
+
+        let root = try decodeJSON(data)
+        let modelObjects = root["models"] as? [[String: Any]] ?? []
+        var models: [LocalModelInstance] = []
+        var seen = Set<String>()
+
+        for model in modelObjects {
+            let identifier = stringValue(in: model, keys: ["name", "model", "id"]) ?? ""
+            guard !identifier.isEmpty, seen.insert(identifier).inserted else {
+                continue
+            }
+
+            let details = model["details"] as? [String: Any] ?? [:]
+            let parameterSize = stringValue(in: details, keys: ["parameter_size"]) ?? ""
+            let quantization = stringValue(in: details, keys: ["quantization_level"]) ?? ""
+            let detailParts = [parameterSize, quantization].filter { !$0.isEmpty }
+            let displayName = detailParts.isEmpty ? identifier : "\(identifier) \(detailParts.joined(separator: " "))"
+
+            models.append(
+                LocalModelInstance(
+                    id: identifier,
+                    modelKey: identifier,
+                    displayName: displayName
+                )
+            )
+        }
+
+        return models
     }
 
     func testConnection(settings: AppSettings) async throws {
@@ -173,6 +226,10 @@ struct LLMService {
             }
 
             throw LLMError.httpError(statusCode: httpResponse.statusCode, message: message)
+        }
+
+        if settings.llmProvider == .ollama {
+            return try await parseOllamaStream(bytes: bytes, onUpdate: onUpdate)
         }
 
         if contentType.contains("text/event-stream") {
@@ -273,6 +330,55 @@ struct LLMService {
         return result
     }
 
+    private func parseOllamaStream(
+        bytes: URLSession.AsyncBytes,
+        onUpdate: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        var fullText = ""
+        var fullReasoning = ""
+
+        for try await line in bytes.lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                continue
+            }
+
+            guard
+                let data = trimmed.data(using: .utf8),
+                let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                let json = jsonObject as? [String: Any]
+            else {
+                fullText += trimmed
+                await onUpdate(ResponseCleaner.clean(combinedResponseText(reasoning: fullReasoning, content: fullText), keepThinking: true))
+                continue
+            }
+
+            let message = json["message"] as? [String: Any]
+            let contentChunk = message?["content"] as? String ?? json["response"] as? String ?? ""
+            let reasoningChunk = message?["thinking"] as? String ?? json["thinking"] as? String ?? ""
+
+            if !reasoningChunk.isEmpty {
+                fullReasoning += reasoningChunk
+            }
+
+            if !contentChunk.isEmpty {
+                fullText += contentChunk
+            }
+
+            let combined = combinedResponseText(reasoning: fullReasoning, content: fullText)
+            if !combined.isEmpty {
+                await onUpdate(ResponseCleaner.clean(combined, keepThinking: true))
+            }
+        }
+
+        let result = combinedResponseText(reasoning: fullReasoning, content: fullText)
+        guard !result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw LLMError.invalidResponse("ストリーミング応答が空でした。")
+        }
+
+        return result
+    }
+
     private func makeStreamingRequest(
         prompt: String,
         settings: AppSettings,
@@ -295,6 +401,23 @@ struct LLMService {
             if includeLocalReasoning {
                 body["reasoning"] = "off"
             }
+        case .ollama:
+            let base = AppSettings.normalizeEndpoint(settings.llmEndpoint, provider: .ollama)
+            urlString = "\(base)/api/chat"
+            body = [
+                "model": modelIdentifier,
+                "messages": [
+                    [
+                        "role": "user",
+                        "content": prompt
+                    ]
+                ],
+                "stream": true,
+                "think": false,
+                "options": [
+                    "num_predict": settings.maxTokens
+                ]
+            ]
         case .remote:
             urlString = normalizedRemoteChatURL(endpoint: settings.llmEndpoint)
             body = [
@@ -346,6 +469,16 @@ struct LLMService {
             }
 
             let models = try await fetchLocalModels(endpoint: settings.llmEndpoint)
+            guard let first = models.first else {
+                throw LLMError.noLoadedModel
+            }
+            return first.id
+        case .ollama:
+            if !settings.localModelInstanceId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return settings.localModelInstanceId
+            }
+
+            let models = try await fetchOllamaModels(endpoint: settings.llmEndpoint)
             guard let first = models.first else {
                 throw LLMError.noLoadedModel
             }
@@ -434,6 +567,12 @@ struct LLMService {
                 return text
             }
             return extractLocalChatOutput(from: json)
+        case .ollama:
+            let message = json["message"] as? [String: Any]
+            let content = message?["content"] as? String ?? json["response"] as? String ?? ""
+            let reasoning = message?["thinking"] as? String ?? json["thinking"] as? String ?? ""
+
+            return combinedResponseText(reasoning: reasoning, content: content)
         case .remote:
             guard
                 let choices = json["choices"] as? [[String: Any]],
@@ -552,7 +691,8 @@ struct LLMService {
     }
 
     private func extractStreamChunk(from json: [String: Any], provider: LLMProvider) -> StreamChunk {
-        if provider == .remote {
+        switch provider {
+        case .remote:
             let choice = (json["choices"] as? [[String: Any]])?.first
             let delta = choice?["delta"] as? [String: Any]
             let message = choice?["message"] as? [String: Any]
@@ -563,34 +703,43 @@ struct LLMService {
                 absoluteContent: message?["content"] as? String ?? "",
                 absoluteReasoning: message?["reasoning_content"] as? String ?? ""
             )
+        case .ollama:
+            let message = json["message"] as? [String: Any]
+
+            return StreamChunk(
+                contentChunk: message?["content"] as? String ?? json["response"] as? String ?? "",
+                reasoningChunk: message?["thinking"] as? String ?? json["thinking"] as? String ?? "",
+                absoluteContent: "",
+                absoluteReasoning: ""
+            )
+        case .local:
+            let eventType = (json["type"] as? String) ?? (json["event"] as? String) ?? ""
+            let localDelta = (json["delta"] as? String)
+                ?? (json["output_text"] as? String)
+                ?? ((json["response"] as? [String: Any])?["output_text"] as? String)
+                ?? ""
+
+            let typedDelta: String
+            if eventType.contains("output_text.delta") {
+                typedDelta = (json["delta"] as? String) ?? (json["text"] as? String) ?? (json["content"] as? String) ?? ""
+            } else {
+                typedDelta = ""
+            }
+
+            let messageDelta: String
+            if eventType == "message.delta" {
+                messageDelta = json["content"] as? String ?? ""
+            } else {
+                messageDelta = ""
+            }
+
+            return StreamChunk(
+                contentChunk: messageDelta.isEmpty ? (typedDelta.isEmpty ? localDelta : typedDelta) : messageDelta,
+                reasoningChunk: "",
+                absoluteContent: extractLocalChatOutput(from: json),
+                absoluteReasoning: ""
+            )
         }
-
-        let eventType = (json["type"] as? String) ?? (json["event"] as? String) ?? ""
-        let localDelta = (json["delta"] as? String)
-            ?? (json["output_text"] as? String)
-            ?? ((json["response"] as? [String: Any])?["output_text"] as? String)
-            ?? ""
-
-        let typedDelta: String
-        if eventType.contains("output_text.delta") {
-            typedDelta = (json["delta"] as? String) ?? (json["text"] as? String) ?? (json["content"] as? String) ?? ""
-        } else {
-            typedDelta = ""
-        }
-
-        let messageDelta: String
-        if eventType == "message.delta" {
-            messageDelta = json["content"] as? String ?? ""
-        } else {
-            messageDelta = ""
-        }
-
-        return StreamChunk(
-            contentChunk: messageDelta.isEmpty ? (typedDelta.isEmpty ? localDelta : typedDelta) : messageDelta,
-            reasoningChunk: "",
-            absoluteContent: extractLocalChatOutput(from: json),
-            absoluteReasoning: ""
-        )
     }
 
     private func combinedResponseText(reasoning: String, content: String) -> String {

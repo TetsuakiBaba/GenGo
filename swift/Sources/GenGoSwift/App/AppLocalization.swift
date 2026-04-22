@@ -198,6 +198,17 @@ struct AppStrings {
         )
     }
 
+    var unsavedChangesTitle: String {
+        text(ja: "未保存の変更があります", en: "Unsaved changes")
+    }
+
+    var unsavedChangesHelp: String {
+        text(
+            ja: "保存するとショートカット処理に反映されます。",
+            en: "Save to apply these changes to shortcut actions."
+        )
+    }
+
     var resetButtonTitle: String {
         text(ja: "デフォルトに戻す", en: "Reset to Defaults")
     }
@@ -208,6 +219,33 @@ struct AppStrings {
 
     var saveButtonTitle: String {
         text(ja: "保存", en: "Save")
+    }
+
+    var saveAndActivateButtonTitle: String {
+        text(ja: "保存して有効化", en: "Save and Activate")
+    }
+
+    var saveAndCloseButtonTitle: String {
+        text(ja: "保存して閉じる", en: "Save and Close")
+    }
+
+    var discardChangesButtonTitle: String {
+        text(ja: "保存せずに閉じる", en: "Discard Changes")
+    }
+
+    var cancelButtonTitle: String {
+        text(ja: "キャンセル", en: "Cancel")
+    }
+
+    var unsavedCloseAlertTitle: String {
+        text(ja: "設定が保存されていません", en: "Settings Have Not Been Saved")
+    }
+
+    var unsavedCloseAlertMessage: String {
+        text(
+            ja: "保存せずに閉じると、編集中の変更はショートカット処理に反映されません。",
+            en: "If you close without saving, your edits will not be applied to shortcut actions."
+        )
     }
 
     var enabledLabel: String {
@@ -394,6 +432,13 @@ struct AppStrings {
 
     var connectionTestSucceededNotice: String {
         text(ja: "接続テストに成功しました。", en: "Connection test succeeded.")
+    }
+
+    var connectionTestSucceededUnsavedNotice: String {
+        text(
+            ja: "接続テストに成功しました。この設定はまだ保存されていません。",
+            en: "Connection test succeeded. These settings have not been saved yet."
+        )
     }
 
     var settingsSavedNotice: String {

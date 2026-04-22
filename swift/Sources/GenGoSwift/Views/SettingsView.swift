@@ -36,6 +36,9 @@ struct SettingsView: View {
         .onChange(of: viewModel.draft.llmProvider) { _ in
             viewModel.handleProviderChange()
         }
+        .onChange(of: viewModel.draft) { _ in
+            viewModel.handleDraftChange()
+        }
     }
 
     private var heroCard: some View {
@@ -274,13 +277,7 @@ struct SettingsView: View {
 
     private var footerBar: some View {
         HStack(alignment: .center, spacing: 14) {
-            if let notice = viewModel.notice {
-                noticeView(notice)
-            } else {
-                Text(text.footerHelp)
-                    .font(AppTypography.callout)
-                    .foregroundStyle(.secondary)
-            }
+            footerStatus
 
             Spacer(minLength: 12)
 
@@ -298,7 +295,7 @@ struct SettingsView: View {
             .font(AppTypography.button)
             .controlSize(.large)
 
-            Button(text.saveButtonTitle) {
+            Button(viewModel.canSaveTestedConnection ? text.saveAndActivateButtonTitle : text.saveButtonTitle) {
                 viewModel.save()
             }
             .font(AppTypography.button)
@@ -308,6 +305,24 @@ struct SettingsView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
         .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var footerStatus: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if viewModel.hasUnsavedChanges {
+                Label(text.unsavedChangesTitle, systemImage: "exclamationmark.circle.fill")
+                    .font(AppTypography.callout)
+                    .foregroundStyle(.orange)
+            }
+
+            if let notice = viewModel.notice {
+                noticeView(notice)
+            } else {
+                Text(viewModel.hasUnsavedChanges ? text.unsavedChangesHelp : text.footerHelp)
+                    .font(AppTypography.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private func presetCard(preset: Binding<PresetPrompt>) -> some View {

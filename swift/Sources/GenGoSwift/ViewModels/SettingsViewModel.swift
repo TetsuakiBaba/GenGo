@@ -22,6 +22,8 @@ final class SettingsViewModel: ObservableObject {
     @Published var notice: InlineNotice?
     @Published var isLoadingModels = false
 
+    private var savedSettings: AppSettings
+    private var lastSuccessfulConnectionSettings: AppSettings?
     private unowned let coordinator: AppCoordinator
     private let maxPresetCount = 5
     private var lastProvider: LLMProvider
@@ -33,6 +35,7 @@ final class SettingsViewModel: ObservableObject {
 
     init(settings: AppSettings, coordinator: AppCoordinator) {
         self.draft = settings
+        self.savedSettings = Self.normalized(settings)
         self.coordinator = coordinator
         self.lastProvider = settings.llmProvider
         self.endpointByProvider = Self.defaultEndpointsByProvider(overriding: settings)
@@ -40,6 +43,8 @@ final class SettingsViewModel: ObservableObject {
 
     func reload(from settings: AppSettings) {
         draft = settings
+        savedSettings = Self.normalized(settings)
+        lastSuccessfulConnectionSettings = nil
         lastProvider = settings.llmProvider
         endpointByProvider[settings.llmProvider] = settings.llmEndpoint
         notice = nil
@@ -99,20 +104,32 @@ final class SettingsViewModel: ObservableObject {
         do {
             let candidate = try validatedDraft(requireSelectedLocalModel: false)
             try await coordinator.testConnection(using: candidate)
-            notice = InlineNotice(text: strings.connectionTestSucceededNotice, kind: .success)
+            draft = candidate
+            let normalizedCandidate = Self.normalized(candidate)
+            lastSuccessfulConnectionSettings = normalizedCandidate
+            let message = normalizedCandidate == savedSettings
+                ? strings.connectionTestSucceededNotice
+                : strings.connectionTestSucceededUnsavedNotice
+            notice = InlineNotice(text: message, kind: .success)
         } catch {
+            lastSuccessfulConnectionSettings = nil
             notice = InlineNotice(text: strings.errorMessage(error), kind: .error)
         }
     }
 
-    func save() {
+    @discardableResult
+    func save() -> Bool {
         do {
             let candidate = try validatedDraft()
             try coordinator.saveSettings(candidate)
             draft = candidate
+            savedSettings = Self.normalized(candidate)
+            lastSuccessfulConnectionSettings = nil
             notice = InlineNotice(text: strings.settingsSavedNotice, kind: .success)
+            return true
         } catch {
             notice = InlineNotice(text: strings.errorMessage(error), kind: .error)
+            return false
         }
     }
 
@@ -121,7 +138,18 @@ final class SettingsViewModel: ObservableObject {
         localModels = []
         lastProvider = draft.llmProvider
         endpointByProvider = Self.defaultEndpointsByProvider(overriding: draft)
+        lastSuccessfulConnectionSettings = nil
         notice = InlineNotice(text: strings.resetToDefaultsNotice, kind: .info)
+    }
+
+    func handleDraftChange() {
+        if let testedSettings = lastSuccessfulConnectionSettings, testedSettings != Self.normalized(draft) {
+            lastSuccessfulConnectionSettings = nil
+        }
+
+        if hasUnsavedChanges, notice?.kind == .success, !canSaveTestedConnection {
+            notice = nil
+        }
     }
 
     func handleProviderChange() {
@@ -149,6 +177,14 @@ final class SettingsViewModel: ObservableObject {
         draft.presetPrompts.count < maxPresetCount
     }
 
+    var hasUnsavedChanges: Bool {
+        Self.normalized(draft) != savedSettings
+    }
+
+    var canSaveTestedConnection: Bool {
+        hasUnsavedChanges && lastSuccessfulConnectionSettings == Self.normalized(draft)
+    }
+
     private func nextPresetShortcut() -> String {
         let usedNumbers = Set(
             draft.presetPrompts.compactMap { preset -> Int? in
@@ -168,6 +204,12 @@ final class SettingsViewModel: ObservableObject {
         var endpoints = Dictionary(uniqueKeysWithValues: LLMProvider.allCases.map { ($0, $0.defaultEndpoint) })
         endpoints[settings.llmProvider] = settings.llmEndpoint
         return endpoints
+    }
+
+    private static func normalized(_ settings: AppSettings) -> AppSettings {
+        var normalized = settings
+        normalized.normalize()
+        return normalized
     }
 
     private func validatedDraft(requireSelectedLocalModel: Bool = true) throws -> AppSettings {

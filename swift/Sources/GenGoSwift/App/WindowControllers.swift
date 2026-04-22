@@ -78,7 +78,7 @@ final class PopupWindowController: NSWindowController {
 }
 
 @MainActor
-final class SettingsWindowController: NSWindowController {
+final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let viewModel: SettingsViewModel
 
     init(coordinator: AppCoordinator) {
@@ -102,6 +102,7 @@ final class SettingsWindowController: NSWindowController {
         window.isReleasedWhenClosed = false
 
         super.init(window: window)
+        window.delegate = self
     }
 
     @available(*, unavailable)
@@ -112,5 +113,29 @@ final class SettingsWindowController: NSWindowController {
     func reload(with settings: AppSettings) {
         viewModel.reload(from: settings)
         window?.title = AppStrings(languageCode: settings.language).settingsWindowTitle
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard viewModel.hasUnsavedChanges else {
+            return true
+        }
+
+        let strings = AppStrings(languageCode: viewModel.draft.language)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = strings.unsavedCloseAlertTitle
+        alert.informativeText = strings.unsavedCloseAlertMessage
+        alert.addButton(withTitle: strings.saveAndCloseButtonTitle)
+        alert.addButton(withTitle: strings.discardChangesButtonTitle)
+        alert.addButton(withTitle: strings.cancelButtonTitle)
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            return viewModel.save()
+        case .alertSecondButtonReturn:
+            return true
+        default:
+            return false
+        }
     }
 }

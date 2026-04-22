@@ -77,7 +77,7 @@ struct PresetPrompt: Codable, Identifiable, Hashable {
     }
 }
 
-struct AppSettings: Codable {
+struct AppSettings: Codable, Equatable {
     var autoApplyAndClose: Bool
     var language: String
     var llmProvider: LLMProvider

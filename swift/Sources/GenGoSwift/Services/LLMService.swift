@@ -1,6 +1,11 @@
 import Foundation
 
 struct LLMService {
+    private enum OllamaModelSource {
+        case local
+        case cloud
+    }
+
     enum LLMError: LocalizedError {
         case invalidEndpoint
         case noLoadedModel
@@ -22,6 +27,7 @@ struct LLMService {
     }
 
     private let session: URLSession = .shared
+    private let ollamaCloudModelsURL = "https://ollama.com/api/tags"
 
     func fetchModels(endpoint: String, provider: LLMProvider) async throws -> [LocalModelInstance] {
         switch provider {
@@ -92,10 +98,23 @@ struct LLMService {
 
     func fetchOllamaModels(endpoint: String) async throws -> [LocalModelInstance] {
         let normalized = AppSettings.normalizeEndpoint(endpoint, provider: .ollama)
-        guard let url = URL(string: "\(normalized)/api/tags") else {
+        guard
+            let localURL = URL(string: "\(normalized)/api/tags"),
+            let cloudURL = URL(string: ollamaCloudModelsURL)
+        else {
             throw LLMError.invalidEndpoint
         }
 
+        async let localModelsTask = fetchOllamaModels(url: localURL, source: .local)
+        async let cloudModelsTask = fetchOllamaModels(url: cloudURL, source: .cloud)
+
+        let localModels = try await localModelsTask
+        let cloudModels = (try? await cloudModelsTask) ?? []
+
+        return mergedModels(localModels + cloudModels)
+    }
+
+    private func fetchOllamaModels(url: URL, source: OllamaModelSource) async throws -> [LocalModelInstance] {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -109,16 +128,14 @@ struct LLMService {
         var seen = Set<String>()
 
         for model in modelObjects {
-            let identifier = stringValue(in: model, keys: ["name", "model", "id"]) ?? ""
+            let catalogIdentifier = stringValue(in: model, keys: ["name", "model", "id"]) ?? ""
+            let identifier = ollamaModelIdentifier(catalogIdentifier, source: source)
             guard !identifier.isEmpty, seen.insert(identifier).inserted else {
                 continue
             }
 
             let details = model["details"] as? [String: Any] ?? [:]
-            let parameterSize = stringValue(in: details, keys: ["parameter_size"]) ?? ""
-            let quantization = stringValue(in: details, keys: ["quantization_level"]) ?? ""
-            let detailParts = [parameterSize, quantization].filter { !$0.isEmpty }
-            let displayName = detailParts.isEmpty ? identifier : "\(identifier) \(detailParts.joined(separator: " "))"
+            let displayName = ollamaModelDisplayName(identifier: identifier, details: details, source: source)
 
             models.append(
                 LocalModelInstance(
@@ -130,6 +147,23 @@ struct LLMService {
         }
 
         return models
+    }
+
+    private func ollamaModelIdentifier(_ catalogIdentifier: String, source: OllamaModelSource) -> String {
+        switch source {
+        case .local:
+            return catalogIdentifier
+        case .cloud:
+            if catalogIdentifier.hasSuffix(":cloud") || catalogIdentifier.hasSuffix("-cloud") {
+                return catalogIdentifier
+            }
+
+            if catalogIdentifier.contains(":") {
+                return "\(catalogIdentifier)-cloud"
+            }
+
+            return "\(catalogIdentifier):cloud"
+        }
     }
 
     func testConnection(settings: AppSettings) async throws {
@@ -555,6 +589,37 @@ struct LLMService {
             }
         }
         return nil
+    }
+
+    private func mergedModels(_ models: [LocalModelInstance]) -> [LocalModelInstance] {
+        var merged: [LocalModelInstance] = []
+        var seen = Set<String>()
+
+        for model in models {
+            if seen.insert(model.id).inserted {
+                merged.append(model)
+            }
+        }
+
+        return merged
+    }
+
+    private func ollamaModelDisplayName(
+        identifier: String,
+        details: [String: Any],
+        source: OllamaModelSource
+    ) -> String {
+        let parameterSize = stringValue(in: details, keys: ["parameter_size"]) ?? ""
+        let quantization = stringValue(in: details, keys: ["quantization_level"]) ?? ""
+        let detailParts = [parameterSize, quantization].filter { !$0.isEmpty }
+        let baseName = detailParts.isEmpty ? identifier : "\(identifier) \(detailParts.joined(separator: " "))"
+
+        switch source {
+        case .local:
+            return baseName
+        case .cloud:
+            return "\(baseName) [Cloud]"
+        }
     }
 
     private func extractResponseText(from json: [String: Any], provider: LLMProvider) -> String {

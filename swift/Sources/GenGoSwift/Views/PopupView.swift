@@ -1,5 +1,12 @@
 import SwiftUI
 
+enum PopupSizing {
+    static let inputWindowSize = CGSize(width: 560, height: 320)
+    static let workflowWindowSize = CGSize(width: 640, height: 380)
+    static let placeholderWindowSize = CGSize(width: 480, height: 220)
+    static let workflowTextHeight: CGFloat = 150
+}
+
 struct PopupView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @ObservedObject var viewModel: PopupViewModel
@@ -45,7 +52,7 @@ struct PopupView: View {
         }
         .font(AppTypography.body)
         .padding(16)
-        .frame(minWidth: 480, idealWidth: 620, minHeight: 220)
+        .frame(width: dialogSize.width, height: dialogSize.height, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             updateFocus()
@@ -149,7 +156,7 @@ struct PopupView: View {
 
                 if !viewModel.streamingText.isEmpty {
                     scrollText(viewModel.streamingText)
-                        .frame(minHeight: 150)
+                        .frame(height: PopupSizing.workflowTextHeight)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(text.waitingForResponseText)
@@ -160,6 +167,7 @@ struct PopupView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
+                    .frame(height: PopupSizing.workflowTextHeight, alignment: .center)
                     .background(surfaceBackground)
                 }
             }
@@ -171,7 +179,7 @@ struct PopupView: View {
             cardContainer {
                 sectionTitle(isTextGenerationMode ? text.generationResultTitle : text.processingResultTitle)
                 scrollText(viewModel.resultText)
-                    .frame(minHeight: 130)
+                    .frame(height: PopupSizing.workflowTextHeight)
             }
 
             actionRow(primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle) {
@@ -297,6 +305,17 @@ struct PopupView: View {
     private var surfaceBackground: some View {
         RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(Color(nsColor: .textBackgroundColor))
+    }
+
+    private var dialogSize: CGSize {
+        switch viewModel.presentationMode {
+        case .hidden:
+            return PopupSizing.placeholderWindowSize
+        case .onDemandInput, .textGenerationInput:
+            return PopupSizing.inputWindowSize
+        case .processing, .result:
+            return PopupSizing.workflowWindowSize
+        }
     }
 
     private var displayTitle: String {

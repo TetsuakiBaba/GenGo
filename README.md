@@ -4,7 +4,7 @@
 
 **GenGo** is an AI-powered text processing tool that brings the power of Large Language Models (LLMs) to your fingertips. Process text instantly with customizable shortcuts, supporting both local and remote LLM providers.
 
-[![Version](https://img.shields.io/badge/version-0.8.3-blue.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Version](https://img.shields.io/badge/version-0.20.0-blue.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
 

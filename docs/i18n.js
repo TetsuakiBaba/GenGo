@@ -133,7 +133,7 @@ const translations = {
             title: '始めましょう',
             subtitle: 'GenGo for macOSをダウンロードして、AI-powered text processingを体験してください。',
             macBtn: 'macOS版をダウンロード',
-            version: 'Version 0.10.4 | macOS 13+ | MIT License | オープンソース'
+            version: 'Version 0.20.0 | macOS 13+ | MIT License | オープンソース'
         },
         footer: {
             description: 'AI-powered text processing tool for everyone. Built as a native macOS app with Swift and SwiftUI.',
@@ -305,7 +305,7 @@ const translations = {
             title: 'Ready to Get Started?',
             subtitle: 'Download GenGo for macOS and experience AI-powered text processing.',
             macBtn: 'Download for macOS',
-            version: 'Version 0.10.4 | macOS 13+ | MIT License | Open Source'
+            version: 'Version 0.20.0 | macOS 13+ | MIT License | Open Source'
         },
         footer: {
             description: 'AI-powered text processing tool for everyone. Built as a native macOS app with Swift and SwiftUI.',

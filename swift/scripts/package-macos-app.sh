@@ -14,6 +14,7 @@ MIN_SYSTEM_VERSION="${MIN_SYSTEM_VERSION:-13.0}"
 BUILD_CONFIGURATION="${BUILD_CONFIGURATION:-release}"
 BUILD_ARCHS="${BUILD_ARCHS:-$(uname -m)}"
 ICON_SOURCE="${ICON_SOURCE:-${REPO_ROOT}/icons/icon.icns}"
+TRAY_ICON_SOURCE="${TRAY_ICON_SOURCE:-${REPO_ROOT}/icons/newicon.png}"
 DIST_DIR="${DIST_DIR:-${SWIFT_DIR}/dist}"
 APP_DIR="${APP_DIR:-${DIST_DIR}/${APP_NAME}.app}"
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
@@ -53,6 +54,7 @@ EXECUTABLE_SOURCE="${BIN_PATH}/${PRODUCT_NAME}"
 EXECUTABLE_DESTINATION="${APP_DIR}/Contents/MacOS/${BUNDLE_EXECUTABLE_NAME}"
 INFO_PLIST_PATH="${APP_DIR}/Contents/Info.plist"
 ICON_DESTINATION="${APP_DIR}/Contents/Resources/${APP_NAME}.icns"
+TRAY_ICON_DESTINATION="${APP_DIR}/Contents/Resources/GenGoTrayIcon.png"
 
 if [[ ! -x "${EXECUTABLE_SOURCE}" ]]; then
     echo "Built executable not found: ${EXECUTABLE_SOURCE}" >&2
@@ -88,6 +90,10 @@ fi
 
 if [[ -f "${ICON_SOURCE}" ]]; then
     cp "${ICON_SOURCE}" "${ICON_DESTINATION}"
+fi
+
+if [[ -f "${TRAY_ICON_SOURCE}" ]]; then
+    cp "${TRAY_ICON_SOURCE}" "${TRAY_ICON_DESTINATION}"
 fi
 
 cat > "${INFO_PLIST_PATH}" <<EOF

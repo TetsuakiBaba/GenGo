@@ -120,8 +120,8 @@ struct AppStrings {
 
     var manualModelNameHelp: String {
         text(
-            ja: "一覧にないモデル名も指定できます。ローカルモデルは `ollama pull <model>` の後に更新すると一覧へ表示されます。",
-            en: "You can enter a model that is not in the list. Run `ollama pull <model>`, then refresh to list local models."
+            ja: "一覧にないモデル名も指定できます。ローカルモデルは `ollama pull <model>` 後、Cloud モデルは `ollama signin` 後に利用できます。",
+            en: "You can enter a model that is not in the list. Local models need `ollama pull <model>`; cloud models need `ollama signin`."
         )
     }
 

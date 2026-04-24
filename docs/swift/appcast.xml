@@ -6,15 +6,15 @@
         <description>GenGo for macOS update feed</description>
         <language>ja</language>
         <item>
-            <title>GenGo 0.10.7</title>
-            <sparkle:version>0.10.7</sparkle:version>
-            <sparkle:shortVersionString>0.10.7</sparkle:shortVersionString>
+            <title>GenGo 0.10.8</title>
+            <sparkle:version>0.10.8</sparkle:version>
+            <sparkle:shortVersionString>0.10.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>13.0.0</sparkle:minimumSystemVersion>
-            <sparkle:releaseNotesLink>https://github.com/TetsuakiBaba/GenGo/releases/tag/swift-v0.10.7</sparkle:releaseNotesLink>
-            <pubDate>Thu, 23 Apr 2026 00:01:30 +0000</pubDate>
-            <enclosure url="https://github.com/TetsuakiBaba/GenGo/releases/download/swift-v0.10.7/GenGo-0.10.7-macos-arm64.zip"
-                       sparkle:edSignature="brhm9gI1clwSX/ZCWY2F0vg8To0GplUdB+MRSwZM7hKjZIsLVxBRhOSwA5fzkIklOwDHdZLtiVRMS4+ZuWjPCQ=="
-                       length="1500547"
+            <sparkle:releaseNotesLink>https://github.com/TetsuakiBaba/GenGo/releases/tag/swift-v0.10.8</sparkle:releaseNotesLink>
+            <pubDate>Fri, 24 Apr 2026 09:18:29 +0000</pubDate>
+            <enclosure url="https://github.com/TetsuakiBaba/GenGo/releases/download/swift-v0.10.8/GenGo-0.10.8-macos-arm64.zip"
+                       sparkle:edSignature="aeq6/lUTYqZUDMBC7/B+LDN3e63dHeCDvBzzX5yc+i/hoMdhBWUSvu49z65NUop6XZxLvaaM36glo87Nr86XBA=="
+                       length="1506453"
                        type="application/octet-stream" />
         </item>
     </channel>

@@ -352,7 +352,7 @@ final class AppCoordinator: NSObject, ObservableObject {
             size = sharedWorkflowSize
         }
 
-        popupWindowController?.present(size: size)
+        popupWindowController?.present(size: size, mode: mode)
     }
 
     private func presentError(_ message: String) {

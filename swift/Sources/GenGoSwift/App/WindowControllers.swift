@@ -19,6 +19,7 @@ final class PopupWindowController: NSWindowController {
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.collectionBehavior = [.moveToActiveSpace, .transient]
+        panel.hidesOnDeactivate = true
         panel.isMovableByWindowBackground = true
         panel.isOpaque = true
         panel.backgroundColor = .windowBackgroundColor
@@ -35,8 +36,10 @@ final class PopupWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func present(size: NSSize) {
+    func present(size: NSSize, mode: PopupPresentationMode) {
         guard let window else { return }
+
+        configureBehavior(window: window, mode: mode)
 
         if window.isVisible {
             let currentSize = window.contentLayoutRect.size
@@ -54,6 +57,24 @@ final class PopupWindowController: NSWindowController {
 
     func dismiss() {
         window?.orderOut(nil)
+    }
+
+    private func configureBehavior(window: NSWindow, mode: PopupPresentationMode) {
+        let shouldRemainVisibleWhenInactive: Bool
+        switch mode {
+        case .processing, .result:
+            shouldRemainVisibleWhenInactive = true
+        case .hidden, .onDemandInput, .textGenerationInput:
+            shouldRemainVisibleWhenInactive = false
+        }
+
+        if let panel = window as? NSPanel {
+            panel.hidesOnDeactivate = !shouldRemainVisibleWhenInactive
+        }
+
+        window.collectionBehavior = shouldRemainVisibleWhenInactive
+            ? [.moveToActiveSpace]
+            : [.moveToActiveSpace, .transient]
     }
 
     private func position(window: NSWindow, size: NSSize) {

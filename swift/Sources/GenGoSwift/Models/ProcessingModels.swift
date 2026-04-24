@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Foundation
 
 struct LocalModelInstance: Identifiable, Hashable {
@@ -11,6 +12,8 @@ struct SelectionContext {
     let applicationName: String
     let bundleIdentifier: String?
     let application: NSRunningApplication?
+    let focusedElement: AXUIElement?
+    let selectedTextRange: CFRange?
 }
 
 struct SelectionCaptureResult {

@@ -81,7 +81,99 @@ scripts/release-macos.sh
 - `APPLE_TEAM_ID`
 - `APPLE_APP_SPECIFIC_PASSWORD`
 
-`MACOS_CERTIFICATE_P12_BASE64` は `Developer ID Application` の `.p12` を base64 化した値です。
+Secret の意味:
+
+- `MACOS_CERTIFICATE_P12_BASE64`: `Developer ID Application` 証明書を秘密鍵つきで export した `.p12` を base64 化した値
+- `MACOS_CERTIFICATE_PASSWORD`: `.p12` export 時に設定したパスワード
+- `MACOS_KEYCHAIN_PASSWORD`: GitHub Actions ランナー内で一時 keychain を作るための任意のパスワード
+- `MACOS_SIGNING_IDENTITY`: 例 `Developer ID Application: TETSUAKI BABA (ZE8M4T49DP)`
+- `APPLE_ID`: notarization に使う Apple ID
+- `APPLE_TEAM_ID`: Apple Developer Team ID
+- `APPLE_APP_SPECIFIC_PASSWORD`: notarization 用の app-specific password
+
+`MACOS_CERTIFICATE_PASSWORD` は Apple ID のパスワードではなく、`.p12` を export したときのパスワードです。
+
+`.p12` は `Keychain Access` の `My Certificates` から、`Developer ID Application` 証明書とその private key を含んだ状態で export してください。証明書だけを export すると GitHub Actions 側で `0 valid identities found` になります。
+
+#### Secrets を準備する
+
+ローカルで `.p12` を base64 化する例:
+
+```bash
+base64 < /path/to/developer-id-application.p12 | pbcopy
+```
+
+これを GitHub の `Settings` -> `Secrets and variables` -> `Actions` に登録します。
+
+#### まず手動で workflow を試す
+
+最初は `Actions` タブから `Swift macOS Release` を `Run workflow` で実行するのがおすすめです。
+
+- `workflow_dispatch` 実行では workflow artifact は作られます
+- draft GitHub Release は作られません
+- notarization と signing が通るかを先に確認する用途です
+
+#### GitHub Release を作るまでの git コマンド
+
+Swift 側の変更と workflow を含む commit を先に push してから、タグを打ちます。
+
+```bash
+cd /path/to/GenGo
+
+git status
+git add swift .github
+git commit -m "Prepare Swift macOS release"
+git push origin main
+```
+
+その後、現在の `main` の commit に対して Swift 用タグを付けて push します。
+
+```bash
+cd /path/to/GenGo
+
+git tag swift-v0.10.2
+git push origin swift-v0.10.2
+```
+
+これで `push.tags: swift-v*` がトリガーされ、workflow が draft release を作成します。
+
+#### タグ運用の注意
+
+- タグは `swift/` ディレクトリ単体ではなく、リポジトリ全体の commit に付きます
+- 既存の `swift-v0.10.1` が古い commit を指している場合は、そのままでは最新の Swift workflow は走りません
+- すでに公開していない限り retag もできますが、通常は `swift-v0.10.2` のように次の番号を使う方が安全です
+
+#### Actions で失敗したときの確認
+
+- `Validate signing identity` で `0 valid identities found` の場合は、`.p12` に private key が入っていないか、`MACOS_CERTIFICATE_PASSWORD` が誤っています
+- `The specified item could not be found in the keychain.` の場合は、署名 identity 名か keychain import の問題であることが多いです
+- `No Keychain password item found for profile` の場合は、`NOTARYTOOL_PROFILE` 名の typo か、`store-credentials` 未実行です
+
+ローカルで `.p12` が正しいか確認する例:
+
+```bash
+P12_PATH="/path/to/developer-id-application.p12"
+P12_PASSWORD="p12-export-password"
+TMP_KEYCHAIN="$HOME/tmp-gengo-signing.keychain-db"
+TMP_KEYCHAIN_PASSWORD="temporary-keychain-password"
+
+security delete-keychain "$TMP_KEYCHAIN" 2>/dev/null || true
+security create-keychain -p "$TMP_KEYCHAIN_PASSWORD" "$TMP_KEYCHAIN"
+security unlock-keychain -p "$TMP_KEYCHAIN_PASSWORD" "$TMP_KEYCHAIN"
+security import "$P12_PATH" \
+  -k "$TMP_KEYCHAIN" \
+  -P "$P12_PASSWORD" \
+  -T /usr/bin/codesign \
+  -T /usr/bin/security
+security set-key-partition-list \
+  -S apple-tool:,apple: \
+  -s \
+  -k "$TMP_KEYCHAIN_PASSWORD" \
+  "$TMP_KEYCHAIN"
+security find-identity -v -p codesigning "$TMP_KEYCHAIN"
+```
+
+ここで `1 valid identities found` 以上が出れば、GitHub Actions に渡す `.p12` として妥当です。
 
 ## 注意点
 

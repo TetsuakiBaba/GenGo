@@ -1,6 +1,6 @@
 # GenGo
 
-![GenGo Logo](./icons/original.png)
+![GenGo Logo](./icons/newicon.png)
 
 **GenGo** is an AI-powered text processing tool that brings the power of Large Language Models (LLMs) to your fingertips. Process text instantly with customizable shortcuts, supporting both local and remote LLM providers.
 
@@ -239,7 +239,7 @@ npm run package:win    # Windows
 ```
 
 **Note for Windows builds:**
-- Windows icon (icon.ico) is automatically generated from `icons/original.png`
+- Windows icon (icon.ico) is automatically generated from `icons/newicon.png`
 - Run `python3 create_icon.py` to regenerate if needed
 - Code signing is not required for Windows builds
 

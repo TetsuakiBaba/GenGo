@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Windows用のアイコンファイル(.ico)を生成するスクリプト
-original.pngからicon.icoを生成します
+newicon.pngからicon.icoを生成します
 """
 
 from PIL import Image
@@ -9,11 +9,11 @@ import os
 
 
 def create_windows_icon():
-    """original.pngからWindows用のicon.icoを生成"""
+    """newicon.pngからWindows用のicon.icoを生成"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     icons_dir = os.path.join(script_dir, 'icons')
 
-    input_path = os.path.join(icons_dir, 'original.png')
+    input_path = os.path.join(icons_dir, 'newicon.png')
     output_path = os.path.join(icons_dir, 'icon.ico')
 
     if not os.path.exists(input_path):

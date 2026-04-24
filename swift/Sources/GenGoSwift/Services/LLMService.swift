@@ -1,6 +1,15 @@
 import Foundation
 
 struct LLMService {
+    enum AppleFoundationModelUnavailableReason: String, Sendable {
+        case unsupportedOS
+        case frameworkUnavailable
+        case deviceNotEligible
+        case appleIntelligenceNotEnabled
+        case modelNotReady
+        case unsupportedLocale
+    }
+
     private enum OllamaModelSource {
         case local
         case cloud
@@ -9,6 +18,7 @@ struct LLMService {
     enum LLMError: LocalizedError {
         case invalidEndpoint
         case noLoadedModel
+        case appleFoundationModelUnavailable(AppleFoundationModelUnavailableReason)
         case invalidResponse(String)
         case httpError(statusCode: Int, message: String)
 
@@ -18,6 +28,21 @@ struct LLMService {
                 return "LLM エンドポイントが不正です。"
             case .noLoadedModel:
                 return "利用可能なローカルモデルが見つかりません。"
+            case .appleFoundationModelUnavailable(let reason):
+                switch reason {
+                case .unsupportedOS:
+                    return "Apple Intelligence は macOS 26 以降で利用できます。"
+                case .frameworkUnavailable:
+                    return "このビルドでは Apple Foundation Models framework を利用できません。"
+                case .deviceNotEligible:
+                    return "この Mac は Apple Intelligence に対応していません。"
+                case .appleIntelligenceNotEnabled:
+                    return "Apple Intelligence が有効になっていません。"
+                case .modelNotReady:
+                    return "Apple Intelligence のオンデバイスモデルがまだ利用可能になっていません。"
+                case .unsupportedLocale:
+                    return "現在の言語または地域設定では Apple Intelligence のオンデバイスモデルを利用できません。"
+                }
             case .invalidResponse(let message):
                 return message
             case .httpError(let statusCode, let message):
@@ -35,6 +60,8 @@ struct LLMService {
             return try await fetchLocalModels(endpoint: endpoint)
         case .ollama:
             return try await fetchOllamaModels(endpoint: endpoint)
+        case .appleFoundation:
+            return []
         case .remote:
             return []
         }
@@ -228,6 +255,15 @@ struct LLMService {
         omitLocalReasoning: Bool = false,
         onLocalReasoningUnsupportedModel: (@Sendable (String) async -> Void)? = nil
     ) async throws -> String {
+        if settings.llmProvider == .appleFoundation {
+            let responseText = try await AppleFoundationModelClient.generate(
+                prompt: prompt,
+                maxTokens: settings.maxTokens
+            )
+            await onUpdate(ResponseCleaner.clean(responseText, keepThinking: true))
+            return responseText
+        }
+
         let modelIdentifier = try await resolveModelIdentifier(settings: settings, override: modelIdentifierOverride)
         let shouldIncludeLocalReasoning = settings.llmProvider == .local
             && !omitLocalReasoning
@@ -452,6 +488,8 @@ struct LLMService {
                     "num_predict": settings.maxTokens
                 ]
             ]
+        case .appleFoundation:
+            throw LLMError.invalidResponse("Apple Intelligence は HTTP エンドポイントを使用しません。")
         case .remote:
             urlString = normalizedRemoteChatURL(endpoint: settings.llmEndpoint)
             body = [
@@ -517,6 +555,8 @@ struct LLMService {
                 throw LLMError.noLoadedModel
             }
             return first.id
+        case .appleFoundation:
+            return "apple-foundation-model"
         case .remote:
             let trimmed = settings.modelName.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? "gpt-4o-mini" : trimmed
@@ -638,6 +678,8 @@ struct LLMService {
             let reasoning = message?["thinking"] as? String ?? json["thinking"] as? String ?? ""
 
             return combinedResponseText(reasoning: reasoning, content: content)
+        case .appleFoundation:
+            return ""
         case .remote:
             guard
                 let choices = json["choices"] as? [[String: Any]],
@@ -774,6 +816,13 @@ struct LLMService {
             return StreamChunk(
                 contentChunk: message?["content"] as? String ?? json["response"] as? String ?? "",
                 reasoningChunk: message?["thinking"] as? String ?? json["thinking"] as? String ?? "",
+                absoluteContent: "",
+                absoluteReasoning: ""
+            )
+        case .appleFoundation:
+            return StreamChunk(
+                contentChunk: "",
+                reasoningChunk: "",
                 absoluteContent: "",
                 absoluteReasoning: ""
             )

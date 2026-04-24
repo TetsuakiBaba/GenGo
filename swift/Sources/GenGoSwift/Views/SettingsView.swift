@@ -101,18 +101,20 @@ struct SettingsView: View {
                     .controlSize(.large)
                 }
 
-                labeledField(text.endpointLabel) {
-                    TextField(
-                        endpointPlaceholder,
-                        text: $viewModel.draft.llmEndpoint
-                    )
-                    .font(AppTypography.body)
-                    .textFieldStyle(.roundedBorder)
-                    .controlSize(.large)
+                if viewModel.draft.llmProvider.usesEndpoint {
+                    labeledField(text.endpointLabel) {
+                        TextField(
+                            endpointPlaceholder,
+                            text: $viewModel.draft.llmEndpoint
+                        )
+                        .font(AppTypography.body)
+                        .textFieldStyle(.roundedBorder)
+                        .controlSize(.large)
 
-                    Text(endpointHelpText)
-                    .font(AppTypography.helper)
-                    .foregroundStyle(.secondary)
+                        Text(endpointHelpText)
+                        .font(AppTypography.helper)
+                        .foregroundStyle(.secondary)
+                    }
                 }
 
                 if viewModel.draft.llmProvider.usesModelCatalog {
@@ -159,7 +161,7 @@ struct SettingsView: View {
                             }
                         }
                     }
-                } else {
+                } else if viewModel.draft.llmProvider.usesRemoteCredentials {
                     VStack(alignment: .leading, spacing: 18) {
                         labeledField("API Key") {
                             SecureField("sk-...", text: $viewModel.draft.apiKey)
@@ -179,6 +181,16 @@ struct SettingsView: View {
                                 .controlSize(.large)
                         }
                     }
+                } else {
+                    Label(text.appleFoundationModelHelp, systemImage: viewModel.draft.llmProvider.systemImage)
+                        .font(AppTypography.callout)
+                        .foregroundStyle(.secondary)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(nsColor: .textBackgroundColor))
+                        )
                 }
 
                 labeledField("Max Tokens") {

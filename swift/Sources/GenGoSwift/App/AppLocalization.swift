@@ -76,8 +76,8 @@ struct AppStrings {
 
     var llmSectionSubtitle: String {
         text(
-            ja: "LM Studio、Ollama、OpenAI 互換 API のどれでも同じ操作感で使えるように整えます。",
-            en: "Use LM Studio, Ollama, or an OpenAI-compatible API with the same workflow."
+            ja: "LM Studio、Ollama、Apple Intelligence、OpenAI 互換 API のどれでも同じ操作感で使えるように整えます。",
+            en: "Use LM Studio, Ollama, Apple Intelligence, or an OpenAI-compatible API with the same workflow."
         )
     }
 
@@ -129,6 +129,13 @@ struct AppStrings {
         text(
             ja: "OpenAI 互換 API で認証が必要な場合のみ設定します。",
             en: "Set this only when your OpenAI-compatible API requires authentication."
+        )
+    }
+
+    var appleFoundationModelHelp: String {
+        text(
+            ja: "Apple Intelligence のオンデバイスモデルを使用します。macOS 26 以降、Apple Intelligence 対応 Mac、Apple Intelligence が有効な状態で利用できます。用途を固定した小さな処理に向いているため、プロンプトどおりに動作しない場合があります。必要に応じてプロンプトを具体的に調整してください。",
+            en: "Uses the Apple Intelligence on-device model. Requires macOS 26 or later, an Apple Intelligence-compatible Mac, and Apple Intelligence enabled. It works best for small, focused tasks, so it may not always follow prompts exactly. Adjust prompts to be more specific when needed."
         )
     }
 
@@ -276,6 +283,8 @@ struct AppStrings {
                 ja: "Ollama のベース URL を指定します。`/api/chat` と `/api/tags` は自動で補完されます。",
                 en: "Set the Ollama base URL. `/api/chat` and `/api/tags` are completed automatically."
             )
+        case .appleFoundation:
+            return appleFoundationModelHelp
         case .remote:
             return text(
                 ja: "OpenAI 互換 API のベース URL を指定します。`/chat/completions` は自動で補完されます。",
@@ -290,6 +299,8 @@ struct AppStrings {
             return text(ja: "LM Studio モデル", en: "LM Studio Model")
         case .ollama:
             return text(ja: "Ollama モデル", en: "Ollama Model")
+        case .appleFoundation:
+            return text(ja: "Apple Intelligence", en: "Apple Intelligence")
         case .remote:
             return text(ja: "モデル", en: "Model")
         }
@@ -361,6 +372,8 @@ struct AppStrings {
         switch (language, provider) {
         case (.ja, .remote):
             return "OpenAI 互換 API"
+        case (.ja, .appleFoundation):
+            return "Apple Intelligence"
         default:
             return provider.displayName
         }
@@ -458,8 +471,8 @@ struct AppStrings {
 
     var aboutText: String {
         text(
-            ja: "LM Studio、Ollama、OpenAI 互換 API と連携し、選択テキストをその場で処理できる macOS ネイティブ版です。",
-            en: "A native macOS app that processes selected text in place with LM Studio, Ollama, or an OpenAI-compatible API."
+            ja: "LM Studio、Ollama、Apple Intelligence、OpenAI 互換 API と連携し、選択テキストをその場で処理できる macOS ネイティブ版です。",
+            en: "A native macOS app that processes selected text in place with LM Studio, Ollama, Apple Intelligence, or an OpenAI-compatible API."
         )
     }
 
@@ -540,12 +553,51 @@ struct AppStrings {
             return text(ja: "LLM エンドポイントが不正です。", en: "The LLM endpoint is invalid.")
         case .noLoadedModel:
             return text(ja: "利用可能なローカルモデルが見つかりません。", en: "No available local model was found.")
+        case .appleFoundationModelUnavailable(let reason):
+            return appleFoundationModelUnavailableMessage(reason)
         case .invalidResponse(let message):
             return localizedKnownMessage(message)
         case .httpError(let statusCode, let message):
             return text(
                 ja: "LLM API エラー (\(statusCode)): \(message)",
                 en: "LLM API error (\(statusCode)): \(localizedKnownMessage(message))"
+            )
+        }
+    }
+
+    private func appleFoundationModelUnavailableMessage(
+        _ reason: LLMService.AppleFoundationModelUnavailableReason
+    ) -> String {
+        switch reason {
+        case .unsupportedOS:
+            return text(
+                ja: "Apple Intelligence は macOS 26 以降で利用できます。LM Studio、Ollama、または OpenAI 互換 API を選択してください。",
+                en: "Apple Intelligence is available on macOS 26 or later. Choose LM Studio, Ollama, or an OpenAI-compatible API instead."
+            )
+        case .frameworkUnavailable:
+            return text(
+                ja: "このビルドでは Apple Foundation Models framework を利用できません。macOS 26 SDK でビルドし直すか、別の LLM provider を選択してください。",
+                en: "This build cannot use the Apple Foundation Models framework. Rebuild with the macOS 26 SDK or choose another LLM provider."
+            )
+        case .deviceNotEligible:
+            return text(
+                ja: "この Mac は Apple Intelligence に対応していません。別の LLM provider を選択してください。",
+                en: "This Mac is not compatible with Apple Intelligence. Choose another LLM provider."
+            )
+        case .appleIntelligenceNotEnabled:
+            return text(
+                ja: "Apple Intelligence が有効になっていません。システム設定で Apple Intelligence を有効にするか、別の LLM provider を選択してください。",
+                en: "Apple Intelligence is not enabled. Enable it in System Settings or choose another LLM provider."
+            )
+        case .modelNotReady:
+            return text(
+                ja: "Apple Intelligence のオンデバイスモデルがまだ利用可能になっていません。ダウンロードや初期化の完了後に再試行してください。",
+                en: "The Apple Intelligence on-device model is not ready yet. Try again after download or initialization finishes."
+            )
+        case .unsupportedLocale:
+            return text(
+                ja: "現在の言語または地域設定では Apple Intelligence のオンデバイスモデルを利用できません。システムの言語設定を確認するか、別の LLM provider を選択してください。",
+                en: "The Apple Intelligence on-device model is unavailable for the current language or region. Check system language settings or choose another LLM provider."
             )
         }
     }

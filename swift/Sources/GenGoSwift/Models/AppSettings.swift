@@ -3,6 +3,7 @@ import Foundation
 enum LLMProvider: String, Codable, CaseIterable, Identifiable {
     case local
     case ollama
+    case appleFoundation
     case remote
 
     var id: String { rawValue }
@@ -13,6 +14,8 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
             return "LM Studio"
         case .ollama:
             return "Ollama"
+        case .appleFoundation:
+            return "Apple Intelligence"
         case .remote:
             return "OpenAI Compatible"
         }
@@ -24,6 +27,8 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
             return "http://127.0.0.1:1234"
         case .ollama:
             return "http://127.0.0.1:11434"
+        case .appleFoundation:
+            return ""
         case .remote:
             return "https://api.openai.com/v1"
         }
@@ -33,7 +38,25 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .local, .ollama:
             return true
+        case .appleFoundation, .remote:
+            return false
+        }
+    }
+
+    var usesEndpoint: Bool {
+        switch self {
+        case .local, .ollama, .remote:
+            return true
+        case .appleFoundation:
+            return false
+        }
+    }
+
+    var usesRemoteCredentials: Bool {
+        switch self {
         case .remote:
+            return true
+        case .local, .ollama, .appleFoundation:
             return false
         }
     }
@@ -44,6 +67,8 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
             return "macwindow"
         case .ollama:
             return "terminal"
+        case .appleFoundation:
+            return "apple.logo"
         case .remote:
             return "cloud"
         }
@@ -145,6 +170,11 @@ struct AppSettings: Codable, Equatable {
         if llmProvider == .remote, modelName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             modelName = "gpt-4o-mini"
         }
+
+        if llmProvider == .appleFoundation {
+            llmEndpoint = ""
+            localModelInstanceId = ""
+        }
     }
 
     static func normalizeEndpoint(_ endpoint: String, provider: LLMProvider) -> String {
@@ -176,6 +206,8 @@ struct AppSettings: Codable, Equatable {
                 return String(base.dropLast(3))
             }
             return base
+        case .appleFoundation:
+            return ""
         case .remote:
             return base
         }

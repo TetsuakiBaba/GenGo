@@ -13,6 +13,7 @@ APP_CATEGORY="${APP_CATEGORY:-public.app-category.utilities}"
 MIN_SYSTEM_VERSION="${MIN_SYSTEM_VERSION:-13.0}"
 BUILD_CONFIGURATION="${BUILD_CONFIGURATION:-release}"
 BUILD_ARCHS="${BUILD_ARCHS:-$(uname -m)}"
+REQUIRE_APPLE_FOUNDATION_MODELS="${REQUIRE_APPLE_FOUNDATION_MODELS:-1}"
 ICON_SOURCE="${ICON_SOURCE:-${REPO_ROOT}/icons/icon.icns}"
 TRAY_ICON_SOURCE="${TRAY_ICON_SOURCE:-${REPO_ROOT}/icons/newicon.png}"
 DIST_DIR="${DIST_DIR:-${SWIFT_DIR}/dist}"
@@ -32,8 +33,59 @@ SHORT_VERSION="${SHORT_VERSION:-${BUILD_VERSION}}"
 
 read -r -a BUILD_ARCH_ARRAY <<< "${BUILD_ARCHS}"
 
+foundation_models_required() {
+    case "${REQUIRE_APPLE_FOUNDATION_MODELS}" in
+        1|true|TRUE|yes|YES)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+validate_foundation_models_sdk() {
+    foundation_models_required || return 0
+
+    local developer_dir
+    local sdk_path
+    local sdk_version
+    local sdk_major
+    local framework_path
+
+    developer_dir="$(xcode-select -p 2>/dev/null || true)"
+    sdk_path="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)"
+    sdk_version="$(xcrun --sdk macosx --show-sdk-version 2>/dev/null || true)"
+    sdk_major="${sdk_version%%.*}"
+
+    if [[ -z "${sdk_path}" || -z "${sdk_version}" || ! "${sdk_major}" =~ ^[0-9]+$ || "${sdk_major}" -lt 26 ]]; then
+        echo "Apple Foundation Models support requires Xcode 26 with the macOS 26 SDK." >&2
+        echo "Selected developer directory: ${developer_dir:-unknown}" >&2
+        echo "Selected macOS SDK: ${sdk_version:-unknown} (${sdk_path:-unknown})" >&2
+        echo "Set DEVELOPER_DIR to Xcode 26, use a macos-26 GitHub Actions runner, or set REQUIRE_APPLE_FOUNDATION_MODELS=0 to build without Apple Intelligence." >&2
+        exit 1
+    fi
+
+    framework_path="${sdk_path}/System/Library/Frameworks/FoundationModels.framework"
+    if [[ ! -d "${framework_path}" ]]; then
+        echo "FoundationModels.framework was not found in the selected macOS SDK." >&2
+        echo "Selected developer directory: ${developer_dir:-unknown}" >&2
+        echo "Selected macOS SDK: ${sdk_version} (${sdk_path})" >&2
+        echo "Set DEVELOPER_DIR to Xcode 26, use a macos-26 GitHub Actions runner, or set REQUIRE_APPLE_FOUNDATION_MODELS=0 to build without Apple Intelligence." >&2
+        exit 1
+    fi
+
+    echo "Using macOS SDK ${sdk_version} with FoundationModels.framework."
+}
+
+validate_foundation_models_sdk
+
 BUILD_CMD=(swift build -c "${BUILD_CONFIGURATION}")
 SHOW_BIN_CMD=(swift build -c "${BUILD_CONFIGURATION}" --show-bin-path)
+
+if foundation_models_required; then
+    BUILD_CMD+=(-Xswiftc -DREQUIRE_APPLE_FOUNDATION_MODELS)
+fi
 
 for arch in "${BUILD_ARCH_ARRAY[@]}"; do
     BUILD_CMD+=(--arch "${arch}")

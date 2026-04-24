@@ -1,5 +1,9 @@
 import Foundation
 
+#if REQUIRE_APPLE_FOUNDATION_MODELS && !canImport(FoundationModels)
+#error("GenGo release builds require the Apple Foundation Models framework. Build with Xcode 26 / macOS 26 SDK, or set REQUIRE_APPLE_FOUNDATION_MODELS=0 for a build without Apple Intelligence.")
+#endif
+
 #if canImport(FoundationModels)
 import FoundationModels
 #endif

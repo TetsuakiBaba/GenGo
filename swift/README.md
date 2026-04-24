@@ -71,6 +71,8 @@ scripts/release-macos.sh
 
 `.github/workflows/swift-release.yml` を追加してあり、`swift-v0.10.1` のようなタグを push すると、署名済みの成果物を作って draft release に添付します。
 
+Apple Intelligence / Apple Foundation Models provider を含めるため、workflow は `macos-26` runner 上で macOS 26 SDK を使ってビルドします。SDK が古い場合は、Apple Intelligence なしの Release を黙って作らないようにビルドを失敗させます。
+
 必要な GitHub Secrets:
 
 - `MACOS_CERTIFICATE_P12_BASE64`

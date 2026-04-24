@@ -50,7 +50,7 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
                 .standardizedFileURL
         ].compactMap { $0 }
 
-        if let image = statusIcon(from: templateIconURLs, isTemplate: true, usesLuminanceMask: true) {
+        if let image = statusIcon(from: templateIconURLs, isTemplate: true, preparesTemplateMask: true) {
             return image
         }
 
@@ -77,14 +77,14 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
     private static func statusIcon(
         from iconURLs: [URL],
         isTemplate: Bool,
-        usesLuminanceMask: Bool = false
+        preparesTemplateMask: Bool = false
     ) -> NSImage? {
         for iconURL in iconURLs {
             guard let image = NSImage(contentsOf: iconURL) else {
                 continue
             }
 
-            let statusImage = usesLuminanceMask ? (templateMaskImage(from: image) ?? image) : image
+            let statusImage = preparesTemplateMask ? (templateMaskImage(from: image) ?? image) : image
             statusImage.size = NSSize(width: 18, height: 18)
             statusImage.isTemplate = isTemplate
             statusImage.accessibilityDescription = "GenGo"
@@ -121,17 +121,37 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
 
         inputContext.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
-        var maskPixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+        var visibleLuminanceTotal = 0
+        var visiblePixelCount = 0
+        var luminanceValues = [UInt8](repeating: 0, count: width * height)
+
         for offset in stride(from: 0, to: pixels.count, by: bytesPerPixel) {
             let red = Int(pixels[offset])
             let green = Int(pixels[offset + 1])
             let blue = Int(pixels[offset + 2])
+            let alpha = Int(pixels[offset + 3])
             let luminance = UInt8((red * 299 + green * 587 + blue * 114) / 1000)
+            luminanceValues[offset / bytesPerPixel] = luminance
+
+            if alpha > 0 {
+                visibleLuminanceTotal += Int(luminance)
+                visiblePixelCount += 1
+            }
+        }
+
+        let averageVisibleLuminance = visiblePixelCount > 0 ? visibleLuminanceTotal / visiblePixelCount : 0
+        let usesLuminanceMask = averageVisibleLuminance > 127
+        var maskPixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+
+        for offset in stride(from: 0, to: pixels.count, by: bytesPerPixel) {
+            let alpha = Int(pixels[offset + 3])
+            let luminance = Int(luminanceValues[offset / bytesPerPixel])
+            let maskAlpha = usesLuminanceMask ? UInt8((luminance * alpha) / 255) : UInt8(alpha)
 
             maskPixels[offset] = 0
             maskPixels[offset + 1] = 0
             maskPixels[offset + 2] = 0
-            maskPixels[offset + 3] = luminance
+            maskPixels[offset + 3] = maskAlpha
         }
 
         guard let outputContext = CGContext(

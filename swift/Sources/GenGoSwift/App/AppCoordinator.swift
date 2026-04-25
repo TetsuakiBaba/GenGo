@@ -78,7 +78,70 @@ final class AppCoordinator: NSObject, ObservableObject {
         let alert = NSAlert()
         alert.messageText = "GenGo"
         alert.informativeText = strings.aboutText
+        alert.icon = Self.aboutIcon()
+        alert.layout()
+        Self.applyOpaqueWhiteBackground(to: alert.window)
         alert.runModal()
+    }
+
+    private static func applyOpaqueWhiteBackground(to window: NSWindow) {
+        window.appearance = NSAppearance(named: .aqua)
+        window.alphaValue = 1.0
+        window.isOpaque = true
+        window.backgroundColor = .white
+        window.titlebarAppearsTransparent = false
+
+        if let contentView = window.contentView {
+            contentView.wantsLayer = true
+            contentView.layer?.backgroundColor = NSColor.white.cgColor
+            applyOpaqueWhiteBackground(to: contentView)
+        }
+    }
+
+    private static func applyOpaqueWhiteBackground(to view: NSView) {
+        if let visualEffectView = view as? NSVisualEffectView {
+            visualEffectView.blendingMode = .withinWindow
+            visualEffectView.material = .contentBackground
+            visualEffectView.state = .inactive
+        }
+
+        view.subviews.forEach { applyOpaqueWhiteBackground(to: $0) }
+    }
+
+    private static func aboutIcon() -> NSImage? {
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let iconURLs = [
+            Bundle.main.url(forResource: "GenGo", withExtension: "icns"),
+            Bundle.main.resourceURL?.appendingPathComponent("GenGo.icns"),
+            currentDirectoryURL
+                .appendingPathComponent("../icons/icon.icns")
+                .standardizedFileURL,
+            currentDirectoryURL
+                .appendingPathComponent("icons/icon.icns")
+                .standardizedFileURL
+        ].compactMap { $0 }
+
+        guard let sourceIcon = iconURLs.lazy.compactMap({ NSImage(contentsOf: $0) }).first ?? NSApp.applicationIconImage.copy() as? NSImage else {
+            return nil
+        }
+
+        let iconSize = NSSize(width: 64, height: 64)
+        let icon = NSImage(size: iconSize, flipped: false) { destinationRect in
+            NSColor.white.setFill()
+            destinationRect.fill()
+
+            let iconPadding: CGFloat = 8
+            sourceIcon.draw(
+                in: destinationRect.insetBy(dx: iconPadding, dy: iconPadding),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1.0
+            )
+            return true
+        }
+        icon.isTemplate = false
+        icon.accessibilityDescription = "GenGo"
+        return icon
     }
 
     func fetchModels(endpoint: String, provider: LLMProvider) async throws -> [LocalModelInstance] {

@@ -2,8 +2,8 @@ node_modules/
 dist/
 out/
 swift/.build/
+electron/.forge-resources/
 forge.config.js
-forge.config.cjs
 .DS_Store
 .vscode/
 *ignore*

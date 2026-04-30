@@ -3,6 +3,7 @@ import SwiftUI
 enum AppTypography {
     static let heroTitle = Font.system(size: 30, weight: .semibold, design: .rounded)
     static let windowTitle = Font.system(size: 27, weight: .semibold, design: .rounded)
+    static let popupTitle = Font.system(size: 21, weight: .semibold, design: .rounded)
     static let sectionTitle = Font.title2.weight(.semibold)
     static let subsectionTitle = Font.title3.weight(.semibold)
     static let label = Font.body.weight(.medium)

@@ -1,6 +1,6 @@
 # GenGo for macOS
 
-`./swift/` 配下には、既存の Electron 実装に触れずに追加した Swift 版の移植プロジェクトを置いています。
+`./swift/` 配下には Swift 版の macOS アプリプロジェクトを置いています。Electron 版は `../electron/`、共有アイコンは `../icons/` にあります。
 
 ## 目的
 

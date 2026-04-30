@@ -476,6 +476,16 @@ struct AppStrings {
         )
     }
 
+    func aboutText(version: String?) -> String {
+        let resolvedVersion = version ?? text(ja: "不明", en: "Unknown")
+        let versionText = text(
+            ja: "バージョン \(resolvedVersion)",
+            en: "Version \(resolvedVersion)"
+        )
+
+        return "\(aboutText)\n\n\(versionText)"
+    }
+
     var onDemandPromptRequired: String {
         text(ja: "処理指示を入力してください。", en: "Enter processing instructions.")
     }

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Optional version override (defaults to package.json or tag value)
+        description: Optional version override (defaults to electron/package.json or tag value)
         required: false
         type: string
   push:
@@ -48,7 +48,7 @@ jobs:
           elif [[ -n "${INPUT_VERSION:-}" ]]; then
             VERSION="${INPUT_VERSION}"
           else
-            VERSION="$(/usr/bin/plutil -extract version raw -o - package.json)"
+            VERSION="$(/usr/bin/plutil -extract version raw -o - electron/package.json)"
           fi
 
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"

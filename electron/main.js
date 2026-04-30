@@ -12,6 +12,18 @@ import { defaultSettings } from './default-settings.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+function appResourcePath(...segments) {
+    return app.isPackaged
+        ? path.join(process.resourcesPath, ...segments)
+        : path.join(__dirname, ...segments);
+}
+
+function sharedResourcePath(...segments) {
+    return app.isPackaged
+        ? path.join(process.resourcesPath, ...segments)
+        : path.join(__dirname, '..', ...segments);
+}
+
 function redactSensitiveData(value) {
     if (!value || typeof value !== 'object') {
         return value;
@@ -132,18 +144,11 @@ class GengoElectronMain {
                 console.log('既存のシステムトレイを破棄しました');
             }
 
-            // テキストベースの簡単なアイコンを作成
-            const isDev = !app.isPackaged;
+            const icon_path_settings = appResourcePath('images', 'settings.png');
+            const icon_path_about = appResourcePath('images', 'about.png');
+            const trayIconPath = sharedResourcePath('icons', 'IconTemplate.png');
 
-            const icon_path_settings = isDev
-                ? path.join(__dirname, 'images', 'settings.png')
-                : path.join(process.resourcesPath, 'images', 'settings.png');
-
-            const icon_path_about = isDev
-                ? path.join(__dirname, 'images', 'about.png')
-                : path.join(process.resourcesPath, 'images', 'about.png');
-
-            this.tray = new Tray(path.join(__dirname, './icons/IconTemplate.png'))
+            this.tray = new Tray(trayIconPath)
             this.tray.setToolTip(t('tray.tooltip'));
             const img_about = nativeImage
                 .createFromPath(icon_path_about)

@@ -42,10 +42,7 @@ final class PopupWindowController: NSWindowController {
         configureBehavior(window: window, mode: mode)
 
         if window.isVisible {
-            let currentSize = window.contentLayoutRect.size
-            if currentSize != size {
-                window.setContentSize(size)
-            }
+            resize(size: size, mode: mode)
         } else {
             position(window: window, size: size)
             window.setContentSize(size)
@@ -53,6 +50,19 @@ final class PopupWindowController: NSWindowController {
 
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    func resize(size: NSSize, mode: PopupPresentationMode) {
+        guard let window, window.isVisible else { return }
+
+        configureBehavior(window: window, mode: mode)
+
+        let currentSize = window.contentLayoutRect.size
+        guard abs(currentSize.width - size.width) > 0.5 || abs(currentSize.height - size.height) > 0.5 else {
+            return
+        }
+
+        setContentSizePreservingTopLeft(size, for: window)
     }
 
     func dismiss() {
@@ -95,6 +105,33 @@ final class PopupWindowController: NSWindowController {
         }
 
         window.setFrameOrigin(origin)
+    }
+
+    private func setContentSizePreservingTopLeft(_ size: NSSize, for window: NSWindow) {
+        let targetFrameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: size)).size
+        let currentFrame = window.frame
+        var targetFrame = NSRect(
+            x: currentFrame.minX,
+            y: currentFrame.maxY - targetFrameSize.height,
+            width: targetFrameSize.width,
+            height: targetFrameSize.height
+        )
+
+        let visibleFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
+        if targetFrame.maxX > visibleFrame.maxX {
+            targetFrame.origin.x = visibleFrame.maxX - targetFrame.width - 20
+        }
+        if targetFrame.minX < visibleFrame.minX {
+            targetFrame.origin.x = visibleFrame.minX + 20
+        }
+        if targetFrame.minY < visibleFrame.minY {
+            targetFrame.origin.y = visibleFrame.minY + 20
+        }
+        if targetFrame.maxY > visibleFrame.maxY {
+            targetFrame.origin.y = visibleFrame.maxY - targetFrame.height - 20
+        }
+
+        window.setFrame(targetFrame, display: true, animate: false)
     }
 }
 

@@ -19,9 +19,13 @@ SPARKLE_ARCHIVE_PATH="${SPARKLE_ARCHIVE_PATH:-}"
 SPARKLE_DOWNLOAD_URL="${SPARKLE_DOWNLOAD_URL:-}"
 SPARKLE_RELEASE_NOTES_URL="${SPARKLE_RELEASE_NOTES_URL:-}"
 SPARKLE_MIN_SYSTEM_VERSION="${SPARKLE_MIN_SYSTEM_VERSION:-13.0.0}"
+VERSION_PACKAGE_JSON="${VERSION_PACKAGE_JSON:-${REPO_ROOT}/electron/package.json}"
 
 if [[ -z "${BUILD_VERSION}" ]]; then
-    if [[ -f "${REPO_ROOT}/package.json" ]]; then
+    if [[ -f "${VERSION_PACKAGE_JSON}" ]]; then
+        BUILD_VERSION="$(/usr/bin/plutil -extract version raw -o - "${VERSION_PACKAGE_JSON}" 2>/dev/null || true)"
+        SHORT_VERSION="${SHORT_VERSION:-${BUILD_VERSION}}"
+    elif [[ -f "${REPO_ROOT}/package.json" ]]; then
         BUILD_VERSION="$(/usr/bin/plutil -extract version raw -o - "${REPO_ROOT}/package.json" 2>/dev/null || true)"
         SHORT_VERSION="${SHORT_VERSION:-${BUILD_VERSION}}"
     fi

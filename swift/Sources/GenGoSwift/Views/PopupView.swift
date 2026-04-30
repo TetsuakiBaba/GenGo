@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 enum PopupSizing {
@@ -5,6 +6,54 @@ enum PopupSizing {
     static let workflowWindowSize = CGSize(width: 640, height: 380)
     static let placeholderWindowSize = CGSize(width: 480, height: 220)
     static let workflowTextHeight: CGFloat = 150
+    static let minimumWorkflowTextHeight: CGFloat = 44
+    static let minimumEmptyWorkflowTextHeight: CGFloat = 88
+    static let maximumWorkflowTextHeight: CGFloat = 420
+
+    private static let workflowBaseHeight = workflowWindowSize.height - workflowTextHeight
+    private static let workflowTextWidth: CGFloat = 560
+    private static let workflowTextPadding: CGFloat = 24
+
+    static func dialogSize(for mode: PopupPresentationMode, outputText: String = "") -> CGSize {
+        switch mode {
+        case .hidden:
+            return placeholderWindowSize
+        case .onDemandInput, .textGenerationInput:
+            return inputWindowSize
+        case .processing, .result:
+            return CGSize(
+                width: workflowWindowSize.width,
+                height: workflowBaseHeight + outputTextHeight(for: outputText)
+            )
+        }
+    }
+
+    static func outputTextHeight(for text: String) -> CGFloat {
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return minimumEmptyWorkflowTextHeight
+        }
+
+        let measuredHeight = measuredTextHeight(for: text)
+        return min(max(measuredHeight, minimumWorkflowTextHeight), maximumWorkflowTextHeight)
+    }
+
+    private static func measuredTextHeight(for text: String) -> CGFloat {
+        let displayText = text.isEmpty ? " " : text
+        let font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+        let boundingRect = (displayText as NSString).boundingRect(
+            with: CGSize(width: workflowTextWidth - workflowTextPadding, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes
+        )
+
+        return ceil(boundingRect.height) + workflowTextPadding
+    }
 }
 
 struct PopupView: View {
@@ -60,13 +109,19 @@ struct PopupView: View {
         .onChange(of: viewModel.presentationMode) { _ in
             updateFocus()
         }
+        .onChange(of: viewModel.streamingText) { _ in
+            coordinator.resizePopupForCurrentContent()
+        }
+        .onChange(of: viewModel.resultText) { _ in
+            coordinator.resizePopupForCurrentContent()
+        }
     }
 
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(displayTitle)
-                    .font(AppTypography.windowTitle)
+                    .font(AppTypography.popupTitle)
 
                 HStack(spacing: 8) {
                     if !viewModel.sourceText.isEmpty, viewModel.presentationMode != .result {
@@ -156,7 +211,7 @@ struct PopupView: View {
 
                 if !viewModel.streamingText.isEmpty {
                     scrollText(viewModel.streamingText)
-                        .frame(height: PopupSizing.workflowTextHeight)
+                        .frame(height: outputTextHeight)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(text.waitingForResponseText)
@@ -167,7 +222,7 @@ struct PopupView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .frame(height: PopupSizing.workflowTextHeight, alignment: .center)
+                    .frame(height: outputTextHeight, alignment: .center)
                     .background(surfaceBackground)
                 }
             }
@@ -179,7 +234,7 @@ struct PopupView: View {
             cardContainer {
                 sectionTitle(isTextGenerationMode ? text.generationResultTitle : text.processingResultTitle)
                 scrollText(viewModel.resultText)
-                    .frame(height: PopupSizing.workflowTextHeight)
+                    .frame(height: outputTextHeight)
             }
 
             actionRow(primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle) {
@@ -308,13 +363,21 @@ struct PopupView: View {
     }
 
     private var dialogSize: CGSize {
+        PopupSizing.dialogSize(for: viewModel.presentationMode, outputText: currentOutputText)
+    }
+
+    private var outputTextHeight: CGFloat {
+        PopupSizing.outputTextHeight(for: currentOutputText)
+    }
+
+    private var currentOutputText: String {
         switch viewModel.presentationMode {
-        case .hidden:
-            return PopupSizing.placeholderWindowSize
-        case .onDemandInput, .textGenerationInput:
-            return PopupSizing.inputWindowSize
-        case .processing, .result:
-            return PopupSizing.workflowWindowSize
+        case .processing:
+            return viewModel.streamingText
+        case .result:
+            return viewModel.resultText
+        case .hidden, .onDemandInput, .textGenerationInput:
+            return ""
         }
     }
 

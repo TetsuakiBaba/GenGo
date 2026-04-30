@@ -56,6 +56,7 @@ git clone https://github.com/TetsuakiBaba/GenGo.git
 cd GenGo
 
 # Install dependencies
+cd electron
 npm install
 
 # Run in development mode
@@ -149,22 +150,16 @@ GenGo is built with:
 
 ```
 GenGo/
-├── main.js                 # Main Electron process
-├── renderer.js             # Renderer process for main UI
-├── preload.js              # Preload script for IPC
-├── simple-llm-engine.js    # LLM communication layer
-├── i18n.js                 # Internationalization setup
-├── settings.html           # Settings UI
-├── settings-preload.js     # Settings preload script
-├── popup-ui.html           # Result popup UI
-├── popup-preload.js        # Popup preload script
-├── icons/                  # Application icons
-├── locales/                # Translation files
-│   ├── en/
-│   │   └── translation.json
-│   └── ja/
-│       └── translation.json
-└── docs/                   # Documentation website
+├── electron/               # Electron app project
+│   ├── main.js             # Main Electron process
+│   ├── simple-llm-engine.js
+│   ├── settings.html
+│   ├── popup-ui.html
+│   ├── images/             # Electron app packaging assets
+│   └── locales/            # Electron translation files
+├── swift/                  # Swift Package Manager app project
+├── icons/                  # Shared application icons
+└── docs/                   # Documentation website / GitHub Pages
     ├── index.html
     ├── style.css
     ├── script.js
@@ -228,6 +223,7 @@ GenGo supports both macOS and Windows with platform-specific features:
 
 ```bash
 # macOS build (requires macOS)
+cd electron
 npm run make:mac
 
 # Windows build (requires Windows or cross-compilation setup)
@@ -251,9 +247,9 @@ GenGo supports multiple languages through i18next:
 - English (en)
 
 To add a new language:
-1. Create a new folder in `locales/` (e.g., `locales/fr/`)
+1. Create a new folder in `electron/locales/` (e.g., `electron/locales/fr/`)
 2. Add `translation.json` with translated strings
-3. Update `i18n.js` to include the new language
+3. Update `electron/i18n.js` to include the new language
 
 ## 🤝 Contributing
 

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -52,9 +53,18 @@ struct SettingsView: View {
                     )
                     .frame(width: 68, height: 68)
 
-                Image(systemName: "sparkles.rectangle.stack")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                if let appIconImage {
+                    Image(nsImage: appIconImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: 52, height: 52)
+                        .accessibilityLabel("GenGo")
+                } else {
+                    Image(systemName: "sparkles.rectangle.stack")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -81,6 +91,22 @@ struct SettingsView: View {
         }
         .padding(24)
         .background(cardBackground)
+    }
+
+    private var appIconImage: NSImage? {
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let iconURLs = [
+            Bundle.main.url(forResource: "GenGo", withExtension: "icns"),
+            Bundle.main.resourceURL?.appendingPathComponent("GenGo.icns"),
+            currentDirectoryURL
+                .appendingPathComponent("../icons/icon.icns")
+                .standardizedFileURL,
+            currentDirectoryURL
+                .appendingPathComponent("icons/icon.icns")
+                .standardizedFileURL
+        ].compactMap { $0 }
+
+        return iconURLs.lazy.compactMap { NSImage(contentsOf: $0) }.first ?? NSApp.applicationIconImage
     }
 
     private var llmSection: some View {

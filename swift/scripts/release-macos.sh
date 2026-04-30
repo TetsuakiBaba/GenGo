@@ -14,8 +14,11 @@ SIGN_IDENTITY="${SIGN_IDENTITY:-${DEVELOPER_ID_APPLICATION:-}}"
 BUILD_ARCHS="${BUILD_ARCHS:-$(uname -m)}"
 BUNDLE_EXECUTABLE_NAME="${BUNDLE_EXECUTABLE_NAME:-${APP_NAME}}"
 SIGN_KEYCHAIN="${SIGN_KEYCHAIN:-}"
+VERSION_PACKAGE_JSON="${VERSION_PACKAGE_JSON:-${REPO_ROOT}/electron/package.json}"
 
-if [[ -f "${REPO_ROOT}/package.json" ]]; then
+if [[ -f "${VERSION_PACKAGE_JSON}" ]]; then
+    DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${VERSION_PACKAGE_JSON}" 2>/dev/null || true)"
+elif [[ -f "${REPO_ROOT}/package.json" ]]; then
     DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${REPO_ROOT}/package.json" 2>/dev/null || true)"
 else
     DEFAULT_VERSION=""

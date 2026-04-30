@@ -74,14 +74,49 @@ final class AppCoordinator: NSObject, ObservableObject {
         popupWindowController?.dismiss()
     }
 
+    func resizePopupForCurrentContent() {
+        let mode = popupViewModel.presentationMode
+        switch mode {
+        case .processing, .result:
+            popupWindowController?.resize(size: popupSize(for: mode), mode: mode)
+        case .hidden, .onDemandInput, .textGenerationInput:
+            break
+        }
+    }
+
     func showAbout() {
         let alert = NSAlert()
         alert.messageText = "GenGo"
-        alert.informativeText = strings.aboutText
+        alert.informativeText = strings.aboutText(version: Self.appVersion)
         alert.icon = Self.aboutIcon()
         alert.layout()
         Self.applyOpaqueWhiteBackground(to: alert.window)
         alert.runModal()
+    }
+
+    private static var appVersion: String? {
+        let shortVersion = trimmedInfoDictionaryString(for: "CFBundleShortVersionString")
+        let buildVersion = trimmedInfoDictionaryString(for: "CFBundleVersion")
+
+        switch (shortVersion, buildVersion) {
+        case let (short?, build?) where short != build:
+            return "\(short) (\(build))"
+        case let (short?, _):
+            return short
+        case let (_, build?):
+            return build
+        default:
+            return nil
+        }
+    }
+
+    private static func trimmedInfoDictionaryString(for key: String) -> String? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func applyOpaqueWhiteBackground(to window: NSWindow) {
@@ -398,23 +433,28 @@ final class AppCoordinator: NSObject, ObservableObject {
     }
 
     private func showPopup(for mode: PopupPresentationMode) {
-        let size: NSSize
-
         switch mode {
         case .hidden:
             popupWindowController?.dismiss()
             return
-        case .onDemandInput:
-            size = PopupSizing.inputWindowSize
-        case .textGenerationInput:
-            size = PopupSizing.inputWindowSize
-        case .processing:
-            size = PopupSizing.workflowWindowSize
-        case .result:
-            size = PopupSizing.workflowWindowSize
+        case .onDemandInput, .textGenerationInput, .processing, .result:
+            popupWindowController?.present(size: popupSize(for: mode), mode: mode)
         }
+    }
 
-        popupWindowController?.present(size: size, mode: mode)
+    private func popupSize(for mode: PopupPresentationMode) -> NSSize {
+        PopupSizing.dialogSize(for: mode, outputText: popupOutputText(for: mode))
+    }
+
+    private func popupOutputText(for mode: PopupPresentationMode) -> String {
+        switch mode {
+        case .processing:
+            return popupViewModel.streamingText
+        case .result:
+            return popupViewModel.resultText
+        case .hidden, .onDemandInput, .textGenerationInput:
+            return ""
+        }
     }
 
     private func presentError(_ message: String) {

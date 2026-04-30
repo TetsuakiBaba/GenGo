@@ -427,9 +427,7 @@ export class SimpleLLMEngine {
                         content: prompt
                     }
                 ],
-                stream: false,
-                reasoning: "off",
-                enable_thinking: false
+                stream: false
             };
 
         if (this.provider === 'remote') {
@@ -524,6 +522,44 @@ export class SimpleLLMEngine {
         };
     }
 
+    parseStreamPayloads(streamText) {
+        const payloads = [];
+        const lines = streamText.split(/\r?\n/);
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) {
+                continue;
+            }
+
+            const payloadText = trimmed.startsWith('data:')
+                ? trimmed.slice(5).trim()
+                : trimmed;
+
+            if (!payloadText || payloadText === '[DONE]') {
+                continue;
+            }
+
+            try {
+                payloads.push(JSON.parse(payloadText));
+            } catch (parseError) {
+                console.warn('ストリーミングチャンクの解析をスキップしました:', payloadText.slice(0, 120));
+            }
+        }
+
+        return payloads;
+    }
+
+    findIncompleteStreamRemainder(streamText) {
+        const lastNewlineIndex = streamText.lastIndexOf('\n');
+        if (lastNewlineIndex === -1) {
+            return streamText;
+        }
+
+        const remainder = streamText.slice(lastNewlineIndex + 1);
+        return remainder.trim() ? remainder : '';
+    }
+
     /**
      * LLM APIを呼び出し（常時ストリーミング）
      */
@@ -553,9 +589,7 @@ export class SimpleLLMEngine {
                         content: prompt
                     }
                 ],
-                stream: true,
-                reasoning: "off",
-                enable_thinking: false
+                stream: true
             };
 
         const useMaxCompletionTokens = this.provider === 'remote' && modelToUse && (
@@ -673,83 +707,46 @@ export class SimpleLLMEngine {
                     }
 
                     buffer += decoder.decode(value, { stream: true });
-                    const events = buffer.split('\n\n');
-                    buffer = events.pop() || '';
+                    const remainder = this.findIncompleteStreamRemainder(buffer);
+                    const parseableText = remainder ? buffer.slice(0, -remainder.length) : buffer;
+                    buffer = remainder;
 
-                    for (const eventText of events) {
-                        const dataLines = eventText
-                            .split('\n')
-                            .map(line => line.trimEnd())
-                            .filter(line => line.startsWith('data:'))
-                            .map(line => line.slice(5).trimStart());
+                    for (const data of this.parseStreamPayloads(parseableText)) {
+                        const parsed = this.extractStreamPayloadText(data);
 
-                        if (dataLines.length === 0) {
-                            continue;
+                        if (parsed.reasoningChunk) {
+                            fullReasoning += parsed.reasoningChunk;
                         }
 
-                        const payloadText = dataLines.join('\n').trim();
-                        if (!payloadText || payloadText === '[DONE]') {
-                            continue;
+                        if (parsed.contentChunk) {
+                            fullText += parsed.contentChunk;
+                        } else if (parsed.absoluteContent && !fullText) {
+                            fullText = parsed.absoluteContent;
                         }
 
-                        try {
-                            const data = JSON.parse(payloadText);
-                            const parsed = this.extractStreamPayloadText(data);
+                        if (parsed.absoluteReasoning && !fullReasoning) {
+                            fullReasoning = parsed.absoluteReasoning;
+                        }
 
-                            if (parsed.reasoningChunk) {
-                                fullReasoning += parsed.reasoningChunk;
-                            }
-
-                            if (parsed.contentChunk) {
-                                fullText += parsed.contentChunk;
-                            } else if (parsed.absoluteContent && !fullText) {
-                                fullText = parsed.absoluteContent;
-                            }
-
-                            if (parsed.absoluteReasoning && !fullReasoning) {
-                                fullReasoning = parsed.absoluteReasoning;
-                            }
-
-                            if (onChunk && (parsed.reasoningChunk || parsed.contentChunk || parsed.absoluteContent)) {
-                                const combinedText = fullReasoning
-                                    ? `<think>\n${fullReasoning}\n</think>\n${fullText}`
-                                    : fullText;
-                                onChunk(parsed.contentChunk || parsed.absoluteContent || '', combinedText);
-                            }
-                        } catch (parseError) {
-                            if (payloadText) {
-                                fullText += payloadText;
-                                if (onChunk) {
-                                    const combinedText = fullReasoning
-                                        ? `<think>\n${fullReasoning}\n</think>\n${fullText}`
-                                        : fullText;
-                                    onChunk(payloadText, combinedText);
-                                }
-                            } else {
-                                console.error('JSON parse error:', parseError, 'Payload:', payloadText);
-                            }
+                        if (onChunk && (parsed.reasoningChunk || parsed.contentChunk || parsed.absoluteContent)) {
+                            const combinedText = fullReasoning
+                                ? `<think>\n${fullReasoning}\n</think>\n${fullText}`
+                                : fullText;
+                            onChunk(parsed.contentChunk || parsed.absoluteContent || '', combinedText);
                         }
                     }
                 }
 
                 const trailing = buffer.trim();
-                if (trailing.startsWith('data:')) {
-                    const payloadText = trailing.slice(5).trimStart();
-                    if (payloadText && payloadText !== '[DONE]') {
-                        try {
-                            const data = JSON.parse(payloadText);
-                            const parsed = this.extractStreamPayloadText(data);
-                            if (parsed.reasoningChunk) {
-                                fullReasoning += parsed.reasoningChunk;
-                            }
-                            if (parsed.contentChunk) {
-                                fullText += parsed.contentChunk;
-                            } else if (parsed.absoluteContent && !fullText) {
-                                fullText = parsed.absoluteContent;
-                            }
-                        } catch {
-                            fullText += payloadText;
-                        }
+                for (const data of this.parseStreamPayloads(trailing)) {
+                    const parsed = this.extractStreamPayloadText(data);
+                    if (parsed.reasoningChunk) {
+                        fullReasoning += parsed.reasoningChunk;
+                    }
+                    if (parsed.contentChunk) {
+                        fullText += parsed.contentChunk;
+                    } else if (parsed.absoluteContent && !fullText) {
+                        fullText = parsed.absoluteContent;
                     }
                 }
             } finally {

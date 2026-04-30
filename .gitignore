@@ -1,6 +1,7 @@
 node_modules/
 dist/
 out/
+swift/.build/
 forge.config.js
 forge.config.cjs
 .DS_Store

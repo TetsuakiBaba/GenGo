@@ -12,6 +12,18 @@ import { defaultSettings } from './default-settings.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+function redactSensitiveData(value) {
+    if (!value || typeof value !== 'object') {
+        return value;
+    }
+
+    const redacted = Array.isArray(value) ? [...value] : { ...value };
+    if (typeof redacted.apiKey === 'string' && redacted.apiKey.length > 0) {
+        redacted.apiKey = '[REDACTED]';
+    }
+    return redacted;
+}
+
 // Auto-updater (production環境でのみ実行)
 if (app.isPackaged) {
     try {
@@ -62,7 +74,7 @@ class GengoElectronMain {
         this.appVersion = await getPackageVersion();
 
         // LLM設定を出力
-        console.log('LLM設定詳細:', this.getLLMConfig());
+        console.log('LLM設定詳細:', redactSensitiveData(this.getLLMConfig()));
 
         // LLMエンジン初期化
         this.llmEngine = this.createLLMEngine();
@@ -2417,7 +2429,7 @@ if ($process) {
                 }
 
                 this.settings = { ...this.settings, ...loadedSettings };
-                console.log('設定を読み込みました:', this.settings);
+                console.log('設定を読み込みました:', redactSensitiveData(this.settings));
             }
         } catch (error) {
             console.error('設定読み込みエラー:', error);

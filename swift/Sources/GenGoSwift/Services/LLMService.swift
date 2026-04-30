@@ -339,9 +339,6 @@ struct LLMService {
             }
 
             guard let data = trimmed.data(using: .utf8) else {
-                fullText += trimmed
-                let combined = combinedResponseText(reasoning: fullReasoning, content: fullText)
-                await onUpdate(ResponseCleaner.clean(combined, keepThinking: true))
                 return
             }
 
@@ -349,9 +346,6 @@ struct LLMService {
                 let jsonObject = try? JSONSerialization.jsonObject(with: data),
                 let json = jsonObject as? [String: Any]
             else {
-                fullText += trimmed
-                let combined = combinedResponseText(reasoning: fullReasoning, content: fullText)
-                await onUpdate(ResponseCleaner.clean(combined, keepThinking: true))
                 return
             }
 
@@ -377,7 +371,16 @@ struct LLMService {
         for try await line in bytes.lines {
             if line.hasPrefix("data:") {
                 let lineBody = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-                dataLines.append(lineBody)
+                if lineBody == "[DONE]" || lineBody.trimmingCharacters(in: .whitespaces).hasPrefix("{") {
+                    if !dataLines.isEmpty {
+                        let payload = dataLines.joined(separator: "\n")
+                        dataLines.removeAll(keepingCapacity: true)
+                        await processPayload(payload)
+                    }
+                    await processPayload(lineBody)
+                } else {
+                    dataLines.append(lineBody)
+                }
                 continue
             }
 
@@ -385,6 +388,12 @@ struct LLMService {
                 let payload = dataLines.joined(separator: "\n")
                 dataLines.removeAll(keepingCapacity: true)
                 await processPayload(payload)
+                continue
+            }
+
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasPrefix("{") || trimmed == "[DONE]" {
+                await processPayload(trimmed)
             }
         }
 
@@ -500,9 +509,7 @@ struct LLMService {
                         "content": prompt
                     ]
                 ],
-                "stream": true,
-                "reasoning": "off",
-                "enable_thinking": false
+                "stream": true
             ]
 
             if usesMaxCompletionTokens(modelIdentifier: modelIdentifier) {
@@ -747,7 +754,55 @@ struct LLMService {
             }
         }
 
+        if trimmed.contains("\"chat.completion.chunk\"") || trimmed.split(whereSeparator: \.isNewline).contains(where: { String($0).trimmingCharacters(in: .whitespaces).hasPrefix("{") }) {
+            let streamText = extractResponseTextFromBufferedStreamLines(trimmed, provider: provider)
+            if !streamText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return streamText
+            }
+        }
+
         return trimmed
+    }
+
+    private func extractResponseTextFromBufferedStreamLines(_ text: String, provider: LLMProvider) -> String {
+        var fullText = ""
+        var fullReasoning = ""
+
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty, line != "[DONE]" else {
+                continue
+            }
+
+            let payloadText = line.hasPrefix("data:")
+                ? String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                : line
+
+            guard
+                !payloadText.isEmpty,
+                payloadText != "[DONE]",
+                let payloadData = payloadText.data(using: .utf8),
+                let jsonObject = try? JSONSerialization.jsonObject(with: payloadData),
+                let json = jsonObject as? [String: Any]
+            else {
+                continue
+            }
+
+            let chunk = extractStreamChunk(from: json, provider: provider)
+            if !chunk.reasoningChunk.isEmpty {
+                fullReasoning += chunk.reasoningChunk
+            } else if !chunk.absoluteReasoning.isEmpty, fullReasoning.isEmpty {
+                fullReasoning = chunk.absoluteReasoning
+            }
+
+            if !chunk.contentChunk.isEmpty {
+                fullText += chunk.contentChunk
+            } else if !chunk.absoluteContent.isEmpty, fullText.isEmpty {
+                fullText = chunk.absoluteContent
+            }
+        }
+
+        return combinedResponseText(reasoning: fullReasoning, content: fullText)
     }
 
     private func extractResponseTextFromBufferedEventStream(_ text: String, provider: LLMProvider) -> String {

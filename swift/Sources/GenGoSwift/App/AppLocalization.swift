@@ -156,8 +156,8 @@ struct AppStrings {
 
     var shortcutExampleHelp: String {
         text(
-            ja: "例: `Ctrl+Shift+1`, `Cmd+1`, `Alt+Space`",
-            en: "Examples: `Ctrl+Shift+1`, `Cmd+1`, `Alt+Space`"
+            ja: "例: `Ctrl+0`, `Cmd+1`, `Alt+Space`",
+            en: "Examples: `Ctrl+0`, `Cmd+1`, `Alt+Space`"
         )
     }
 

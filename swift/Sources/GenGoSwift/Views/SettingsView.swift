@@ -220,7 +220,7 @@ struct SettingsView: View {
         ) {
             VStack(alignment: .leading, spacing: 18) {
                 labeledField(text.onDemandShortcutLabel) {
-                    TextField("Ctrl+Shift+1", text: $viewModel.draft.onDemandShortcutKey)
+                    TextField("Ctrl+0", text: $viewModel.draft.onDemandShortcutKey)
                         .font(AppTypography.monoBody)
                         .textFieldStyle(.roundedBorder)
                         .controlSize(.large)

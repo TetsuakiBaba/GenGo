@@ -376,7 +376,7 @@
                     </label>
                     <div class="mb-2">
                         <label class="form-label small" id="ondemand-shortcut-label">ショートカットキー</label>
-                        <input type="text" class="form-control" id="onDemandShortcutKey" placeholder="例: Ctrl+Shift+1">
+                        <input type="text" class="form-control" id="onDemandShortcutKey" placeholder="例: Ctrl+0">
                         <small class="form-text text-muted" id="ondemand-shortcut-help">
                             使用可能なキー: Ctrl, Alt, Shift, Command (Mac), 英数字, F1-F12など
                         </small>
@@ -775,7 +775,7 @@
                 renderPresetPrompts(settings.presetPrompts || []);
 
                 // オンデマンドプロンプトショートカットを設定
-                document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey || 'Ctrl+Shift+1';
+                document.getElementById('onDemandShortcutKey').value = settings.onDemandShortcutKey || 'Ctrl+0';
 
                 // LLM設定
                 document.getElementById('llmProvider').value = settings.llmProvider || 'local';

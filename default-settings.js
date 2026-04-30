@@ -9,7 +9,7 @@ export const defaultSettings = {
     localModelInstanceId: '',
     localReasoningUnsupportedModels: [],
     maxTokens: 4096,
-    onDemandShortcutKey: 'Ctrl+Shift+1',
+    onDemandShortcutKey: 'Ctrl+0',
     presetPrompts: [
         {
             shortcutKey: 'Ctrl+1',

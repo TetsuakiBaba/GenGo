@@ -125,7 +125,7 @@ struct AppSettings: Codable, Equatable {
         localModelInstanceId: String = "",
         localReasoningUnsupportedModels: [String] = [],
         maxTokens: Int = 4096,
-        onDemandShortcutKey: String = "Ctrl+Shift+1",
+        onDemandShortcutKey: String = "Ctrl+0",
         presetPrompts: [PresetPrompt] = AppSettings.defaultPresetPrompts
     ) {
         self.autoApplyAndClose = autoApplyAndClose
@@ -164,7 +164,7 @@ struct AppSettings: Codable, Equatable {
         }
 
         if onDemandShortcutKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            onDemandShortcutKey = "Ctrl+Shift+1"
+            onDemandShortcutKey = "Ctrl+0"
         }
 
         if llmProvider == .remote, modelName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

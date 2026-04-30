@@ -487,7 +487,7 @@ class GengoElectronMain {
     }
 
     /**
-     * オンデマンドプロンプトトリガー処理（Ctrl+Shift+1）
+     * オンデマンドプロンプトトリガー処理（Ctrl+0）
      */
     async handleOnDemandPromptTrigger() {
         try {
@@ -2396,7 +2396,9 @@ if ($process) {
                     loadedSettings.llmEndpoint = this.normalizeLocalEndpoint(loadedSettings.llmEndpoint);
                 }
                 if (!loadedSettings.onDemandShortcutKey) {
-                    loadedSettings.onDemandShortcutKey = 'Ctrl+Shift+1';
+                    loadedSettings.onDemandShortcutKey = 'Ctrl+0';
+                } else if (loadedSettings.onDemandShortcutKey === 'Ctrl+Shift+1') {
+                    loadedSettings.onDemandShortcutKey = 'Ctrl+0';
                 }
                 if (!loadedSettings.localModelInstanceId) {
                     loadedSettings.localModelInstanceId = '';

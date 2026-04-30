@@ -31,6 +31,9 @@ final class SettingsStore: ObservableObject {
 
             let data = try Data(contentsOf: url)
             var decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+            if decoded.onDemandShortcutKey == "Ctrl+Shift+1" {
+                decoded.onDemandShortcutKey = "Ctrl+0"
+            }
             decoded.normalize()
             settings = decoded
         } catch {

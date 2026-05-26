@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="GenGo - macOS native AI text processing tool with LM Studio and OpenAI-compatible API support">
+        content="GenGo - macOS native AI text processing tool with LM Studio, Ollama, and OpenAI-compatible API support">
     <title>GenGo - macOS Native AI Text Processing</title>
     <link rel="icon" type="image/png" href="./newicon.png">
     <link rel="apple-touch-icon" href="./newicon.png">
@@ -32,16 +32,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="#setup-guide" data-i18n="nav.setupGuide">Setup Guide</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#screenshots" data-i18n="nav.screenshots">Screenshots</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="best_practices.html" data-i18n="nav.bestPractices">Best Practices</a>
+                        <a class="nav-link" href="#best-practices" data-i18n="nav.bestPractices">Best Practices</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#download" data-i18n="nav.download">Download</a>
@@ -87,7 +81,7 @@
                     </video>
                     <p class="text-muted mb-5 animate-fade-in-delay-2 mx-auto" style="max-width: 600px;"
                         data-i18n="hero.description">
-                        LM Studio または OpenAI 互換 API を活用した、macOS ネイティブのテキスト処理アプリケーション。
+                        LM Studio、Ollama、または OpenAI 互換 API を活用した、macOS ネイティブのテキスト処理アプリケーション。
                         翻訳、校正、カスタムプロンプト処理を、ショートカットキー一つで実行できます。
                     </p>
                     <div class="d-flex gap-3 justify-content-center animate-fade-in-delay-3">
@@ -104,289 +98,285 @@
         </div>
     </section>
 
-    <!-- 使い方セクション -->
-    <section id="how-it-works" class="section-padding">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3" data-i18n="howItWorks.title">使い方</h2>
-                <p class="lead text-muted" data-i18n="howItWorks.subtitle">4ステップで簡単に始められます</p>
-            </div>
-
-            <div class="row g-5">
-                <!-- Step 1 -->
-                <div class="col-lg-3">
-                    <div class="text-center">
-                        <div class="step-number mx-auto mb-4">1</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step1.title">LLM設定</h3>
-                        <p class="text-muted" data-i18n="howItWorks.step1.description">
-                            LM Studio にモデルをロードするか、
-                            OpenAI 互換 API の接続情報を設定します。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="col-lg-3">
-                    <div class="text-center">
-                        <div class="step-number mx-auto mb-4">2</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step2.title">プロンプト設定</h3>
-                        <p class="text-muted" data-i18n="howItWorks.step2.description">
-                            最大5個の事前プロンプトを登録し、
-                            それぞれにショートカットキーを割り当てます。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="col-lg-3">
-                    <div class="text-center">
-                        <div class="step-number mx-auto mb-4">3</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step3.title">テキスト選択</h3>
-                        <p class="text-muted" data-i18n="howItWorks.step3.description">
-                            処理したいテキストを任意のアプリケーションで選択します。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="col-lg-3">
-                    <div class="text-center">
-                        <div class="step-number mx-auto mb-4">4</div>
-                        <h3 class="h4 mb-3" data-i18n="howItWorks.step4.title">ショートカット実行</h3>
-                        <p class="text-muted" data-i18n="howItWorks.step4.description">
-                            設定したショートカットキーを押すだけで、
-                            即座にAI処理が開始されます。
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- セットアップガイドセクション -->
-    <section id="setup-guide" class="section-padding">
+    <section id="setup-guide" class="section-padding setup-section">
         <div class="container">
-            <div class="text-center mb-5">
+            <div class="section-heading">
                 <h2 class="display-5 fw-bold mb-3" data-i18n="setupGuide.title">セットアップガイド</h2>
-                <p class="lead text-muted" data-i18n="setupGuide.subtitle">GenGoを始めるための完全ガイド</p>
+                <p class="lead text-muted" data-i18n="setupGuide.subtitle">共通手順とローカルLLM環境を切り替えて確認できます</p>
             </div>
 
-            <!-- ステップ1: GenGoのインストール -->
-            <div class="row align-items-center mb-5 pb-5 border-bottom">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">1</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step1.title">GenGoをインストール</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step1.description">
-                        GitHubのリリースページから、macOS用のDMGまたはZIPをダウンロードしてインストールします。
-                    </p>
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong data-i18n="setupGuide.step1.tip.title">ヒント:</strong>
-                        <span data-i18n="setupGuide.step1.tip.text">初回起動時に確認ダイアログが表示された場合は、macOSの案内に従って開いてください。</span>
-                    </div>
-                    <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest" class="btn btn-primary"
-                        target="_blank">
-                        <i class="bi bi-download me-2"></i><span
-                            data-i18n="setupGuide.step1.downloadBtn">ダウンロードページへ</span>
-                    </a>
-                </div>
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: GenGoのGitHubリリースページのスクリーンショット -->
-                        <!-- ファイル名: setup-step1-download.png -->
-                        <!-- 内容: macOS版のDMG/ZIPダウンロードが表示されているリリースページ -->
-                        <img src="./images/getting01.png" alt="GenGo Download" class="img-fluid">
-                        <div class="p-3 bg-light">
-                            <small class="text-muted"
-                                data-i18n="setupGuide.step1.imageCaption">GitHubリリースページからインストーラーをダウンロード</small>
+            <div class="setup-card">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-6">
+                        <div class="setup-step-heading">
+                            <div class="step-number">1</div>
+                            <div>
+                                <p class="section-label" data-i18n="setupGuide.commonStep">Common</p>
+                                <h3 class="mb-0" data-i18n="setupGuide.step1.title">GenGoをインストール</h3>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ステップ2: LM Studioのインストール -->
-            <div class="row align-items-center mb-5 pb-5 border-bottom">
-                <div class="col-lg-6 order-lg-2 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">2</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step2.title">LM Studioをインストール</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step2.description">
-                        ローカルLLMを使用するために、LM Studioをインストールします。LM Studioは無料で使いやすいLLM実行環境です。インストール時には Power
-                        UserまたはDeveloperを選択してください。
-                    </p>
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong data-i18n="setupGuide.step2.tip.title">ヒント:</strong>
-                        <span data-i18n="setupGuide.step2.tip.text">OpenAI 互換 APIを使用する場合は、この手順をスキップできます。</span>
-                    </div>
-                    <a href="https://lmstudio.ai/" class="btn btn-primary" target="_blank">
-                        <i class="bi bi-box-arrow-up-right me-2"></i><span data-i18n="setupGuide.step2.downloadBtn">LM
-                            Studio公式サイト</span>
-                    </a>
-                </div>
-                <div class="col-lg-6 order-lg-1">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: LM Studioの公式サイトのスクリーンショット -->
-                        <!-- ファイル名: setup-step2-lmstudio.png -->
-                        <!-- 内容: LM Studioのダウンロードページまたはメイン画面 -->
-                        <img src="./images/getting02.png" alt="LM Studio" class="img-fluid">
-                        <div class="p-3 bg-light">
-                            <small class="text-muted" data-i18n="setupGuide.step2.imageCaption">LM Studio公式サイト</small>
+                        <p class="text-muted mb-3" data-i18n="setupGuide.step1.description">
+                            GitHubのリリースページから、macOS用のDMGまたはZIPをダウンロードしてインストールします。
+                        </p>
+                        <div class="notice">
+                            <i class="bi bi-info-circle"></i>
+                            <p class="mb-0">
+                                <strong data-i18n="setupGuide.step1.tip.title">ヒント:</strong>
+                                <span data-i18n="setupGuide.step1.tip.text">初回起動時に確認ダイアログが表示された場合は、macOSの案内に従って開いてください。</span>
+                            </p>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ステップ3: モデルのダウンロード -->
-            <div class="row align-items-center mb-5 pb-5 border-bottom">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">3</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step3.title">AIモデルをダウンロード</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step3.description">
-                        LM Studioを起動し、検索バーからAIモデルを検索してダウンロードします。
-                    </p>
-                    <div class="alert alert-success">
-                        <i class="bi bi-star-fill me-2"></i>
-                        <strong data-i18n="setupGuide.step3.recommend.title">おすすめモデル:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li><code>Qwen3.5-9b</code></li>
-                            <li><code>gpt-oss-20b</code></li>
-                            <li><code>gemma-4-26b-a4b</code></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: LM Studioのモデル検索画面 -->
-                        <!-- ファイル名: setup-step3-model-download.png -->
-                        <!-- 内容: LM Studioでモデルを検索してダウンロードしている画面 -->
-                        <img src="./images/getting03.png" alt="Download AI Model" class="img-fluid">
-
-                        <div class="p-3 bg-light">
-                            <small class="text-muted" data-i18n="setupGuide.step3.imageCaption">LM
-                                StudioでAIモデルを検索・ダウンロード</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ステップ4: ローカルサーバーの起動 -->
-            <div class="row align-items-center mb-5 pb-5 border-bottom">
-                <div class="col-lg-6 order-lg-2 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">4</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step4.title">ローカルサーバーを起動</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step4.description">
-                        LM Studioの「Local Server」タブを開き、ダウンロードしたモデルを選択して「Start Server」ボタンをクリックします。
-                    </p>
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong data-i18n="setupGuide.step4.note.title">注意:</strong>
-                        <span data-i18n="setupGuide.step4.note.prefix">デフォルトのポート番号は</span><code>1234</code><span
-                            data-i18n="setupGuide.step4.note.suffix">です。変更した場合は、GenGoの設定でエンドポイントを調整してください。</span>
-                    </div>
-                </div>
-                <div class="col-lg-6 order-lg-1">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: LM StudioのLocal Serverタブ -->
-                        <!-- ファイル名: setup-step4-start-server.png -->
-                        <!-- 内容: モデルが選択され、Start Serverボタンが表示されている画面 -->
-                        <img src="./images/getting04.png" alt="Start Local Server" class="img-fluid">
-                        <img src="./images/getting05.png" alt="Start Local Server" class="img-fluid">
-
-                        <div class="p-3 bg-light">
-                            <small class="text-muted" data-i18n="setupGuide.step4.imageCaption">LM
-                                Studioでローカルサーバーを起動</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ステップ5: GenGoの設定 -->
-            <div class="row align-items-center mb-5 pb-5 border-bottom">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">5</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step5.title">GenGoを設定</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step5.description">
-                        GenGoを起動し、トレイアイコンから「Settings」を開きます。プロンプトとショートカットキーを設定します。
-                    </p>
-                    <div class="card border-primary mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <i class="bi bi-gear-fill me-2"></i><span
-                                data-i18n="setupGuide.step5.settings.title">基本設定</span>
-                        </div>
-                        <div class="card-body">
-                            <ul class="mb-0">
-                                <li><strong data-i18n="setupGuide.step5.settings.llmLabel">LLMエンドポイント:</strong>
-                                    <code>http://127.0.0.1:1234</code>
-                                </li>
-                                <li><strong data-i18n="setupGuide.step5.settings.presetLabel">事前プロンプト:</strong>
-                                    <span data-i18n="setupGuide.step5.settings.presetText">よく使う処理を最大5個登録</span>
-                                </li>
-                                <li><strong data-i18n="setupGuide.step5.settings.shortcutLabel">ショートカットキー:</strong>
-                                    <span data-i18n="setupGuide.step5.settings.shortcutText">各プロンプトに割り当て</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: GenGoの設定画面 -->
-                        <!-- ファイル名: setup-step5-gengo-settings.png -->
-                        <!-- 内容: GenGoの設定画面で、プロンプトとショートカットが設定されている様子 -->
-                        <img src="./images/getting06.png" alt="GenGo Settings" class="img-fluid">
-
-                        <div class="p-3 bg-light">
-                            <small class="text-muted" data-i18n="setupGuide.step5.imageCaption">GenGoの設定画面</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ステップ6: 使ってみる -->
-            <div class="row align-items-center">
-                <div class="col-lg-6 order-lg-2 mb-4 mb-lg-0">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="step-number me-3">6</div>
-                        <h3 class="mb-0" data-i18n="setupGuide.step6.title">使ってみよう！</h3>
-                    </div>
-                    <p class="text-muted mb-3" data-i18n="setupGuide.step6.description">
-                        任意のアプリケーションでテキストを選択し、設定したショートカットキーを押してください。AI処理が開始されます！
-                    </p>
-                    <div class="alert alert-success">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <strong data-i18n="setupGuide.step6.success.title">完了！</strong>
-                        <p class="mb-0" data-i18n="setupGuide.step6.success.text">
-                            これでGenGoを使い始める準備が整いました。テキスト処理をお楽しみください。</p>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="#screenshots" class="btn btn-outline-primary">
-                            <i class="bi bi-images me-2"></i><span
-                                data-i18n="setupGuide.step6.screenshotsBtn">スクリーンショットを見る</span>
-                        </a>
-                        <a href="https://github.com/TetsuakiBaba/GenGo" class="btn btn-outline-secondary"
+                        <a href="https://github.com/TetsuakiBaba/GenGo/releases/latest" class="btn btn-primary"
                             target="_blank">
-                            <i class="bi bi-github me-2"></i><span data-i18n="setupGuide.step6.githubBtn">GitHub</span>
+                            <i class="bi bi-download me-2"></i><span
+                                data-i18n="setupGuide.step1.downloadBtn">ダウンロードページへ</span>
                         </a>
                     </div>
+                    <div class="col-lg-6">
+                        <div class="screenshot-card">
+                            <img src="./images/getting01.png" alt="GenGo Download" class="img-fluid">
+                            <div class="media-caption">
+                                <small class="text-muted"
+                                    data-i18n="setupGuide.step1.imageCaption">GitHubリリースページからインストーラーをダウンロード</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-lg-6 order-lg-1">
-                    <div class="screenshot-card">
-                        <!-- 画像指示: GenGoを使用している様子 -->
-                        <!-- ファイル名: setup-step6-in-action.png -->
-                        <!-- 内容: テキストを選択してショートカットを押し、処理結果が表示されている画面 -->
-                        <img src="./images/getting07.png" alt="GenGo in Action" class="img-fluid">
-                        <div class="p-3 bg-light">
-                            <small class="text-muted" data-i18n="setupGuide.step6.imageCaption">GenGoでテキスト処理を実行</small>
+            </div>
+
+            <div class="setup-provider-panel">
+                <div class="setup-step-heading">
+                    <div class="step-number">2</div>
+                    <div>
+                        <p class="section-label" data-i18n="setupGuide.step2.label">Local LLM</p>
+                        <h3 class="mb-0" data-i18n="setupGuide.step2.title">ローカルLLMを準備</h3>
+                    </div>
+                </div>
+                <ul class="nav nav-pills setup-provider-tabs" id="setupProviderTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="lmstudio-tab" data-bs-toggle="pill"
+                            data-bs-target="#lmstudio-panel" type="button" role="tab" aria-controls="lmstudio-panel"
+                            aria-selected="false">
+                            <i class="bi bi-window-sidebar"></i>
+                            <span data-i18n="setupGuide.lmStudio.tab">LM Studio</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="ollama-tab" data-bs-toggle="pill"
+                            data-bs-target="#ollama-panel" type="button" role="tab" aria-controls="ollama-panel"
+                            aria-selected="true">
+                            <i class="bi bi-terminal"></i>
+                            <span data-i18n="setupGuide.ollama.tab">Ollama</span>
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="setupProviderTabContent">
+                    <div class="tab-pane fade" id="lmstudio-panel" role="tabpanel"
+                        aria-labelledby="lmstudio-tab" tabindex="0">
+                        <div class="row align-items-start g-4">
+                            <div class="col-lg-6">
+                                <ol class="setup-list">
+                                    <li data-i18n="setupGuide.lmStudio.install">LM Studioをインストールし、アプリを起動します。</li>
+                                    <li data-i18n="setupGuide.lmStudio.model">Discoverまたは検索からモデルをダウンロードします。</li>
+                                    <li data-i18n="setupGuide.lmStudio.server">DeveloperまたはLocal Serverでモデルをロードし、サーバーを開始します。</li>
+                                </ol>
+                                <div class="notice">
+                                    <i class="bi bi-gear"></i>
+                                    <p class="mb-0">
+                                        <strong data-i18n="setupGuide.lmStudio.noteTitle">GenGo設定:</strong>
+                                        <span data-i18n="setupGuide.lmStudio.noteText">GenGoのSettingsパネルでは、LM Studioをボタンひとつで選択できます。</span>
+                                    </p>
+                                </div>
+                                <a href="https://lmstudio.ai/" class="btn btn-primary" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i><span
+                                        data-i18n="setupGuide.lmStudio.downloadBtn">LM Studio公式サイト</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="screenshot-card">
+                                    <img src="./images/getting02.png" alt="LM Studio" class="img-fluid">
+                                    <img src="./images/getting04.png" alt="LM Studio Local Server" class="img-fluid">
+                                    <div class="media-caption">
+                                        <small class="text-muted" data-i18n="setupGuide.lmStudio.imageCaption">LM
+                                            Studioでモデルを用意してローカルサーバーを起動</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade show active" id="ollama-panel" role="tabpanel" aria-labelledby="ollama-tab"
+                        tabindex="0">
+                        <div class="row align-items-start g-4">
+                            <div class="col-lg-6">
+                                <ol class="setup-list">
+                                    <li data-i18n="setupGuide.ollama.install">Ollamaをダウンロードし、Applicationsフォルダへ移動して起動します。</li>
+                                    <li>
+                                        <span data-i18n="setupGuide.ollama.accountPrefix"></span><a
+                                            href="https://ollama.com/" target="_blank" rel="noopener"
+                                            data-i18n="setupGuide.ollama.accountLink">https://ollama.com/</a><span
+                                            data-i18n="setupGuide.ollama.accountSuffix"> からアカウントを作成してください。</span>
+                                    </li>
+                                    <li>
+                                        <span data-i18n="setupGuide.ollama.signin">OllamaアプリのSettingsから先ほど作成したアカウントでサインしてください。これでcloudモデルを利用できるようになります。</span>
+                                    </li>
+                                </ol>
+                                <div class="notice">
+                                    <i class="bi bi-lightbulb"></i>
+                                    <p class="mb-0">
+                                        <strong data-i18n="setupGuide.ollama.noteTitle">ヒント:</strong>
+                                        <span data-i18n="setupGuide.ollama.noteText">Settings画面ではCloudにチェックが入っているかも確認を忘れずに。</span>
+                                    </p>
+                                </div>
+                                <a href="https://ollama.com/download" class="btn btn-primary" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i><span
+                                        data-i18n="setupGuide.ollama.downloadBtn">Ollama公式ダウンロード</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="screenshot-card">
+                                    <img src="./images/getting02_ollama.png" alt="Ollama setup" class="img-fluid">
+                                    <div class="media-caption">
+                                        <small class="text-muted"
+                                            data-i18n="setupGuide.ollama.imageCaption">Ollamaのセットアップ画面</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-card">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-6">
+                        <div class="setup-step-heading">
+                            <div class="step-number">3</div>
+                            <div>
+                                <p class="section-label" data-i18n="setupGuide.finalStep">Finish</p>
+                                <h3 class="mb-0" data-i18n="setupGuide.step5.title">GenGoを設定</h3>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3" data-i18n="setupGuide.step5.description">
+                            GenGoを起動し、メニューバーアイコンから「Settings」を開きます。利用するLLMをボタンひとつで選択します。
+                        </p>
+                        <ul class="nav nav-pills setup-provider-tabs settings-provider-tabs" id="settingsProviderTabs"
+                            role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="settings-lmstudio-tab" data-bs-toggle="pill"
+                                    data-bs-target="#settings-lmstudio-panel" type="button" role="tab"
+                                    aria-controls="settings-lmstudio-panel" aria-selected="false"
+                                    data-media-group="settings-provider" data-media-target="settings-lmstudio-media">
+                                    <i class="bi bi-window-sidebar"></i>
+                                    <span data-i18n="setupGuide.step5.lmStudio.tab">LM Studio</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="settings-ollama-tab" data-bs-toggle="pill"
+                                    data-bs-target="#settings-ollama-panel" type="button" role="tab"
+                                    aria-controls="settings-ollama-panel" aria-selected="true"
+                                    data-media-group="settings-provider" data-media-target="settings-ollama-media">
+                                    <i class="bi bi-cloud"></i>
+                                    <span data-i18n="setupGuide.step5.ollama.tab">Ollama</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content settings-tab-content" id="settingsProviderTabContent">
+                            <div class="tab-pane fade" id="settings-lmstudio-panel" role="tabpanel"
+                                aria-labelledby="settings-lmstudio-tab" tabindex="0">
+                                <ol class="setup-list">
+                                    <li data-i18n="setupGuide.step5.lmStudio.provider">LLMの項目でProviderをLM Studioに選択します。</li>
+                                    <li data-i18n="setupGuide.step5.lmStudio.model">モデル欄では、LM StudioでLoadされているモデル一覧から使いたいモデルを選択します。</li>
+                                    <li data-i18n="setupGuide.step5.connection">接続テストボタンを押し、接続に成功したら保存ボタンを押します。</li>
+                                </ol>
+                            </div>
+                            <div class="tab-pane fade show active" id="settings-ollama-panel" role="tabpanel"
+                                aria-labelledby="settings-ollama-tab" tabindex="0">
+                                <ol class="setup-list">
+                                    <li data-i18n="setupGuide.step5.ollama.provider">LLMの項目でProviderをOllamaに選択します。</li>
+                                    <li data-i18n="setupGuide.step5.ollama.model">モデル欄から好きなCloudモデルを選択します。</li>
+                                    <li data-i18n="setupGuide.step5.connection">接続テストボタンを押し、接続に成功したら保存ボタンを押します。</li>
+                                </ol>
+                                <div class="notice">
+                                    <i class="bi bi-info-circle"></i>
+                                    <p class="mb-0">
+                                        <strong data-i18n="setupGuide.step5.ollama.recommendTitle">おすすめ:</strong>
+                                        <span data-i18n="setupGuide.step5.ollama.recommendPrefix">GenGoでは</span>
+                                        <code>gemma4:31b-cloud</code>
+                                        <span data-i18n="setupGuide.step5.ollama.recommendSuffix">をおすすめします。一部モデルは有料プランが必要な場合がありますが、GenGoのようなTokenを消費しない使い方であればFree Planで十分利用できます。</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="provider-media-pane fade" id="settings-lmstudio-media"
+                            data-media-group="settings-provider" data-media-pane>
+                            <div class="screenshot-card">
+                                <img src="./images/getting06.png" alt="GenGo Settings for LM Studio" class="img-fluid">
+                                <div class="media-caption">
+                                    <small class="text-muted"
+                                        data-i18n="setupGuide.step5.lmStudio.imageCaption">GenGoのLM Studio設定画面</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="provider-media-pane fade show active" id="settings-ollama-media"
+                            data-media-group="settings-provider" data-media-pane>
+                            <div class="screenshot-card">
+                                <img src="./images/getting03_ollama.png" alt="GenGo Ollama settings" class="img-fluid">
+                                <div class="media-caption">
+                                    <small class="text-muted"
+                                        data-i18n="setupGuide.step5.ollama.imageCaption">GenGoのOllama設定画面</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-card">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-6 order-lg-2">
+                        <div class="setup-step-heading">
+                            <div class="step-number">4</div>
+                            <div>
+                                <p class="section-label" data-i18n="setupGuide.finalStep">Finish</p>
+                                <h3 class="mb-0" data-i18n="setupGuide.step6.title">使ってみよう</h3>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3" data-i18n="setupGuide.step6.description">
+                            任意のアプリケーションでテキストを選択し、Ctrl+1を押してください。日本語の場合は英語に、英語の場合は日本語に変換され、Applyボタンまたは⌘+Enterキーで選択したテキストを入れ替えることができます。
+                        </p>
+                        <div class="notice">
+                            <i class="bi bi-lightbulb"></i>
+                            <p class="mb-0">
+                                <strong data-i18n="setupGuide.step6.tip.title">ヒント:</strong>
+                                <span data-i18n="setupGuide.step6.tip.text">テキストを選択せずにショートカットキーを押すと、テキスト生成モードとして使えます。</span>
+                            </p>
+                        </div>
+                        <div class="notice notice-strong">
+                            <i class="bi bi-check-circle"></i>
+                            <p class="mb-0">
+                                <strong data-i18n="setupGuide.step6.success.title">完了:</strong>
+                                <span data-i18n="setupGuide.step6.success.text">
+                                    これでGenGoを使い始める準備が整いました。</span>
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="https://github.com/TetsuakiBaba/GenGo" class="btn btn-outline-secondary"
+                                target="_blank">
+                                <i class="bi bi-github me-2"></i><span
+                                    data-i18n="setupGuide.step6.githubBtn">GitHub</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 order-lg-1">
+                        <div class="screenshot-card">
+                            <img src="./images/getting07.png" alt="GenGo in Action" class="img-fluid">
+                            <div class="media-caption">
+                                <small class="text-muted"
+                                    data-i18n="setupGuide.step6.imageCaption">選択したテキストに絵文字を自動で入れた様子</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -394,62 +384,31 @@
         </div>
     </section>
 
-    <!-- スクリーンショットセクション -->
-    <section id="screenshots" class="section-padding bg-light">
+    <!-- ベストプラクティスセクション -->
+    <section id="best-practices" class="section-padding bg-light">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3" data-i18n="screenshots.title">スクリーンショット</h2>
-                <p class="lead text-muted" data-i18n="screenshots.subtitle">GenGoの使用例</p>
+            <div class="section-heading">
+                <h2 class="display-5 fw-bold mb-3" data-i18n="bestPractices.title">ベストプラクティス</h2>
+                <p class="lead text-muted" data-i18n="bestPractices.subtitle">GenGoを効果的に使うためのヒントとコツ</p>
+                <p class="text-muted mx-auto" data-i18n="bestPractices.description">
+                    実際の使用経験から得られた、便利なプロンプトとショートカットの活用法をご紹介します。各プロンプトは、コピーボタンをクリックすることで、すぐに設定画面にペーストできます。
+                </p>
             </div>
 
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <video autoplay muted loop class="img-fluid rounded">
-                            <source src="./images/hello.mp4" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="p-3">
-                            <h4 data-i18n="screenshots.translation.title">翻訳機能</h4>
-                            <p class="text-muted mb-0" data-i18n="screenshots.translation.description">日本語と英語の相互翻訳を瞬時に実行
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div class="row g-4" id="practicesContainer">
+                <!-- カードはJavaScriptで自動生成されます -->
+            </div>
 
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <img src="./images/settings.png" alt="Settings" class="img-fluid rounded">
-                        <div class="p-3">
-                            <h4 data-i18n="screenshots.settings.title">設定画面</h4>
-                            <p class="text-muted mb-0" data-i18n="screenshots.settings.description">直感的なUIで簡単に設定をカスタマイズ
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <video autoplay muted loop class="img-fluid rounded">
-                            <source src="./images/keigo.mp4" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="p-3">
-                            <h4 data-i18n="screenshots.customPrompt.title">カスタムプロンプト</h4>
-                            <p class="text-muted mb-0" data-i18n="screenshots.customPrompt.description">
-                                オンデマンドで任意のプロンプトを実行</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="screenshot-card">
-                        <img src="./images/wagahaihaneko.png" alt="Result" class="img-fluid rounded">
-                        <div class="p-3">
-                            <h4 data-i18n="screenshots.result.title">結果プレビュー</h4>
-                            <p class="text-muted mb-0" data-i18n="screenshots.result.description">処理結果を確認してから適用</p>
-                        </div>
-                    </div>
+            <div class="notice best-practices-note mt-5">
+                <i class="bi bi-info-circle"></i>
+                <div>
+                    <h3 class="h5 mb-3" data-i18n="bestPractices.howToUse.title">このページの使い方</h3>
+                    <ol class="mb-3">
+                        <li data-i18n="bestPractices.howToUse.step1">使いたいプロンプトの「コピー」ボタンをクリック</li>
+                        <li data-i18n="bestPractices.howToUse.step2">GenGoの設定画面を開く</li>
+                        <li data-i18n="bestPractices.howToUse.step3">事前プロンプトの欄にペースト</li>
+                        <li data-i18n="bestPractices.howToUse.step4">ショートカットキーを設定して保存</li>
+                    </ol>
                 </div>
             </div>
         </div>
@@ -482,7 +441,7 @@
                     <div class="tech-card text-center">
                         <i class="bi bi-cpu tech-icon"></i>
                         <h5>LLM API</h5>
-                        <p class="text-muted small" data-i18n="techStack.llm">LM Studio / OpenAI 互換 API</p>
+                        <p class="text-muted small" data-i18n="techStack.llm">LM Studio / Ollama / OpenAI 互換 API</p>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
@@ -578,10 +537,27 @@
         </div>
     </footer>
 
+    <!-- Toast notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto" data-i18n="bestPractices.toast.title">コピー成功</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+            <div class="toast-body" data-i18n="bestPractices.toast.message">
+                プロンプトをクリップボードにコピーしました
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- i18n JS -->
     <script src="i18n.js"></script>
+    <!-- Best Practices Data -->
+    <script src="best_practices.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/TetsuakiBaba/placeholderable@main/placeholderable.js"
         crossorigin="anonymous" type="text/javascript"></script>
     <!-- Custom JS -->

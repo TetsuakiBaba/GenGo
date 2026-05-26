@@ -2,42 +2,22 @@
 const translations = {
     ja: {
         nav: {
-            howItWorks: '使い方',
             setupGuide: 'セットアップガイド',
-            screenshots: 'スクリーンショット',
             bestPractices: 'ベストプラクティス',
             download: 'ダウンロード'
         },
         hero: {
             title: 'GenGo',
             subtitle: 'AI-Powered Text Processing Tool',
-            description: 'LM Studio または OpenAI 互換 API を活用した、macOS ネイティブのテキスト処理アプリケーション。翻訳、校正、カスタムプロンプト処理を、ショートカットキー一つで実行できます。',
+            description: 'LM Studio、Ollama、または OpenAI 互換 API を活用した、macOS ネイティブのテキスト処理アプリケーション。翻訳、校正、カスタムプロンプト処理を、ショートカットキー一つで実行できます。',
             downloadBtn: 'ダウンロード',
             githubBtn: 'View on GitHub'
         },
-        howItWorks: {
-            title: '使い方',
-            subtitle: '4ステップで簡単に始められます',
-            step1: {
-                title: 'LLM設定',
-                description: 'LM Studio にモデルをロードするか、OpenAI 互換 API の接続情報を設定します。'
-            },
-            step2: {
-                title: 'プロンプト設定',
-                description: '最大5個の事前プロンプトを登録し、それぞれにショートカットキーを割り当てます。'
-            },
-            step3: {
-                title: 'テキスト選択',
-                description: '処理したいテキストを任意のアプリケーションで選択します。'
-            },
-            step4: {
-                title: 'ショートカット実行',
-                description: '設定したショートカットキーを押すだけで、即座にAI処理が開始されます。'
-            }
-        },
         setupGuide: {
             title: 'セットアップガイド',
-            subtitle: 'GenGoを始めるための完全ガイド',
+            subtitle: '共通手順とローカルLLM環境を切り替えて確認できます',
+            commonStep: 'Common',
+            finalStep: 'Finish',
             step1: {
                 title: 'GenGoをインストール',
                 description: 'GitHubのリリースページから、macOS用のDMGまたはZIPをダウンロードしてインストールします。',
@@ -49,76 +29,69 @@ const translations = {
                 imageCaption: 'GitHubリリースページからmacOS版をダウンロード'
             },
             step2: {
-                title: 'LM Studioをインストール',
-                description: 'ローカルLLMを使用するために、LM Studioをインストールします。LM Studioは無料で使いやすいLLM実行環境です。インストール時には Power UserまたはDeveloperを選択してください。',
-                tip: {
-                    title: 'ヒント:',
-                    text: 'OpenAI 互換 APIを使用する場合は、この手順をスキップできます。'
-                },
+                label: 'Local LLM',
+                title: 'ローカルLLMを準備'
+            },
+            lmStudio: {
+                tab: 'LM Studio',
+                label: 'GUI setup',
+                title: 'LM Studioを準備',
+                install: 'LM Studioをインストールし、アプリを起動します。',
+                model: 'Discoverまたは検索からモデルをダウンロードします。',
+                server: 'DeveloperまたはLocal Serverでモデルをロードし、サーバーを開始します。',
+                noteTitle: 'GenGo設定:',
+                noteText: 'GenGoのSettingsパネルでは、LM Studioをボタンひとつで選択できます。',
                 downloadBtn: 'LM Studio公式サイト',
-                imageCaption: 'LM Studio公式サイト'
+                imageCaption: 'LM Studioでモデルを用意してローカルサーバーを起動'
             },
-            step3: {
-                title: 'AIモデルをダウンロード',
-                description: 'LM Studioを起動し、検索バーからAIモデルを検索してダウンロードします。',
-                recommend: {
-                    title: 'おすすめモデル:'
-                },
-                imageCaption: 'LM StudioでAIモデルを検索・ダウンロード'
-            },
-            step4: {
-                title: 'ローカルサーバーを起動',
-                description: 'LM StudioのLocal Serverでダウンロード済みモデルをロードし、「Start Server」ボタンをクリックします。',
-                note: {
-                    title: '注意:',
-                    prefix: 'デフォルトのポート番号は',
-                    suffix: 'です。変更した場合は、GenGoの設定でエンドポイントを調整してください。'
-                },
-                imageCaption: 'LM Studioでローカルサーバーを起動'
+            ollama: {
+                tab: 'Ollama',
+                label: 'Cloud setup',
+                title: 'Ollamaを準備',
+                install: 'Ollamaをダウンロードし、Applicationsフォルダへ移動して起動します。',
+                accountPrefix: '',
+                accountLink: 'https://ollama.com/',
+                accountSuffix: ' からアカウントを作成してください。',
+                signin: 'OllamaアプリのSettingsから先ほど作成したアカウントでサインしてください。これでcloudモデルを利用できるようになります。',
+                noteTitle: 'ヒント:',
+                noteText: 'Settings画面ではCloudにチェックが入っているかも確認を忘れずに。',
+                downloadBtn: 'Ollama公式ダウンロード',
+                imageCaption: 'Ollamaのセットアップ画面'
             },
             step5: {
                 title: 'GenGoを設定',
-                description: 'GenGoを起動し、メニューバーアイコンから「Settings」を開きます。プロンプトとショートカットキーを設定します。',
-                settings: {
-                    title: '基本設定',
-                    llmLabel: 'LLMエンドポイント:',
-                    presetLabel: '事前プロンプト:',
-                    presetText: 'よく使う処理を最大5個登録',
-                    shortcutLabel: 'ショートカットキー:',
-                    shortcutText: '各プロンプトに割り当て'
+                description: 'GenGoを起動し、メニューバーアイコンから「Settings」を開きます。利用するLLMをボタンひとつで選択します。',
+                connection: '接続テストボタンを押し、接続に成功したら保存ボタンを押します。',
+                lmStudio: {
+                    tab: 'LM Studio',
+                    provider: 'LLMの項目でProviderをLM Studioに選択します。',
+                    model: 'モデル欄では、LM StudioでLoadされているモデル一覧から使いたいモデルを選択します。',
+                    imageCaption: 'GenGoのLM Studio設定画面'
+                },
+                ollama: {
+                    tab: 'Ollama',
+                    provider: 'LLMの項目でProviderをOllamaに選択します。',
+                    model: 'モデル欄から好きなCloudモデルを選択します。',
+                    recommendTitle: 'おすすめ:',
+                    recommendPrefix: 'GenGoでは',
+                    recommendSuffix: 'をおすすめします。一部モデルは有料プランが必要な場合がありますが、GenGoのようなTokenを消費しない使い方であればFree Planで十分利用できます。',
+                    imageCaption: 'GenGoのOllama設定画面'
                 },
                 imageCaption: 'GenGoの設定画面'
             },
             step6: {
-                title: '使ってみよう！',
-                description: '任意のアプリケーションでテキストを選択し、設定したショートカットキーを押してください。AI処理が開始されます！',
-                success: {
-                    title: '完了！',
-                    text: 'これでGenGoを使い始める準備が整いました。テキスト処理をお楽しみください。'
+                title: '使ってみよう',
+                description: '任意のアプリケーションでテキストを選択し、Ctrl+1を押してください。日本語の場合は英語に、英語の場合は日本語に変換され、Applyボタンまたは⌘+Enterキーで選択したテキストを入れ替えることができます。',
+                tip: {
+                    title: 'ヒント:',
+                    text: 'テキストを選択せずにショートカットキーを押すと、テキスト生成モードとして使えます。'
                 },
-                screenshotsBtn: 'スクリーンショットを見る',
+                success: {
+                    title: '完了:',
+                    text: 'これでGenGoを使い始める準備が整いました。'
+                },
                 githubBtn: 'GitHub',
-                imageCaption: 'GenGoでテキスト処理を実行'
-            }
-        },
-        screenshots: {
-            title: 'スクリーンショット',
-            subtitle: 'GenGoの使用例',
-            translation: {
-                title: '翻訳機能',
-                description: '日本語と英語の相互翻訳を瞬時に実行。事前プロンプトに登録することで、よく使う処理をショートカットキー一つで実行できます。'
-            },
-            settings: {
-                title: '設定画面',
-                description: '最大5個の事前プロンプトを登録し、それぞれに自由なショートカットキーを設定可能'
-            },
-            customPrompt: {
-                title: 'オンデマンドプロンプト',
-                description: 'その場でプロンプトを入力して柔軟に処理を実行'
-            },
-            result: {
-                title: '結果プレビュー',
-                description: '処理結果を確認してから適用'
+                imageCaption: '選択したテキストに絵文字を自動で入れた様子'
             }
         },
         techStack: {
@@ -126,7 +99,7 @@ const translations = {
             subtitle: 'macOSネイティブアプリとして構築',
             swift: 'macOS 13+ ネイティブアプリ',
             swiftui: '軽量なメニューバーUI',
-            llm: 'LM Studio / OpenAI 互換 API',
+            llm: 'LM Studio / Ollama / OpenAI 互換 API',
             sparkle: '署名済みアップデート配信'
         },
         download: {
@@ -151,7 +124,7 @@ const translations = {
             subtitle: 'GenGoを効果的に使うためのヒントとコツ',
             description: '実際の使用経験から得られた、便利なプロンプトとショートカットの活用法をご紹介します。各プロンプトは、コピーボタンをクリックすることで、すぐに設定画面にペーストできます。',
             copyBtn: 'コピー',
-            emptyMessage: 'まだベストプラクティスが登録されていません。\n上記のテンプレートを使用して、新しいプロンプトを追加してください。',
+            emptyMessage: 'まだベストプラクティスが登録されていません。',
             toast: {
                 title: 'コピー成功',
                 message: 'プロンプトをクリップボードにコピーしました'
@@ -161,9 +134,7 @@ const translations = {
                 step1: '使いたいプロンプトの「コピー」ボタンをクリック',
                 step2: 'GenGoの設定画面を開く',
                 step3: '事前プロンプトの欄にペースト',
-                step4: 'ショートカットキーを設定して保存',
-                addNew: '新しいプロンプトの追加:',
-                editNoteNew: 'ファイルにJSONデータを追記するだけで自動的に反映されます。HTMLの編集は不要です。'
+                step4: 'ショートカットキーを設定して保存'
             },
             example: {
                 title: 'タイトルをここに',
@@ -174,42 +145,22 @@ const translations = {
     },
     en: {
         nav: {
-            howItWorks: 'How It Works',
             setupGuide: 'Setup Guide',
-            screenshots: 'Screenshots',
             bestPractices: 'Best Practices',
             download: 'Download'
         },
         hero: {
             title: 'GenGo',
             subtitle: 'AI-Powered Text Processing Tool',
-            description: 'A native macOS text processing app powered by LM Studio or OpenAI-compatible APIs. Run translation, proofreading, and custom prompt workflows with a single shortcut.',
+            description: 'A native macOS text processing app powered by LM Studio, Ollama, or OpenAI-compatible APIs. Run translation, proofreading, and custom prompt workflows with a single shortcut.',
             downloadBtn: 'Download',
             githubBtn: 'View on GitHub'
         },
-        howItWorks: {
-            title: 'How It Works',
-            subtitle: 'Get started in 4 easy steps',
-            step1: {
-                title: 'Set Up LLM',
-                description: 'Load a model in LM Studio or configure an OpenAI-compatible API connection.'
-            },
-            step2: {
-                title: 'Configure Prompts',
-                description: 'Register up to 5 preset prompts and assign shortcut keys to each.'
-            },
-            step3: {
-                title: 'Select Text',
-                description: 'Select the text you want to process in any application.'
-            },
-            step4: {
-                title: 'Run Shortcut',
-                description: 'Press the configured shortcut key to start AI processing instantly.'
-            }
-        },
         setupGuide: {
             title: 'Setup Guide',
-            subtitle: 'Complete guide to get started with GenGo',
+            subtitle: 'Switch between the common steps and your local LLM runtime',
+            commonStep: 'Common',
+            finalStep: 'Finish',
             step1: {
                 title: 'Install GenGo',
                 description: 'Download the macOS DMG or ZIP from the GitHub releases page and install it.',
@@ -221,76 +172,69 @@ const translations = {
                 imageCaption: 'Download the macOS release from GitHub'
             },
             step2: {
-                title: 'Install LM Studio',
-                description: 'Install LM Studio to use local LLMs. LM Studio is a free, user-friendly LLM runtime. During installation, select Power User or Developer.',
-                tip: {
-                    title: 'Tip:',
-                    text: 'You can skip this step if you use an OpenAI-compatible API.'
-                },
+                label: 'Local LLM',
+                title: 'Prepare a local LLM'
+            },
+            lmStudio: {
+                tab: 'LM Studio',
+                label: 'GUI setup',
+                title: 'Prepare LM Studio',
+                install: 'Install LM Studio and launch the app.',
+                model: 'Download a model from Discover or search.',
+                server: 'Load the model from Developer or Local Server, then start the server.',
+                noteTitle: 'GenGo Settings:',
+                noteText: 'In the GenGo Settings panel, choose LM Studio with one button.',
                 downloadBtn: 'LM Studio Official Site',
-                imageCaption: 'LM Studio official website'
+                imageCaption: 'Prepare a model and start the local server in LM Studio'
             },
-            step3: {
-                title: 'Download AI Models',
-                description: 'Launch LM Studio, search for AI models in the search bar, and download them.',
-                recommend: {
-                    title: 'Recommended models:'
-                },
-                imageCaption: 'Search and download AI models in LM Studio'
-            },
-            step4: {
-                title: 'Start Local Server',
-                description: 'Load the downloaded model in LM Studio Local Server, then click the "Start Server" button.',
-                note: {
-                    title: 'Note:',
-                    prefix: 'The default port number is ',
-                    suffix: '. If you change it, adjust the endpoint in GenGo settings.'
-                },
-                imageCaption: 'Start local server in LM Studio'
+            ollama: {
+                tab: 'Ollama',
+                label: 'Cloud setup',
+                title: 'Prepare Ollama',
+                install: 'Download Ollama, move it to Applications, and launch it.',
+                accountPrefix: 'Create an account from ',
+                accountLink: 'https://ollama.com/',
+                accountSuffix: '.',
+                signin: 'Sign in from Ollama app Settings with the account you just created. This makes cloud models available.',
+                noteTitle: 'Tip:',
+                noteText: 'In Settings, also remember to check that Cloud is enabled.',
+                downloadBtn: 'Ollama Official Download',
+                imageCaption: 'Ollama setup screen'
             },
             step5: {
                 title: 'Configure GenGo',
-                description: 'Launch GenGo, open "Settings" from the menu bar icon, and configure prompts and shortcut keys.',
-                settings: {
-                    title: 'Basic Settings',
-                    llmLabel: 'LLM Endpoint:',
-                    presetLabel: 'Preset Prompts:',
-                    presetText: 'Register up to 5 frequently used workflows',
-                    shortcutLabel: 'Shortcut Keys:',
-                    shortcutText: 'Assign to each prompt'
+                description: 'Launch GenGo and open "Settings" from the menu bar icon. Choose your LLM with one button.',
+                connection: 'Click the connection test button, then click Save after the connection succeeds.',
+                lmStudio: {
+                    tab: 'LM Studio',
+                    provider: 'In the LLM section, choose LM Studio as the Provider.',
+                    model: 'In the model field, choose from the models currently loaded in LM Studio.',
+                    imageCaption: 'GenGo LM Studio settings panel'
+                },
+                ollama: {
+                    tab: 'Ollama',
+                    provider: 'In the LLM section, choose Ollama as the Provider.',
+                    model: 'Choose any cloud model from the model field.',
+                    recommendTitle: 'Recommended:',
+                    recommendPrefix: 'For GenGo, we recommend',
+                    recommendSuffix: '. Some models may require a paid plan, but the Free Plan is enough for GenGo-style usage that does not consume tokens.',
+                    imageCaption: 'GenGo Ollama settings panel'
                 },
                 imageCaption: 'GenGo settings panel'
             },
             step6: {
-                title: 'Try It Out!',
-                description: 'Select text in any application and press the configured shortcut key. AI processing will start.',
-                success: {
-                    title: 'Done!',
-                    text: 'You are ready to start using GenGo. Enjoy text processing.'
+                title: 'Try It Out',
+                description: 'Select text in any application and press Ctrl+1. Japanese text is converted to English, English text is converted to Japanese, and you can replace the selected text with the Apply button or Command+Enter.',
+                tip: {
+                    title: 'Tip:',
+                    text: 'Press a shortcut without selecting text to use GenGo as a text generation mode.'
                 },
-                screenshotsBtn: 'View Screenshots',
+                success: {
+                    title: 'Done:',
+                    text: 'You are ready to start using GenGo.'
+                },
                 githubBtn: 'GitHub',
-                imageCaption: 'Execute text processing with GenGo'
-            }
-        },
-        screenshots: {
-            title: 'Screenshots',
-            subtitle: 'GenGo in action',
-            translation: {
-                title: 'Translation',
-                description: 'Run bidirectional translation between Japanese and English instantly with a preset shortcut.'
-            },
-            settings: {
-                title: 'Settings Panel',
-                description: 'Register up to 5 preset prompts and assign custom shortcut keys to each.'
-            },
-            customPrompt: {
-                title: 'On-Demand Prompt',
-                description: 'Enter prompts on the spot for flexible processing.'
-            },
-            result: {
-                title: 'Result Preview',
-                description: 'Review results before applying them.'
+                imageCaption: 'Example of automatically adding emoji to selected text'
             }
         },
         techStack: {
@@ -298,7 +242,7 @@ const translations = {
             subtitle: 'Built as a native macOS app',
             swift: 'Native macOS 13+ app',
             swiftui: 'Lightweight menu bar UI',
-            llm: 'LM Studio / OpenAI-compatible APIs',
+            llm: 'LM Studio / Ollama / OpenAI-compatible APIs',
             sparkle: 'Signed update delivery'
         },
         download: {
@@ -323,7 +267,7 @@ const translations = {
             subtitle: 'Tips and tricks for effective GenGo usage',
             description: 'Discover useful prompts and shortcut techniques gathered from real-world experience. Click the copy button on any prompt to paste it directly into your settings.',
             copyBtn: 'Copy',
-            emptyMessage: 'No best practices have been registered yet.\nUse the template above to add new prompts.',
+            emptyMessage: 'No best practices have been registered yet.',
             toast: {
                 title: 'Copied',
                 message: 'Prompt copied to clipboard'
@@ -333,9 +277,7 @@ const translations = {
                 step1: 'Click the "Copy" button on the prompt you want to use',
                 step2: 'Open GenGo settings panel',
                 step3: 'Paste into a preset prompt field',
-                step4: 'Assign a shortcut key and save',
-                addNew: 'Adding New Prompts:',
-                editNoteNew: 'Simply add JSON data to the file and it will be automatically reflected. No HTML editing required.'
+                step4: 'Assign a shortcut key and save'
             },
             example: {
                 title: 'Title goes here',

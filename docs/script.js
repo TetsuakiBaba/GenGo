@@ -55,8 +55,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }, observerOptions);
 
+    renderPractices();
+
     // Observe feature cards
-    document.querySelectorAll('.feature-card, .screenshot-card, .tech-card').forEach(card => {
+    document.querySelectorAll('.feature-card, .screenshot-card, .tech-card, .setup-card, .setup-provider-panel').forEach(card => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(30px)';
         card.style.transition = 'all 0.6s ease-out';
@@ -88,9 +90,117 @@ document.addEventListener('DOMContentLoaded', function () {
     // Counter animation for stats (if you want to add stats)
     animateCounters();
 
-    // Add hover effect to images
-    addImageHoverEffect();
+    syncProviderMedia();
+
+    // Keep media still; card-level motion handles visual feedback.
 });
+
+function renderPractices() {
+    const container = document.getElementById('practicesContainer');
+    if (!container) return;
+
+    const lang = typeof currentLanguage === 'string' ? currentLanguage : 'ja';
+
+    if (typeof bestPracticesData === 'undefined' || bestPracticesData.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 4rem; color: #cccccc;"></i>
+                <p class="text-muted mt-3 mb-0">
+                    <span data-i18n="bestPractices.emptyMessage">まだベストプラクティスが登録されていません。</span>
+                </p>
+            </div>
+        `;
+        applyTranslations(lang);
+        return;
+    }
+
+    container.innerHTML = bestPracticesData.map(practice => `
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card h-100 position-relative">
+                <div class="feature-icon">
+                    <i class="bi ${escapeHtml(practice.icon)}"></i>
+                </div>
+                <h3 class="h4 mb-3">${escapeHtml(practice.title[lang] || practice.title.ja)}</h3>
+                <p class="text-muted mb-3">${escapeHtml(practice.description[lang] || practice.description.ja)}</p>
+                <div class="prompt-container">
+                    <pre class="prompt-text">${escapeHtml(practice.prompt)}</pre>
+                    <button class="btn btn-sm btn-outline-primary copy-btn" onclick="copyPromptDirect(this)">
+                        <i class="bi bi-clipboard"></i> <span data-i18n="bestPractices.copyBtn">コピー</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    applyTranslations(lang);
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function copyPromptDirect(button) {
+    const promptElement = button.previousElementSibling;
+    const promptText = promptElement.textContent.trim();
+
+    navigator.clipboard.writeText(promptText).then(() => {
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check-circle-fill';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-primary');
+
+        const toastElement = document.getElementById('copyToast');
+        if (toastElement && window.bootstrap) {
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
+
+        setTimeout(() => {
+            icon.className = originalClass;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('コピーに失敗しました');
+    });
+}
+
+const originalChangeLanguage = window.changeLanguage;
+if (typeof originalChangeLanguage === 'function') {
+    window.changeLanguage = function (lang) {
+        originalChangeLanguage(lang);
+        renderPractices();
+    };
+}
+
+function syncProviderMedia() {
+    document.querySelectorAll('[data-media-group][data-media-target]').forEach(button => {
+        const updateMedia = () => {
+            const group = button.getAttribute('data-media-group');
+            const targetId = button.getAttribute('data-media-target');
+
+            document.querySelectorAll(`[data-media-group="${group}"][data-media-pane]`).forEach(pane => {
+                const isTarget = pane.id === targetId;
+                pane.classList.toggle('active', isTarget);
+                pane.classList.toggle('show', isTarget);
+            });
+        };
+
+        if (button.classList.contains('active')) {
+            updateMedia();
+        }
+
+        button.addEventListener('shown.bs.tab', updateMedia);
+        button.addEventListener('click', updateMedia);
+    });
+}
 
 // Counter animation
 function animateCounters() {
@@ -126,29 +236,13 @@ function animateCounters() {
     });
 }
 
-// Image hover effect
-function addImageHoverEffect() {
-    const images = document.querySelectorAll('.screenshot-card img, .hero-section img');
-
-    images.forEach(img => {
-        img.addEventListener('mouseenter', function () {
-            this.style.transition = 'transform 0.3s ease';
-            this.style.transform = 'scale(1.05)';
-        });
-
-        img.addEventListener('mouseleave', function () {
-            this.style.transform = 'scale(1)';
-        });
-    });
-}
-
 // Add CSS for active navigation state
 const style = document.createElement('style');
 style.textContent = `
     .navbar-nav .nav-link.active {
         color: #111111 !important;
-        background: #eeeeee;
-        border-radius: 8px;
+        background: #f9f9f9;
+        border-radius: 0;
         padding: 0.5rem 1rem;
     }
 `;
@@ -195,7 +289,7 @@ function activateEasterEgg() {
     if (heroSection) {
         heroSection.style.background = '#eeeeee';
         setTimeout(() => {
-            heroSection.style.background = '#f7f7f7';
+            heroSection.style.background = '#ffffff';
         }, 3000);
     }
     console.log('Easter egg activated. GenGo rocks.');

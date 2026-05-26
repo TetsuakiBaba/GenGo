@@ -25,6 +25,30 @@ const bestPracticesData = [
             en: 'Check for typos and grammar mistakes, improving readability.'
         },
         prompt: 'Proofread and improve the text. Fix any grammar, spelling, or punctuation errors.'
+    },
+    {
+        icon: 'bi-code-slash',
+        title: {
+            ja: '自動マークダウンリンク変換',
+            en: 'Automatic Markdown Link Conversion'
+        },
+        description: {
+            ja: '面倒なマークダウンリンクの記法を自動で変換します。',
+            en: 'Automatically convert tedious markdown link syntax.'
+        },
+        prompt: 'Please convert the selected text {text} into a markdown link format. For example, output it in the format [{text}]({text}).'
+    },
+    {
+        icon: 'bi-code-slash',
+        title: {
+            ja: '自動マークダウンテーブル変換',
+            en: 'Automatic Markdown Table Conversion'
+        },
+        description: {
+            ja: '面倒なマークダウンテーブルの記法をcsv形式から自動で変換します。',
+            en: 'Automatically convert tedious markdown table syntax from CSV format.'
+        },
+        prompt: 'Please convert the selected csv into a markdown table format.'
     }
 ];
 

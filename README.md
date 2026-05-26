@@ -1,6 +1,6 @@
 # GenGo
 
-![GenGo Logo](./icons/newicon.png)
+<img src="./icons/newicon.png" alt="GenGo Logo" style="width: 20%;">
 
 **GenGo** is a native macOS app for processing selected text with Large Language Models. It lives in the menu bar, watches global shortcuts, and lets you translate, proofread, rewrite, or generate text without leaving the app you are working in.
 

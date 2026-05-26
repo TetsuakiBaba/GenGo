@@ -29,6 +29,8 @@ swift run GenGoSwift
 
 Swift 版は Mac App Store ではなく、`Developer ID` 署名と notarization を付けた `.dmg` / `.zip` を GitHub Releases に公開する前提で整えています。
 
+リリースバージョンはリポジトリ共通の `../docs/version.json` で管理します。`BUILD_VERSION` を明示しない場合、パッケージングスクリプトと GitHub Actions はこのファイルを参照します。
+
 ### ローカルで配布物を作る
 
 ```bash
@@ -69,7 +71,7 @@ scripts/release-macos.sh
 
 ### GitHub Actions で自動公開する
 
-`.github/workflows/swift-release.yml` を追加してあり、`swift-v0.10.1` のようなタグを push すると、署名済みの成果物を作って draft release に添付します。
+`.github/workflows/swift-release.yml` を追加してあり、`swift-v<version>` のようなタグを push すると、署名済みの成果物を作って draft release に添付します。
 
 Apple Intelligence / Apple Foundation Models provider を含めるため、workflow は `macos-26` runner 上で macOS 26 SDK を使ってビルドします。SDK が古い場合は、Apple Intelligence なしの Release を黙って作らないようにビルドを失敗させます。
 
@@ -133,8 +135,9 @@ git push origin main
 ```bash
 cd /path/to/GenGo
 
-git tag swift-v0.10.2
-git push origin swift-v0.10.2
+VERSION="$(/usr/bin/plutil -extract version raw -o - docs/version.json)"
+git tag "swift-v${VERSION}"
+git push origin "swift-v${VERSION}"
 ```
 
 これで `push.tags: swift-v*` がトリガーされ、workflow が draft release を作成します。
@@ -142,8 +145,8 @@ git push origin swift-v0.10.2
 #### タグ運用の注意
 
 - タグは `swift/` ディレクトリ単体ではなく、リポジトリ全体の commit に付きます
-- 既存の `swift-v0.10.1` が古い commit を指している場合は、そのままでは最新の Swift workflow は走りません
-- すでに公開していない限り retag もできますが、通常は `swift-v0.10.2` のように次の番号を使う方が安全です
+- 既存の `swift-v<version>` が古い commit を指している場合は、そのままでは最新の Swift workflow は走りません
+- すでに公開していない限り retag もできますが、通常は `docs/version.json` を更新して次の番号を使う方が安全です
 
 #### Actions で失敗したときの確認
 

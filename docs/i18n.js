@@ -1,4 +1,6 @@
 // 多言語対応の翻訳データ
+let currentAppVersion = '';
+
 const translations = {
     ja: {
         nav: {
@@ -106,7 +108,7 @@ const translations = {
             title: '始めましょう',
             subtitle: 'GenGo for macOSをダウンロードして、AI-powered text processingを体験してください。',
             macBtn: 'macOS版をダウンロード',
-            version: 'Version 0.20.0 | macOS 13+ | MIT License | オープンソース'
+            version: 'Version {version} | macOS 13+ | MIT License | オープンソース'
         },
         footer: {
             description: 'AI-powered text processing tool for everyone. Built as a native macOS app with Swift and SwiftUI.',
@@ -249,7 +251,7 @@ const translations = {
             title: 'Ready to Get Started?',
             subtitle: 'Download GenGo for macOS and experience AI-powered text processing.',
             macBtn: 'Download for macOS',
-            version: 'Version 0.20.0 | macOS 13+ | MIT License | Open Source'
+            version: 'Version {version} | macOS 13+ | MIT License | Open Source'
         },
         footer: {
             description: 'AI-powered text processing tool for everyone. Built as a native macOS app with Swift and SwiftUI.',
@@ -318,6 +320,10 @@ function applyTranslations(lang) {
         }
 
         if (value) {
+            if (typeof value === 'string') {
+                value = value.replace(/\{version\}/g, currentAppVersion);
+            }
+
             // 子要素（画像やアイコンなど）がある場合は、それらを保持
             const childElements = Array.from(element.children);
 
@@ -368,10 +374,26 @@ function changeLanguage(lang) {
     applyTranslations(lang);
 }
 
+async function loadAppVersion() {
+    try {
+        const response = await fetch('version.json', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (typeof data.version === 'string' && data.version.trim()) {
+            currentAppVersion = data.version.trim();
+            applyTranslations(currentLanguage);
+        }
+    } catch (error) {
+        console.warn('Failed to load app version:', error);
+    }
+}
+
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', () => {
     // 保存された言語設定を確認、なければブラウザの言語を検出
     const savedLang = localStorage.getItem('preferredLanguage');
     const initialLang = savedLang || detectBrowserLanguage();
     applyTranslations(initialLang);
+    loadAppVersion();
 });

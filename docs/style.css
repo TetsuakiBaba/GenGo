@@ -177,7 +177,7 @@ code {
     border: 1px solid var(--hairline);
     border-radius: 0;
     box-shadow: var(--shadow);
-    max-height: 360px;
+    max-height: 720px;
     object-fit: cover;
 }
 

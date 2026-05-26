@@ -21,12 +21,10 @@ APP_DIR="${APP_DIR:-${DIST_DIR}/${APP_NAME}.app}"
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
 SPARKLE_PUBLIC_ED_KEY="${SPARKLE_PUBLIC_ED_KEY:-}"
 SPARKLE_FRAMEWORK_SOURCE="${SPARKLE_FRAMEWORK_SOURCE:-}"
-VERSION_PACKAGE_JSON="${VERSION_PACKAGE_JSON:-${REPO_ROOT}/electron/package.json}"
+VERSION_FILE="${VERSION_FILE:-${REPO_ROOT}/docs/version.json}"
 
-if [[ -f "${VERSION_PACKAGE_JSON}" ]]; then
-    DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${VERSION_PACKAGE_JSON}" 2>/dev/null || true)"
-elif [[ -f "${REPO_ROOT}/package.json" ]]; then
-    DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${REPO_ROOT}/package.json" 2>/dev/null || true)"
+if [[ -f "${VERSION_FILE}" ]]; then
+    DEFAULT_VERSION="$(/usr/bin/plutil -extract version raw -o - "${VERSION_FILE}" 2>/dev/null || true)"
 else
     DEFAULT_VERSION=""
 fi

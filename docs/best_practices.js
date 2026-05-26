@@ -49,6 +49,18 @@ const bestPracticesData = [
             en: 'Automatically convert tedious markdown table syntax from CSV format.'
         },
         prompt: 'Please convert the selected csv into a markdown table format.'
+    },
+    {
+        icon: 'bi-journal-text',
+        title: {
+            ja: '文字数カウント',
+            en: 'Word Count',
+        },
+        description: {
+            ja: '選択したテキストの文字数をカウントします。',
+            en: 'Count the number of words in the selected text.'
+        },
+        prompt: 'Please count the number of words.'
     }
 ];
 

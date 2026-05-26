@@ -2,319 +2,202 @@
 
 ![GenGo Logo](./icons/newicon.png)
 
-**GenGo** is an AI-powered text processing tool that brings the power of Large Language Models (LLMs) to your fingertips. Process text instantly with customizable shortcuts, supporting both local and remote LLM providers.
+**GenGo** is a native macOS app for processing selected text with Large Language Models. It lives in the menu bar, watches global shortcuts, and lets you translate, proofread, rewrite, or generate text without leaving the app you are working in.
 
-[![Version](https://img.shields.io/badge/version-0.20.0-blue.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FTetsuakiBaba%2FGenGo%2Fmain%2Fdocs%2Fversion.json&query=%24.version&label=version&color=blue)](https://github.com/TetsuakiBaba/GenGo/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/TetsuakiBaba/GenGo/releases)
+[![Swift](https://img.shields.io/badge/main-Swift-orange.svg)](./swift)
 
-## ✨ Features
+## Status
 
-### 🤖 Dual LLM Support
-- **Local LLMs**: LM Studio
-- **Remote LLMs**: OpenAI (GPT-4o, GPT-4o-mini), and other OpenAI-compatible APIs
-- Seamless switching between providers
+GenGo is now developed and supported as a **Swift / SwiftUI macOS application**.
 
-### 🌍 Smart Translation
-- Automatic language detection
-- Bidirectional translation between 10+ languages
-- Natural and readable translations
+The older Electron implementation remains in `electron/` for historical reference only. It is not the supported application, and new fixes or features should target the Swift app under `swift/`.
 
-### ⌨️ Global Shortcuts
-- Customizable keyboard shortcuts
-- Process selected text from any application
-- Quick access to custom prompts
+The project version is defined in one place: [docs/version.json](./docs/version.json). The README badge, documentation site, and Swift release scripts read from that file.
 
-### 🎨 Custom Prompts
-- Create and save custom processing templates
-- Text proofreading, summarization, style conversion
-- On-demand prompt execution
+## Features
 
-### 🔒 Privacy First
-- Use local LLMs for complete offline operation
-- No data sent externally when using local models
-- Full control over your data
+### Native macOS App
 
-### 🌐 Multilingual UI
-- Japanese and English support
-- Easy language switching
-- Localized interface
+- Menu bar app built with Swift and SwiftUI
+- Global shortcuts for preset prompts and on-demand prompts
+- Selected text capture and in-place replacement
+- macOS accessibility integration for copy and paste workflows
 
-## 📦 Installation
+### LLM Providers
 
-### Download Pre-built Binaries
+- **LM Studio**: choose from models loaded in LM Studio
+- **Ollama**: choose local or cloud models from the Ollama catalog
+- **Apple Intelligence**: available on supported macOS versions
+- **OpenAI-compatible APIs**: use a remote endpoint and API key when needed
 
-Download the latest release for your platform:
-- **macOS**: [GenGo-{version}.dmg](https://github.com/TetsuakiBaba/GenGo/releases)
-- **Windows**: [GenGoSetup-{version}.exe](https://github.com/TetsuakiBaba/GenGo/releases)
+### Prompt Workflows
 
-### Build from Source
+- Preset prompts with custom shortcuts
+- On-demand prompt mode
+- Text generation mode when no text is selected
+- Default preset for Japanese / English translation
+- Up to 5 preset prompts
+
+### Privacy Options
+
+- Use LM Studio, Ollama, or Apple Intelligence for local-first workflows
+- Use remote OpenAI-compatible providers only when explicitly configured
+- Settings are stored locally in Application Support
+
+## Installation
+
+Download the latest macOS release from:
+
+[https://github.com/TetsuakiBaba/GenGo/releases](https://github.com/TetsuakiBaba/GenGo/releases)
+
+On first launch, macOS may ask for confirmation because the app was downloaded from the internet. GenGo also needs Accessibility permission so it can read selected text and paste the processed result back into the active app.
+
+## Quick Start
+
+### 1. Install an LLM Provider
+
+Choose one provider:
+
+**Ollama**
+
+1. Install [Ollama](https://ollama.com/download).
+2. Create an account from [https://ollama.com/](https://ollama.com/).
+3. Sign in from the Ollama app Settings.
+4. Make sure Cloud is enabled if you want to use Ollama cloud models.
+
+**LM Studio**
+
+1. Install [LM Studio](https://lmstudio.ai/).
+2. Download a model from Discover or search.
+3. Load the model in LM Studio and start the local server.
+
+### 2. Configure GenGo
+
+Open GenGo from the menu bar and choose **Settings**.
+
+- Select the LLM provider.
+- Select a model from the available model list.
+- Click the connection test button.
+- Save after the connection succeeds.
+
+### 3. Use the Default Shortcut
+
+1. Select text in any macOS application.
+2. Press `Ctrl+1`.
+3. Japanese text is translated into English, and English text is translated into Japanese.
+4. Click **Apply** or press `Command+Enter` to replace the selected text.
+
+If you press a shortcut without selecting text, GenGo opens text generation mode.
+
+## Default Shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+1` | Default Japanese / English translation preset |
+| `Ctrl+0` | On-demand prompt / text generation |
+
+Shortcuts can be changed in the Settings panel.
+
+## Build from Source
+
+Requirements:
+
+- macOS
+- Xcode command line tools
+- Swift Package Manager
+
+Run the Swift app locally:
 
 ```bash
-# Clone the repository
 git clone https://github.com/TetsuakiBaba/GenGo.git
-cd GenGo
-
-# Install dependencies
-cd electron
-npm install
-
-# Run in development mode
-npm start
-
-# Build for your platform
-npm run make              # Current platform
-npm run make:mac         # macOS only
-npm run make:win         # Windows only
-npm run make -- --arch=x64,arm64  # Build for multiple architectures
+cd GenGo/swift
+swift build
+swift run GenGoSwift
 ```
 
-## 🚀 Quick Start
+## Release Build
 
-### 1. Setup LLM Provider
+Swift release packaging scripts live under `swift/scripts/`.
 
-#### Option A: Local LLM (Recommended for Privacy)
-1. Install [LM Studio](https://lmstudio.ai/)
-2. Start your local LLM server
-3. Open GenGo settings panel (from menu bar icon)
-4. Select "Local" as LLM provider
-5. Set the endpoint URL (default: `http://localhost:1234/v1`)
-
-#### Option B: Remote LLM (OpenAI or compatible APIs)
-1. Obtain an API key from [OpenAI](https://platform.openai.com/) or your LLM provider
-2. Open GenGo settings panel (from menu bar icon)
-3. Select "Remote" as LLM provider
-4. Enter your API endpoint URL
-5. Enter your API key
-6. Select your preferred model (e.g., gpt-4o-mini)
-
-### 2. Configure Settings
-
-Open GenGo settings panel (from menu bar icon) to customize:
-- **LLM Provider**: Choose between Local or Remote LLM
-- **LLM Endpoint**: Set the API endpoint URL
-- **API Key**: Enter your API key (for remote providers only)
-- **Model Name**: Specify the model to use (for remote providers only)
-- **Translation Languages**: Primary and secondary languages for translation
-- **Shortcuts**: Global keyboard shortcuts (default: Ctrl+1, Ctrl+2)
-- **Custom Prompts**: Add your own text processing prompts
-- **Max Tokens**: Set maximum token limit (256-32768, default: 4096)
-
-### 3. Use GenGo
-
-1. Select text in any application
-2. Press your configured shortcut:
-   - **Ctrl+1**: Smart Translation
-   - **Ctrl+2**: Text Correction
-3. Review the processed result in the popup window
-4. Click to copy the result or close the window
-
-## ⚙️ Configuration
-
-### LLM Settings
-
-All LLM settings are configured through the **Settings Panel** (accessible from the menu bar icon):
-
-**Local LLM Configuration:**
-- Provider: Select "Local"
-- Endpoint URL: `http://localhost:1234` (LM Studio default base URL)
-- Loaded Model: Select from models already loaded in LM Studio
-- Max Tokens: 4096 (adjustable: 256-32768)
-
-**Remote LLM Configuration:**
-- Provider: Select "Remote"
-- Endpoint URL: `https://api.openai.com/v1` (or your provider's base URL)
-- API Key: Your API key
-- Model Name: `gpt-4o-mini` (or your preferred model)
-- Max Tokens: 4096 (adjustable: 256-32768)
-
-### Keyboard Shortcuts
-
-| Shortcut | Default | Action |
-|----------|---------|--------|
-| Shortcut 1 | Ctrl+1 (Cmd+1 on macOS) | Smart Translation |
-| Shortcut 2 | Ctrl+2 (Cmd+2 on macOS) | Text Correction |
-
-*Shortcuts can be customized in the Settings Panel*
-
-## 🏗️ Architecture
-
-GenGo is built with:
-- **Electron**: Desktop application framework for macOS
-- **Node.js**: Backend processing and LLM communication
-- **Modern JavaScript**: ES6+ with module support
-- **i18next**: Internationalization support
-- **Bootstrap**: Responsive UI components
-
-### Project Structure
-
-```
-GenGo/
-├── electron/               # Electron app project
-│   ├── main.js             # Main Electron process
-│   ├── simple-llm-engine.js
-│   ├── settings.html
-│   ├── popup-ui.html
-│   ├── images/             # Electron app packaging assets
-│   └── locales/            # Electron translation files
-├── swift/                  # Swift Package Manager app project
-├── icons/                  # Shared application icons
-└── docs/                   # Documentation website / GitHub Pages
-    ├── index.html
-    ├── style.css
-    ├── script.js
-    └── i18n.js
-```
-
-## 🔧 API Integration
-
-### Supported LLM Providers
-
-#### Local
-- **LM Studio**: `http://localhost:1234` (uses `/api/v1/models` and `/api/v1/chat`)
-
-#### Remote
-- **OpenAI**: `https://api.openai.com/v1`
-- **Custom Endpoints**: Any OpenAI-compatible API base URL
-
-*Note: Remote provider uses `/chat/completions`; Local (LM Studio) uses `/api/v1/*` endpoints automatically.*
-
-### Example API Call
-
-```javascript
-// Remote endpoint is automatically appended with /chat/completions
-const fullEndpoint = `${endpoint}/chat/completions`;
-
-const response = await fetch(fullEndpoint, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}` // Only for remote
-  },
-  body: JSON.stringify({
-    model: modelName,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userInput }
-    ],
-    max_tokens: maxTokens,
-    temperature: 0.7
-  })
-});
-```
-
-## 💻 Platform Support
-
-GenGo supports both macOS and Windows with platform-specific features:
-
-### macOS
-- Native macOS shortcuts (⌘ key)
-- AppleScript integration for text selection
-- DMG installer
-- Automatic updates via GitHub releases
-
-### Windows
-- Windows shortcuts (Ctrl key)
-- PowerShell integration for text selection
-- Squirrel installer (GenGoSetup.exe)
-- Automatic updates via GitHub releases
-
-### Building for Specific Platforms
+Create local release artifacts:
 
 ```bash
-# macOS build (requires macOS)
-cd electron
-npm run make:mac
-
-# Windows build (requires Windows or cross-compilation setup)
-npm run make:win
-
-# Package without creating installer
-npm run package:mac    # macOS
-npm run package:win    # Windows
+cd swift
+chmod +x scripts/package-macos-app.sh scripts/release-macos.sh
+SIGN_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)" \
+NOTARIZE_TARGET=none \
+scripts/release-macos.sh
 ```
 
-**Note for Windows builds:**
-- Windows icon (icon.ico) is automatically generated from `icons/newicon.png`
-- Run `python3 create_icon.py` to regenerate if needed
-- Code signing is not required for Windows builds
+Artifacts are written to `swift/dist/`:
 
-## 🌐 Internationalization
+- `GenGo.app`
+- `GenGo-<version>-macos-<arch>.zip`
+- `GenGo-<version>-macos-<arch>.dmg`
+- SHA-256 checksum text files
 
-GenGo supports multiple languages through i18next:
+For notarized releases and GitHub Actions setup, see [swift/README.md](./swift/README.md).
 
-- Japanese (ja)
-- English (en)
+## Project Structure
 
-To add a new language:
-1. Create a new folder in `electron/locales/` (e.g., `electron/locales/fr/`)
-2. Add `translation.json` with translated strings
-3. Update `electron/i18n.js` to include the new language
+```text
+GenGo/
+├── swift/                  # Supported Swift / SwiftUI macOS app
+│   ├── Package.swift
+│   ├── Sources/GenGoSwift/
+│   └── scripts/
+├── docs/                   # Documentation website / GitHub Pages
+├── icons/                  # Shared application icons
+├── electron/               # Legacy Electron implementation, unsupported
+└── README.md
+```
 
-## 🤝 Contributing
+## Configuration Files
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+The Swift app stores settings in:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+```text
+~/Library/Application Support/GenGo/settings.json
+```
 
-## 📝 License
+Older `GenGoSwift` settings are migrated when possible. Electron settings are separate and are not the supported configuration path.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Documentation
 
-## 👤 Author
+- Website: [https://tetsuakibaba.github.io/GenGo/](https://tetsuakibaba.github.io/GenGo/)
+- Swift app notes: [swift/README.md](./swift/README.md)
+- Releases: [GitHub Releases](https://github.com/TetsuakiBaba/GenGo/releases)
+
+## Contributing
+
+Contributions are welcome. Please target the Swift macOS app unless a change is explicitly about archived Electron code or documentation cleanup.
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make changes under `swift/`, `docs/`, or shared assets as appropriate.
+4. Run the relevant Swift build or documentation checks.
+5. Open a pull request.
+
+## Support
+
+If you encounter a problem:
+
+- Open an issue: [GitHub Issues](https://github.com/TetsuakiBaba/GenGo/issues)
+- Check the docs: [GenGo Documentation](https://tetsuakibaba.github.io/GenGo/)
+- View releases: [GitHub Releases](https://github.com/TetsuakiBaba/GenGo/releases)
+
+Electron-specific issues are not currently supported.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Author
 
 **Tetsuaki Baba**
 
 - GitHub: [@TetsuakiBaba](https://github.com/TetsuakiBaba)
 - Website: [GenGo Documentation](https://tetsuakibaba.github.io/GenGo/)
-
-## 🙏 Acknowledgments
-
-- [Electron](https://www.electronjs.org/) - Framework for building desktop apps
-- [OpenAI](https://openai.com/) - GPT models
-- [LM Studio](https://lmstudio.ai/) - Local LLM interface
-- [Bootstrap](https://getbootstrap.com/) - UI components
-- [i18next](https://www.i18next.com/) - Internationalization framework
-
-## 📊 Changelog
-
-### Version 0.8.1
-- Added dual LLM support (local and remote)
-- Implemented user-configurable API settings
-- Added max tokens configuration
-- Enhanced translation features
-- Improved UI/UX with multilingual support
-- Created documentation website
-
-### Previous Versions
-See [CHANGELOG.md](CHANGELOG.md) for full version history.
-
-## 🐛 Known Issues
-
-- macOS Gatekeeper may require manual approval on first launch (Right-click → Open)
-
-## 🔮 Roadmap
-
-- [ ] Windows version support
-- [ ] Ollama local LLM support
-- [ ] Support for more LLM providers (Gemini, Claude, etc.)
-- [ ] Plugin system for custom processors
-- [ ] Cloud sync for settings and prompts
-- [ ] Voice input support
-- [ ] Batch processing mode
-- [ ] Chrome/Firefox browser extension
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-- [Open an issue](https://github.com/TetsuakiBaba/GenGo/issues)
-- [Check documentation](https://tetsuakibaba.github.io/GenGo/)
-- [View releases](https://github.com/TetsuakiBaba/GenGo/releases)
-
----
-
-Made with ❤️ by [Tetsuaki Baba](https://github.com/TetsuakiBaba)

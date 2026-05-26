@@ -141,6 +141,55 @@ Artifacts are written to `swift/dist/`:
 
 For notarized releases and GitHub Actions setup, see [swift/README.md](./swift/README.md).
 
+### GitHub Actions Release Package
+
+The repository also includes a GitHub Actions workflow at
+[.github/workflows/swift-release.yml](./.github/workflows/swift-release.yml).
+It builds signed and notarized Swift macOS release packages on the `macos-26`
+runner.
+
+Required repository secrets:
+
+- `MACOS_CERTIFICATE_P12_BASE64`
+- `MACOS_CERTIFICATE_PASSWORD`
+- `MACOS_KEYCHAIN_PASSWORD`
+- `MACOS_SIGNING_IDENTITY`
+- `APPLE_ID`
+- `APPLE_TEAM_ID`
+- `APPLE_APP_SPECIFIC_PASSWORD`
+- `SPARKLE_PUBLIC_ED_KEY`
+- `SPARKLE_PRIVATE_KEY_BASE64`
+
+To test package creation without publishing a GitHub Release:
+
+1. Open **Actions** on GitHub.
+2. Select **Swift macOS Release**.
+3. Click **Run workflow**.
+4. Optionally enter a version. If omitted, the workflow uses
+   `docs/version.json`.
+5. Download the generated workflow artifact after the run finishes.
+
+The workflow artifact contains:
+
+- `GenGo-<version>-macos-<arch>.zip`
+- `GenGo-<version>-macos-<arch>.dmg`
+- SHA-256 checksum text files
+- `swift-appcast.xml`
+
+To create a draft GitHub Release with the same package files, push a Swift
+release tag:
+
+```bash
+VERSION="$(/usr/bin/plutil -extract version raw -o - docs/version.json)"
+git tag "swift-v${VERSION}"
+git push origin "swift-v${VERSION}"
+```
+
+The tag must start with `swift-v`. After the workflow completes, review the
+generated draft release on GitHub and publish it manually. Publishing a
+`swift-v*` release also updates `docs/swift/appcast.xml` from the released
+`swift-appcast.xml`.
+
 ## Project Structure
 
 ```text

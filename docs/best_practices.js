@@ -61,6 +61,18 @@ const bestPracticesData = [
             en: 'Count the number of words in the selected text.'
         },
         prompt: 'Please count the number of words.'
+    },
+    {
+        icon: 'bi-emoji-smile',
+        title: {
+            ja: 'HTMLタグ変換',
+            en: 'HTML Tag Conversion'
+        },
+        description: {
+            ja: '選択したマークダウンテキストをHTMLタグに変換します。',
+            en: 'Convert markdown text to HTML tags.'
+        },
+        prompt: 'Please convert the following markdown text to HTML.'
     }
 ];
 

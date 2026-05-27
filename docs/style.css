@@ -181,6 +181,22 @@ code {
     object-fit: cover;
 }
 
+.product-hunt-badge {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.product-hunt-badge a {
+    display: inline-flex;
+}
+
+.product-hunt-badge img {
+    display: block;
+    height: auto;
+    max-width: min(250px, 100%);
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

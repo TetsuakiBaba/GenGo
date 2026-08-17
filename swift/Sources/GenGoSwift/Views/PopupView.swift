@@ -237,7 +237,10 @@ struct PopupView: View {
                     .frame(height: outputTextHeight)
             }
 
-            actionRow(primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle) {
+            actionRow(
+                primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle,
+                showsCopyButton: true
+            ) {
                 coordinator.applyCurrentResult()
             }
         }
@@ -325,7 +328,11 @@ struct PopupView: View {
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
-    private func actionRow(primaryTitle: String, action: @escaping () -> Void) -> some View {
+    private func actionRow(
+        primaryTitle: String,
+        showsCopyButton: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         HStack {
             Spacer()
 
@@ -333,8 +340,21 @@ struct PopupView: View {
                 coordinator.dismissPopup()
             }
             .font(AppTypography.button)
+            .keyboardShortcut(.cancelAction)
             .buttonStyle(.bordered)
             .controlSize(.regular)
+            .help(text.closeButtonHelp)
+
+            if showsCopyButton {
+                Button(text.copyButtonTitle) {
+                    coordinator.copyCurrentResult()
+                }
+                .font(AppTypography.button)
+                .keyboardShortcut("c", modifiers: [.command])
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help(text.copyButtonHelp)
+            }
 
             Button(primaryTitle) {
                 action()
@@ -343,6 +363,7 @@ struct PopupView: View {
             .keyboardShortcut(.return, modifiers: [.command])
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
+            .help(text.primaryActionButtonHelp(primaryTitle))
         }
     }
 

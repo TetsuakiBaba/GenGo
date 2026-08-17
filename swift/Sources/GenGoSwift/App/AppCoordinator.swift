@@ -203,6 +203,17 @@ final class AppCoordinator: NSObject, ObservableObject {
         }
     }
 
+    func copyCurrentResult() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+
+        if pasteboard.setString(popupViewModel.resultText, forType: .string) {
+            popupViewModel.setNotice(strings.resultCopiedNotice, kind: .success)
+        } else {
+            popupViewModel.setNotice(strings.resultCopyFailedNotice, kind: .error)
+        }
+    }
+
     func submitOnDemandPrompt() {
         let prompt = popupViewModel.promptText.trimmingCharacters(in: .whitespacesAndNewlines)
         let selectedText = popupViewModel.sourceText

@@ -1,9 +1,13 @@
 import AppKit
 
 @MainActor
-final class StatusItemController: NSObject, NSMenuItemValidation {
+final class StatusItemController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private weak var coordinator: AppCoordinator?
+    private var appearanceObservation: NSKeyValueObservation?
+    private var appearanceUpdateTask: Task<Void, Never>?
+    private var displayedFilledIcon: Bool?
+    private var isMenuOpen = false
 
     init(coordinator: AppCoordinator) {
         self.coordinator = coordinator
@@ -20,8 +24,19 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
 
         if let button = statusItem.button {
             button.toolTip = "GenGo"
-            button.image = Self.statusIcon()
             button.imagePosition = .imageOnly
+            updateStatusIcon(for: button)
+
+            if appearanceObservation == nil {
+                appearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] button, _ in
+                    Task { @MainActor [weak self, weak button] in
+                        guard let button else {
+                            return
+                        }
+                        self?.scheduleStatusIconUpdate(for: button)
+                    }
+                }
+            }
         }
 
         let menu = NSMenu()
@@ -34,19 +49,47 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
         menu.addItem(withTitle: strings.aboutMenuTitle, action: #selector(showAbout), keyEquivalent: "").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: strings.quitMenuTitle, action: #selector(quit), keyEquivalent: "q").target = self
+        menu.delegate = self
         statusItem.menu = menu
     }
 
-    private static func statusIcon() -> NSImage? {
+    private func updateStatusIcon(for button: NSStatusBarButton) {
+        let usesFilledIcon = Self.usesFilledIcon(for: button.effectiveAppearance)
+        guard displayedFilledIcon != usesFilledIcon else {
+            return
+        }
+
+        button.image = Self.statusIcon(usesFilledIcon: usesFilledIcon)
+        displayedFilledIcon = usesFilledIcon
+    }
+
+    private func scheduleStatusIconUpdate(for button: NSStatusBarButton) {
+        appearanceUpdateTask?.cancel()
+        appearanceUpdateTask = Task { @MainActor [weak self, weak button] in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled, let self, let button, !self.isMenuOpen else {
+                return
+            }
+            self.updateStatusIcon(for: button)
+        }
+    }
+
+    private static func usesFilledIcon(for appearance: NSAppearance) -> Bool {
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
+    private static func statusIcon(usesFilledIcon: Bool) -> NSImage? {
         let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let bundledIconName = usesFilledIcon ? "GenGoTrayIconDark" : "GenGoTrayIcon"
+        let sourceIconName = usesFilledIcon ? "gengoicon2026-filled.png" : "gengoicon2026.png"
         let templateIconURLs = [
-            Bundle.main.url(forResource: "GenGoTrayIcon", withExtension: "png"),
-            Bundle.main.resourceURL?.appendingPathComponent("GenGoTrayIcon.png"),
+            Bundle.main.url(forResource: bundledIconName, withExtension: "png"),
+            Bundle.main.resourceURL?.appendingPathComponent("\(bundledIconName).png"),
             currentDirectoryURL
-                .appendingPathComponent("../icons/newicon.png")
+                .appendingPathComponent("../icons/\(sourceIconName)")
                 .standardizedFileURL,
             currentDirectoryURL
-                .appendingPathComponent("icons/newicon.png")
+                .appendingPathComponent("icons/\(sourceIconName)")
                 .standardizedFileURL
         ].compactMap { $0 }
 
@@ -72,6 +115,19 @@ final class StatusItemController: NSObject, NSMenuItemValidation {
         let fallbackImage = NSImage(systemSymbolName: "text.badge.star", accessibilityDescription: "GenGo")
         fallbackImage?.isTemplate = true
         return fallbackImage
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        isMenuOpen = true
+        appearanceUpdateTask?.cancel()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        isMenuOpen = false
+        guard let button = statusItem.button else {
+            return
+        }
+        scheduleStatusIconUpdate(for: button)
     }
 
     private static func statusIcon(

@@ -15,13 +15,13 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 18) {
                     heroCard
                     llmSection
                     shortcutSection
                     behaviorSection
                 }
-                .padding(24)
+                .padding(20)
             }
             .background(Color(nsColor: .windowBackgroundColor))
 
@@ -30,7 +30,7 @@ struct SettingsView: View {
             footerBar
         }
         .font(AppTypography.body)
-        .frame(minWidth: 820, minHeight: 760)
+        .frame(minWidth: 760, minHeight: 680)
         .task {
             viewModel.handleAppear()
         }
@@ -89,7 +89,7 @@ struct SettingsView: View {
 
             Spacer()
         }
-        .padding(24)
+        .padding(20)
         .background(cardBackground)
     }
 
@@ -364,13 +364,31 @@ struct SettingsView: View {
     }
 
     private func presetCard(preset: Binding<PresetPrompt>) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
+        let presetNumber = (viewModel.draft.presetPrompts.firstIndex {
+            $0.id == preset.wrappedValue.id
+        } ?? 0) + 1
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Text(text.presetItemTitle(presetNumber))
+                    .font(AppTypography.subsectionTitle)
+
                 Toggle(text.enabledLabel, isOn: preset.enabled)
                     .font(AppTypography.body)
                     .toggleStyle(.switch)
+                    .fixedSize()
 
                 Spacer()
+
+                Text(text.shortcutLabel)
+                    .font(AppTypography.label)
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+
+                TextField("Ctrl+1", text: preset.shortcutKey)
+                    .font(AppTypography.monoBody)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 110)
 
                 Button(text.deleteButtonTitle, role: .destructive) {
                     viewModel.removePresetPrompt(id: preset.wrappedValue.id)
@@ -379,18 +397,12 @@ struct SettingsView: View {
                 .controlSize(.regular)
             }
 
-            labeledField(text.shortcutLabel) {
-                TextField("Ctrl+1", text: preset.shortcutKey)
-                    .font(AppTypography.monoBody)
-                    .textFieldStyle(.roundedBorder)
-                    .controlSize(.large)
-            }
-
             labeledField(text.promptLabel) {
                 TextEditor(text: preset.prompt)
                     .font(AppTypography.monoBody)
-                    .frame(minHeight: 110)
-                    .padding(8)
+                    .scrollContentBackground(.hidden)
+                    .padding(5)
+                    .frame(height: promptEditorHeight(for: preset.wrappedValue.prompt))
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(Color(nsColor: .textBackgroundColor))
@@ -401,7 +413,8 @@ struct SettingsView: View {
                     )
             }
         }
-        .padding(18)
+        .padding(14)
+        .frame(maxWidth: 640, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
@@ -412,13 +425,35 @@ struct SettingsView: View {
         )
     }
 
+    private func promptEditorHeight(for prompt: String) -> CGFloat {
+        let font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+        let displayText = prompt.isEmpty ? " " : prompt
+        let bounds = (displayText as NSString).boundingRect(
+            with: CGSize(width: 584, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes
+        )
+        let editorPadding: CGFloat = 14
+        let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
+        let minimumHeight = ceil(lineHeight) + editorPadding
+        let maximumHeight = ceil(lineHeight * 6) + editorPadding
+
+        return min(max(ceil(bounds.height) + editorPadding, minimumHeight), maximumHeight)
+    }
+
     private func settingsCard<Content: View>(
         title: String,
         subtitle: String,
         systemImage: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: systemImage)
                     .font(AppTypography.subsectionTitle)
@@ -436,7 +471,7 @@ struct SettingsView: View {
 
             content()
         }
-        .padding(22)
+        .padding(18)
         .background(cardBackground)
     }
 

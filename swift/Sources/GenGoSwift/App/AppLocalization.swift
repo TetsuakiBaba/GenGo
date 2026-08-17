@@ -172,6 +172,10 @@ struct AppStrings {
         )
     }
 
+    func presetItemTitle(_ number: Int) -> String {
+        text(ja: "プリセット \(number)", en: "Preset \(number)")
+    }
+
     var addPresetButtonTitle: String {
         text(ja: "プリセットを追加", en: "Add Preset")
     }
@@ -417,8 +421,24 @@ struct AppStrings {
         text(ja: "適用", en: "Apply")
     }
 
+    var copyButtonTitle: String {
+        text(ja: "コピー", en: "Copy")
+    }
+
+    var copyButtonHelp: String {
+        text(ja: "コピー（⌘C）", en: "Copy (⌘C)")
+    }
+
     var closeButtonTitle: String {
         text(ja: "閉じる", en: "Close")
+    }
+
+    var closeButtonHelp: String {
+        text(ja: "閉じる（Esc）", en: "Close (Esc)")
+    }
+
+    func primaryActionButtonHelp(_ title: String) -> String {
+        text(ja: "\(title)（⌘Enter）", en: "\(title) (⌘Enter)")
     }
 
     func modeTitle(_ mode: ProcessingMode) -> String {
@@ -505,6 +525,20 @@ struct AppStrings {
         text(
             ja: "変換結果が元テキストと同じだったため、変更はありません。",
             en: "The result matched the original text, so nothing changed."
+        )
+    }
+
+    var resultCopiedNotice: String {
+        text(
+            ja: "変換結果をクリップボードにコピーしました。",
+            en: "Copied the result to the clipboard."
+        )
+    }
+
+    var resultCopyFailedNotice: String {
+        text(
+            ja: "変換結果をクリップボードにコピーできませんでした。",
+            en: "Could not copy the result to the clipboard."
         )
     }
 

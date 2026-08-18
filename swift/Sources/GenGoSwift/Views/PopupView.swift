@@ -9,21 +9,38 @@ enum PopupSizing {
     static let minimumWorkflowTextHeight: CGFloat = 44
     static let minimumEmptyWorkflowTextHeight: CGFloat = 88
     static let maximumWorkflowTextHeight: CGFloat = 420
+    static let maximumResultTextHeight: CGFloat = 280
+    static let processingControlsHeight: CGFloat = 40
+    static let resultRefinementHeight: CGFloat = 126
 
     private static let workflowBaseHeight = workflowWindowSize.height - workflowTextHeight
     private static let workflowTextWidth: CGFloat = 560
     private static let workflowTextPadding: CGFloat = 24
 
-    static func dialogSize(for mode: PopupPresentationMode, outputText: String = "") -> CGSize {
+    static func dialogSize(
+        for mode: PopupPresentationMode,
+        outputText: String = "",
+        hasNotice: Bool = false
+    ) -> CGSize {
+        let noticeHeight: CGFloat = hasNotice ? 44 : 0
+
         switch mode {
         case .hidden:
-            return placeholderWindowSize
+            return CGSize(width: placeholderWindowSize.width, height: placeholderWindowSize.height + noticeHeight)
         case .onDemandInput, .textGenerationInput:
-            return inputWindowSize
-        case .processing, .result:
+            return CGSize(width: inputWindowSize.width, height: inputWindowSize.height + noticeHeight)
+        case .processing:
             return CGSize(
                 width: workflowWindowSize.width,
-                height: workflowBaseHeight + outputTextHeight(for: outputText)
+                height: workflowBaseHeight + outputTextHeight(for: outputText) + processingControlsHeight + noticeHeight
+            )
+        case .result:
+            return CGSize(
+                width: workflowWindowSize.width,
+                height: workflowBaseHeight
+                    + min(outputTextHeight(for: outputText), maximumResultTextHeight)
+                    + resultRefinementHeight
+                    + noticeHeight
             )
         }
     }
@@ -113,6 +130,9 @@ struct PopupView: View {
             coordinator.resizePopupForCurrentContent()
         }
         .onChange(of: viewModel.resultText) { _ in
+            coordinator.resizePopupForCurrentContent()
+        }
+        .onChange(of: viewModel.notice) { _ in
             coordinator.resizePopupForCurrentContent()
         }
     }
@@ -226,6 +246,17 @@ struct PopupView: View {
                     .background(surfaceBackground)
                 }
             }
+
+            HStack {
+                Spacer()
+                Button(text.stopProcessingButtonTitle) {
+                    coordinator.cancelCurrentProcessing()
+                }
+                .font(AppTypography.button)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help(text.stopProcessingButtonHelp)
+            }
         }
     }
 
@@ -237,9 +268,45 @@ struct PopupView: View {
                     .frame(height: outputTextHeight)
             }
 
+
+            cardContainer {
+                sectionTitle(text.followUpInstructionTitle)
+
+                TextField(text.followUpInstructionPlaceholder, text: $viewModel.followUpPromptText)
+                    .font(AppTypography.body)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        coordinator.submitFollowUpPrompt()
+                    }
+
+                HStack {
+                    Button(text.regenerateButtonTitle) {
+                        coordinator.regenerateCurrentResult()
+                    }
+                    .font(AppTypography.button)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .help(text.regenerateButtonHelp)
+
+                    Spacer()
+
+                    Button(text.runFollowUpButtonTitle) {
+                        coordinator.submitFollowUpPrompt()
+                    }
+                    .font(AppTypography.button)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .disabled(
+                        viewModel.resultText.isEmpty
+                            || viewModel.followUpPromptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    )
+                }
+            }
+
             actionRow(
                 primaryTitle: isTextGenerationMode ? text.insertAtCursorButtonTitle : text.applyButtonTitle,
-                showsCopyButton: true
+                showsCopyButton: true,
+                disablesResultActions: viewModel.resultText.isEmpty
             ) {
                 coordinator.applyCurrentResult()
             }
@@ -331,6 +398,7 @@ struct PopupView: View {
     private func actionRow(
         primaryTitle: String,
         showsCopyButton: Bool = false,
+        disablesResultActions: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         HStack {
@@ -354,6 +422,7 @@ struct PopupView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
                 .help(text.copyButtonHelp)
+                .disabled(disablesResultActions)
             }
 
             Button(primaryTitle) {
@@ -364,6 +433,7 @@ struct PopupView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
             .help(text.primaryActionButtonHelp(primaryTitle))
+            .disabled(disablesResultActions)
         }
     }
 
@@ -384,11 +454,18 @@ struct PopupView: View {
     }
 
     private var dialogSize: CGSize {
-        PopupSizing.dialogSize(for: viewModel.presentationMode, outputText: currentOutputText)
+        PopupSizing.dialogSize(
+            for: viewModel.presentationMode,
+            outputText: currentOutputText,
+            hasNotice: viewModel.notice != nil
+        )
     }
 
     private var outputTextHeight: CGFloat {
-        PopupSizing.outputTextHeight(for: currentOutputText)
+        let height = PopupSizing.outputTextHeight(for: currentOutputText)
+        return viewModel.presentationMode == .result
+            ? min(height, PopupSizing.maximumResultTextHeight)
+            : height
     }
 
     private var currentOutputText: String {

@@ -187,6 +187,61 @@ struct AppStrings {
         )
     }
 
+    var selectionActionsSectionTitle: String {
+        text(ja: "Mouse Selection", en: "Mouse Selection")
+    }
+
+    var selectionActionsSectionSubtitle: String {
+        text(
+            ja: "ドラッグまたはダブルクリックで選択したテキストを、マウス位置からすぐに処理します。",
+            en: "Process text selected by dragging or double-clicking directly from the pointer location."
+        )
+    }
+
+    var selectionActionsEnabledLabel: String {
+        text(ja: "テキスト選択後に GenGo を表示", en: "Show GenGo after selecting text")
+    }
+
+    var selectionActionModeLabel: String {
+        text(ja: "表示方法", en: "Display Style")
+    }
+
+    func selectionActionModeTitle(_ mode: SelectionActionMode) -> String {
+        switch mode {
+        case .bubble:
+            return text(ja: "アイコン", en: "Icon")
+        case .immediateMenu:
+            return text(ja: "メニュー", en: "Menu")
+        case .optionMenu:
+            return text(ja: "⌥選択時", en: "With ⌥")
+        }
+    }
+
+    var selectionActionModeHelp: String {
+        text(
+            ja: "アイコンは4秒後に消えます。⌥選択時はOptionキーを押しながら選択した場合だけメニューを表示します。",
+            en: "The icon disappears after four seconds. With ⌥ only shows the menu when text is selected while holding Option."
+        )
+    }
+
+    var selectionActionExcludedAppsLabel: String {
+        text(ja: "除外するアプリ", en: "Excluded Apps")
+    }
+
+    var selectionActionExcludedAppsHelp: String {
+        text(
+            ja: "Bundle IDをカンマ区切りで指定します。例: com.apple.Terminal, com.example.app",
+            en: "Enter comma-separated bundle IDs, for example: com.apple.Terminal, com.example.app"
+        )
+    }
+
+    var selectionActionPermissionHelp: String {
+        text(
+            ja: "選択テキストの検出にはmacOSのアクセシビリティ権限が必要です。パスワード入力欄では表示しません。",
+            en: "Detecting selected text requires macOS Accessibility permission. GenGo is not shown for password fields."
+        )
+    }
+
     var autoApplyAndCloseLabel: String {
         text(ja: "プリセット実行後に自動で適用して閉じる", en: "Apply and close automatically after presets")
     }
@@ -275,6 +330,21 @@ struct AppStrings {
         text(ja: "プロンプト", en: "Prompt")
     }
 
+    var presetNameLabel: String {
+        text(ja: "プリセット名", en: "Preset Name")
+    }
+
+    var presetNamePlaceholder: String {
+        text(ja: "例: 日英翻訳", en: "Example: Japanese-English Translation")
+    }
+
+    var presetNameHelp: String {
+        text(
+            ja: "未入力の場合、選択メニューにはプロンプトの先頭部分を表示します。",
+            en: "When left blank, the selection menu shows the beginning of the prompt."
+        )
+    }
+
     func endpointHelpText(for provider: LLMProvider) -> String {
         switch provider {
         case .local:
@@ -312,6 +382,10 @@ struct AppStrings {
 
     var onDemandPromptTitle: String {
         text(ja: "オンデマンドプロンプト", en: "On-demand Prompt")
+    }
+
+    var selectionActionOnDemandTitle: String {
+        text(ja: "オンデマンド…", en: "On-demand…")
     }
 
     var textGenerationTitle: String {
@@ -409,6 +483,28 @@ struct AppStrings {
         )
     }
 
+    var stopProcessingButtonTitle: String {
+        text(ja: "停止", en: "Stop")
+    }
+
+    var stopProcessingButtonHelp: String {
+        text(ja: "現在の生成を停止します", en: "Stop the current generation")
+    }
+
+    var processingCancelledNotice: String {
+        text(
+            ja: "生成を停止しました。途中までの結果を表示しています。",
+            en: "Generation stopped. The partial result is shown."
+        )
+    }
+
+    var processingCancelledWithoutResultNotice: String {
+        text(
+            ja: "結果を受信する前に生成を停止しました。",
+            en: "Generation stopped before a result was received."
+        )
+    }
+
     var generationResultTitle: String {
         text(ja: "生成結果", en: "Generated Text")
     }
@@ -423,6 +519,33 @@ struct AppStrings {
 
     var copyButtonTitle: String {
         text(ja: "コピー", en: "Copy")
+    }
+
+    var regenerateButtonTitle: String {
+        text(ja: "再生成", en: "Regenerate")
+    }
+
+    var regenerateButtonHelp: String {
+        text(ja: "同じ指示でもう一度生成します", en: "Generate again with the same instructions")
+    }
+
+    var followUpInstructionTitle: String {
+        text(ja: "追加指示", en: "Follow-up Instructions")
+    }
+
+    var followUpInstructionPlaceholder: String {
+        text(
+            ja: "例: もっと短く、より丁寧に",
+            en: "Example: Make it shorter and more formal"
+        )
+    }
+
+    var runFollowUpButtonTitle: String {
+        text(ja: "追加指示で再生成", en: "Refine Result")
+    }
+
+    var followUpPromptRequired: String {
+        text(ja: "追加指示を入力してください。", en: "Enter follow-up instructions.")
     }
 
     var copyButtonHelp: String {

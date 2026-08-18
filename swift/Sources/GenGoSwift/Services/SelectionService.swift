@@ -8,6 +8,10 @@ final class SelectionService {
     private let copyKeyCode: CGKeyCode = 8
     private let pasteKeyCode: CGKeyCode = 9
 
+    private struct PasteboardSnapshot {
+        let items: [[NSPasteboard.PasteboardType: Data]]
+    }
+
     enum SelectionError: LocalizedError {
         case accessibilityPermissionDenied
         case eventCreationFailed
@@ -27,6 +31,51 @@ final class SelectionService {
         return AXIsProcessTrustedWithOptions(options)
     }
 
+    func captureAccessibleSelectedText(prompt: Bool = false) -> SelectionCaptureResult? {
+        guard ensureAccessibilityPermission(prompt: prompt) else {
+            return nil
+        }
+
+        let sourceApp = NSWorkspace.shared.frontmostApplication
+        guard sourceApp?.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+            return nil
+        }
+
+        guard let focusedElement = focusedElement(for: sourceApp), !isSecureTextElement(focusedElement) else {
+            return nil
+        }
+
+        guard
+            let value = attributeValue(kAXSelectedTextAttribute as CFString, on: focusedElement),
+            let selectedText = value as? String,
+            !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return nil
+        }
+
+        let selectedRange = selectedTextRange(for: focusedElement)
+        if let selectedRange, selectedRange.length <= 0 {
+            return nil
+        }
+
+        let context = SelectionContext(
+            applicationName: sourceApp?.localizedName ?? "Unknown",
+            bundleIdentifier: sourceApp?.bundleIdentifier,
+            application: sourceApp,
+            focusedElement: focusedElement,
+            selectedTextRange: selectedRange
+        )
+        return SelectionCaptureResult(selectedText: selectedText, context: context)
+    }
+
+    func focusedSelectionIsSecure() -> Bool {
+        let sourceApp = NSWorkspace.shared.frontmostApplication
+        guard let focusedElement = focusedElement(for: sourceApp) else {
+            return false
+        }
+        return isSecureTextElement(focusedElement)
+    }
+
     func captureSelectedText() async throws -> SelectionCaptureResult {
         guard ensureAccessibilityPermission(prompt: true) else {
             throw SelectionError.accessibilityPermissionDenied
@@ -42,10 +91,11 @@ final class SelectionService {
             selectedTextRange: focusedElement.flatMap(selectedTextRange(for:))
         )
 
-        let originalString = pasteboard.string(forType: .string)
-        let marker = "__GENGO_SWIFT_TEMP_MARKER__"
+        let pasteboardSnapshot = snapshotPasteboard()
+        let marker = "__GENGO_SWIFT_TEMP_MARKER_\(UUID().uuidString)__"
 
         writePasteboard(marker)
+        defer { restorePasteboard(pasteboardSnapshot) }
 
         try sendModifiedKey(
             keyCode: copyKeyCode,
@@ -55,7 +105,6 @@ final class SelectionService {
         try await Task.sleep(nanoseconds: 250_000_000)
 
         let captured = pasteboard.string(forType: .string)
-        restorePasteboard(originalString)
 
         let selectedText: String?
         if let captured, captured != marker, !captured.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -80,8 +129,9 @@ final class SelectionService {
             throw SelectionError.accessibilityPermissionDenied
         }
 
-        let originalString = pasteboard.string(forType: .string)
+        let pasteboardSnapshot = snapshotPasteboard()
         writePasteboard(text)
+        defer { restorePasteboard(pasteboardSnapshot) }
 
         if let context {
             await restoreFocus(for: context, restoreSelection: restoreSelection)
@@ -90,8 +140,6 @@ final class SelectionService {
         try await Task.sleep(nanoseconds: 120_000_000)
         try sendModifiedKey(keyCode: pasteKeyCode, flags: .maskCommand)
         try await Task.sleep(nanoseconds: 250_000_000)
-
-        restorePasteboard(originalString)
     }
 
     private func writePasteboard(_ string: String) {
@@ -99,10 +147,26 @@ final class SelectionService {
         pasteboard.setString(string, forType: .string)
     }
 
-    private func restorePasteboard(_ string: String?) {
+    private func snapshotPasteboard() -> PasteboardSnapshot {
+        let items = pasteboard.pasteboardItems?.map { item in
+            Dictionary(uniqueKeysWithValues: item.types.compactMap { type in
+                item.data(forType: type).map { (type, $0) }
+            })
+        } ?? []
+        return PasteboardSnapshot(items: items)
+    }
+
+    private func restorePasteboard(_ snapshot: PasteboardSnapshot) {
         pasteboard.clearContents()
-        if let string {
-            pasteboard.setString(string, forType: .string)
+        let items = snapshot.items.map { values -> NSPasteboardItem in
+            let item = NSPasteboardItem()
+            for (type, data) in values {
+                item.setData(data, forType: type)
+            }
+            return item
+        }
+        if !items.isEmpty {
+            pasteboard.writeObjects(items)
         }
     }
 
@@ -207,6 +271,17 @@ final class SelectionService {
         }
 
         return range
+    }
+
+    private func isSecureTextElement(_ element: AXUIElement) -> Bool {
+        guard
+            let value = attributeValue(kAXSubroleAttribute as CFString, on: element),
+            let subrole = value as? String
+        else {
+            return false
+        }
+
+        return subrole == "AXSecureTextField"
     }
 
     private func attributeValue(_ attribute: CFString, on element: AXUIElement) -> CFTypeRef? {

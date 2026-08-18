@@ -17,6 +17,7 @@ REQUIRE_APPLE_FOUNDATION_MODELS="${REQUIRE_APPLE_FOUNDATION_MODELS:-1}"
 ICON_SOURCE="${ICON_SOURCE:-${REPO_ROOT}/icons/icon.icns}"
 TRAY_ICON_SOURCE="${TRAY_ICON_SOURCE:-${REPO_ROOT}/icons/gengoicon2026.png}"
 TRAY_ICON_DARK_SOURCE="${TRAY_ICON_DARK_SOURCE:-${REPO_ROOT}/icons/gengoicon2026-filled.png}"
+DEFAULT_PRESETS_SOURCE="${DEFAULT_PRESETS_SOURCE:-${SWIFT_DIR}/Resources/default-presets.json}"
 DIST_DIR="${DIST_DIR:-${SWIFT_DIR}/dist}"
 APP_DIR="${APP_DIR:-${DIST_DIR}/${APP_NAME}.app}"
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
@@ -110,6 +111,7 @@ INFO_PLIST_PATH="${APP_DIR}/Contents/Info.plist"
 ICON_DESTINATION="${APP_DIR}/Contents/Resources/${APP_NAME}.icns"
 TRAY_ICON_DESTINATION="${APP_DIR}/Contents/Resources/GenGoTrayIcon.png"
 TRAY_ICON_DARK_DESTINATION="${APP_DIR}/Contents/Resources/GenGoTrayIconDark.png"
+DEFAULT_PRESETS_DESTINATION="${APP_DIR}/Contents/Resources/default-presets.json"
 
 if [[ ! -x "${EXECUTABLE_SOURCE}" ]]; then
     echo "Built executable not found: ${EXECUTABLE_SOURCE}" >&2
@@ -154,6 +156,12 @@ fi
 if [[ -f "${TRAY_ICON_DARK_SOURCE}" ]]; then
     cp "${TRAY_ICON_DARK_SOURCE}" "${TRAY_ICON_DARK_DESTINATION}"
 fi
+
+if [[ ! -f "${DEFAULT_PRESETS_SOURCE}" ]]; then
+    echo "Default presets file not found: ${DEFAULT_PRESETS_SOURCE}" >&2
+    exit 1
+fi
+cp "${DEFAULT_PRESETS_SOURCE}" "${DEFAULT_PRESETS_DESTINATION}"
 
 cat > "${INFO_PLIST_PATH}" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

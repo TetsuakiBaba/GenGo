@@ -8,6 +8,9 @@ final class AppCoordinator: NSObject, ObservableObject {
     private let hotKeyCenter = HotKeyCenter()
     private let selectionService = SelectionService()
     private let llmService = LLMService()
+    private let mouseSelectionMonitor = MouseSelectionMonitor()
+    private lazy var selectionActionButtonController = SelectionActionButtonController()
+    private lazy var selectionActionMenuController = SelectionActionMenuController()
 
     private var statusItemController: StatusItemController?
     private var popupWindowController: PopupWindowController?
@@ -19,6 +22,20 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     private var currentSelectionContext: SelectionContext?
     private var isProcessing = false
+    private var processingTask: Task<Void, Never>?
+    private var activeProcessingID: UUID?
+
+    private struct ProcessingRequest {
+        let selectedText: String
+        let prompt: String
+        let mode: ProcessingMode
+    }
+
+    private var lastProcessingRequest: ProcessingRequest?
+    private var selectionCaptureTask: Task<Void, Never>?
+    private var lastSelectionFingerprint: String?
+    private var lastSelectionDate = Date.distantPast
+    private var hasRequestedSelectionPermission = false
 
     var settings: AppSettings {
         settingsStore.settings
@@ -43,13 +60,21 @@ final class AppCoordinator: NSObject, ObservableObject {
         popupWindowController = PopupWindowController(coordinator: self, viewModel: popupViewModel)
         statusItemController = StatusItemController(coordinator: self)
         registerShortcuts()
+        configureMouseSelectionActions()
     }
 
     func stop() {
+        cancelProcessingTask()
+        selectionCaptureTask?.cancel()
+        mouseSelectionMonitor.stop()
+        selectionActionButtonController.dismiss()
         hotKeyCenter.unregisterAll()
     }
 
     func openSettingsWindow() {
+        selectionCaptureTask?.cancel()
+        selectionActionButtonController.dismiss()
+
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(coordinator: self)
         }
@@ -70,6 +95,7 @@ final class AppCoordinator: NSObject, ObservableObject {
     }
 
     func dismissPopup() {
+        cancelProcessingTask()
         popupViewModel.reset()
         popupWindowController?.dismiss()
     }
@@ -193,6 +219,7 @@ final class AppCoordinator: NSObject, ObservableObject {
         try settingsStore.save(newSettings)
         activeLanguage = settingsStore.settings.appLanguage
         registerShortcuts()
+        configureMouseSelectionActions()
         statusItemController?.reloadMenu()
         settingsWindowController?.reload(with: settingsStore.settings)
     }
@@ -204,6 +231,10 @@ final class AppCoordinator: NSObject, ObservableObject {
     }
 
     func copyCurrentResult() {
+        guard !popupViewModel.resultText.isEmpty else {
+            return
+        }
+
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
 
@@ -223,14 +254,12 @@ final class AppCoordinator: NSObject, ObservableObject {
             return
         }
 
-        Task {
-            await processSelectedText(
-                selectedText: selectedText,
-                prompt: prompt,
-                mode: .onDemand,
-                allowAutoApply: false
-            )
-        }
+        startProcessing(
+            selectedText: selectedText,
+            prompt: prompt,
+            mode: .onDemand,
+            allowAutoApply: false
+        )
     }
 
     func submitTextGeneration() {
@@ -241,14 +270,63 @@ final class AppCoordinator: NSObject, ObservableObject {
             return
         }
 
-        Task {
-            await processSelectedText(
-                selectedText: "",
-                prompt: prompt,
-                mode: .textGeneration,
-                allowAutoApply: false
-            )
+        startProcessing(
+            selectedText: "",
+            prompt: prompt,
+            mode: .textGeneration,
+            allowAutoApply: false
+        )
+    }
+
+    func cancelCurrentProcessing() {
+        guard activeProcessingID != nil else {
+            return
         }
+
+        let partialResult = popupViewModel.streamingText
+        let sourceText = popupViewModel.sourceText
+        let mode = popupViewModel.processingMode
+        cancelProcessingTask()
+
+        guard let mode else {
+            dismissPopup()
+            return
+        }
+
+        popupViewModel.showResult(originalText: sourceText, resultText: partialResult, mode: mode)
+        popupViewModel.setNotice(
+            partialResult.isEmpty ? strings.processingCancelledWithoutResultNotice : strings.processingCancelledNotice,
+            kind: .info
+        )
+        showPopup(for: .result)
+    }
+
+    func regenerateCurrentResult() {
+        guard let request = lastProcessingRequest else {
+            return
+        }
+
+        startProcessing(
+            selectedText: request.selectedText,
+            prompt: request.prompt,
+            mode: request.mode,
+            allowAutoApply: false
+        )
+    }
+
+    func submitFollowUpPrompt() {
+        let followUpPrompt = popupViewModel.followUpPromptText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !followUpPrompt.isEmpty else {
+            popupViewModel.setNotice(strings.followUpPromptRequired, kind: .error)
+            return
+        }
+
+        startProcessing(
+            selectedText: popupViewModel.resultText,
+            prompt: followUpPrompt,
+            mode: popupViewModel.processingMode ?? .onDemand,
+            allowAutoApply: false
+        )
     }
 
     private func registerShortcuts() {
@@ -267,6 +345,155 @@ final class AppCoordinator: NSObject, ObservableObject {
                 self?.handleOnDemandTrigger()
             }
         }
+    }
+
+    private func configureMouseSelectionActions() {
+        selectionCaptureTask?.cancel()
+        selectionCaptureTask = nil
+        mouseSelectionMonitor.stop()
+        selectionActionButtonController.dismiss()
+
+        guard settings.selectionActionsEnabled else {
+            return
+        }
+
+        mouseSelectionMonitor.start { [weak self] in
+            self?.selectionActionButtonController.dismiss()
+            self?.selectionCaptureTask?.cancel()
+            self?.selectionCaptureTask = nil
+        } onSelectionGesture: { [weak self] location, modifiers in
+            self?.handleMouseSelectionGesture(at: location, modifiers: modifiers)
+        }
+    }
+
+    private func handleMouseSelectionGesture(at location: NSPoint, modifiers: NSEvent.ModifierFlags) {
+        guard settings.selectionActionsEnabled, !isProcessing, popupViewModel.presentationMode == .hidden else {
+            return
+        }
+
+        if settings.selectionActionMode == .optionMenu, !modifiers.contains(.option) {
+            return
+        }
+
+        guard selectionService.ensureAccessibilityPermission(prompt: false) else {
+            if !hasRequestedSelectionPermission {
+                hasRequestedSelectionPermission = true
+                _ = selectionService.ensureAccessibilityPermission(prompt: true)
+            }
+            return
+        }
+
+        selectionCaptureTask?.cancel()
+        selectionCaptureTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 160_000_000)
+            guard !Task.isCancelled, let self else {
+                return
+            }
+            self.selectionCaptureTask = nil
+            await self.presentSelectionActionIfAvailable(at: location)
+        }
+    }
+
+    private func presentSelectionActionIfAvailable(at location: NSPoint) async {
+        let sourceBundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        guard !isExcludedFromSelectionActions(sourceBundleIdentifier) else {
+            return
+        }
+
+        let capture: SelectionCaptureResult?
+        if let accessibleCapture = selectionService.captureAccessibleSelectedText() {
+            capture = accessibleCapture
+        } else if selectionService.focusedSelectionIsSecure() {
+            capture = nil
+        } else {
+            capture = try? await selectionService.captureSelectedText()
+        }
+
+        guard
+            !Task.isCancelled,
+            let capture,
+            let selectedText = capture.selectedText,
+            !isExcludedFromSelectionActions(capture.context.bundleIdentifier)
+        else {
+            return
+        }
+
+        let fingerprint = selectionFingerprint(text: selectedText, context: capture.context)
+        let now = Date()
+        if fingerprint == lastSelectionFingerprint, now.timeIntervalSince(lastSelectionDate) < 0.75 {
+            return
+        }
+        lastSelectionFingerprint = fingerprint
+        lastSelectionDate = now
+
+        switch settings.selectionActionMode {
+        case .bubble:
+            selectionActionButtonController.present(at: location) { [weak self] in
+                self?.presentSelectionActionMenu(for: capture, at: location)
+            }
+        case .immediateMenu, .optionMenu:
+            presentSelectionActionMenu(for: capture, at: location)
+        }
+    }
+
+    private func presentSelectionActionMenu(for capture: SelectionCaptureResult, at location: NSPoint) {
+        selectionActionButtonController.dismiss()
+        selectionActionMenuController.present(
+            at: location,
+            presets: settings.presetPrompts,
+            strings: strings
+        ) { [weak self] choice in
+            self?.handleSelectionActionMenuChoice(choice, capture: capture)
+        }
+    }
+
+    private func handleSelectionActionMenuChoice(
+        _ choice: SelectionActionMenuChoice,
+        capture: SelectionCaptureResult
+    ) {
+        guard let selectedText = capture.selectedText else {
+            return
+        }
+
+        currentSelectionContext = capture.context
+        switch choice {
+        case .onDemand:
+            popupViewModel.prepareOnDemandInput(selectedText: selectedText)
+            showPopup(for: .onDemandInput)
+
+        case .preset(let index):
+            guard settings.presetPrompts.indices.contains(index), settings.presetPrompts[index].enabled else {
+                return
+            }
+            let preset = settings.presetPrompts[index]
+            startProcessing(
+                selectedText: selectedText,
+                prompt: preset.prompt,
+                mode: .preset(index: index),
+                allowAutoApply: settings.autoApplyAndClose
+            )
+        }
+    }
+
+    private func isExcludedFromSelectionActions(_ bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier else {
+            return false
+        }
+
+        if bundleIdentifier.caseInsensitiveCompare(Bundle.main.bundleIdentifier ?? "") == .orderedSame {
+            return true
+        }
+        return settings.excludedSelectionActionBundleIdentifiers.contains(bundleIdentifier.lowercased())
+    }
+
+    private func selectionFingerprint(text: String, context: SelectionContext) -> String {
+        let range = context.selectedTextRange
+        return [
+            context.bundleIdentifier ?? "",
+            String(range?.location ?? -1),
+            String(range?.length ?? -1),
+            text
+        ].joined(separator: "|")
     }
 
     private func configureSoftwareUpdater() {
@@ -311,7 +538,7 @@ final class AppCoordinator: NSObject, ObservableObject {
 
                 if let selectedText = capture.selectedText {
                     let preset = settings.presetPrompts[index]
-                    await processSelectedText(
+                    startProcessing(
                         selectedText: selectedText,
                         prompt: preset.prompt,
                         mode: .preset(index: index),
@@ -355,13 +582,12 @@ final class AppCoordinator: NSObject, ObservableObject {
         selectedText: String,
         prompt: String,
         mode: ProcessingMode,
-        allowAutoApply: Bool
+        allowAutoApply: Bool,
+        operationID: UUID
     ) async {
-        guard !isProcessing else {
+        guard activeProcessingID == operationID else {
             return
         }
-
-        isProcessing = true
         let currentSettings = settings
         popupViewModel.showProcessing(
             sourceText: selectedText,
@@ -371,7 +597,13 @@ final class AppCoordinator: NSObject, ObservableObject {
         )
         showPopup(for: .processing)
 
-        defer { isProcessing = false }
+        defer {
+            if activeProcessingID == operationID {
+                activeProcessingID = nil
+                processingTask = nil
+                isProcessing = false
+            }
+        }
 
         do {
             let result = try await llmService.processCustomPromptStreaming(
@@ -379,14 +611,21 @@ final class AppCoordinator: NSObject, ObservableObject {
                 customPrompt: prompt,
                 settings: currentSettings
             ) { [weak self] preview in
+                guard self?.activeProcessingID == operationID else {
+                    return
+                }
                 self?.popupViewModel.setStreamingPreview(preview)
             } onLocalReasoningUnsupportedModel: { [weak self] modelId in
                 await self?.rememberLocalReasoningUnsupportedModel(modelId)
             }
 
+            guard activeProcessingID == operationID else {
+                return
+            }
+
             if result == selectedText && mode != .textGeneration {
-                popupViewModel.setNotice(strings.unchangedResultNotice, kind: .info)
                 popupViewModel.showResult(originalText: selectedText, resultText: result, mode: mode)
+                popupViewModel.setNotice(strings.unchangedResultNotice, kind: .info)
                 showPopup(for: .result)
                 return
             }
@@ -398,9 +637,44 @@ final class AppCoordinator: NSObject, ObservableObject {
                 await applyCurrentResultAsync()
             }
         } catch {
+            guard activeProcessingID == operationID, !Task.isCancelled else {
+                return
+            }
             popupViewModel.setNotice(strings.errorMessage(error), kind: .error)
             showPopup(for: .processing)
         }
+    }
+
+    private func startProcessing(
+        selectedText: String,
+        prompt: String,
+        mode: ProcessingMode,
+        allowAutoApply: Bool
+    ) {
+        guard !isProcessing else {
+            return
+        }
+
+        let operationID = UUID()
+        isProcessing = true
+        activeProcessingID = operationID
+        lastProcessingRequest = ProcessingRequest(selectedText: selectedText, prompt: prompt, mode: mode)
+        processingTask = Task { [weak self] in
+            await self?.processSelectedText(
+                selectedText: selectedText,
+                prompt: prompt,
+                mode: mode,
+                allowAutoApply: allowAutoApply,
+                operationID: operationID
+            )
+        }
+    }
+
+    private func cancelProcessingTask() {
+        activeProcessingID = nil
+        processingTask?.cancel()
+        processingTask = nil
+        isProcessing = false
     }
 
     private func applyCurrentResultAsync() async {
@@ -409,7 +683,12 @@ final class AppCoordinator: NSObject, ObservableObject {
         }
 
         let resultText = popupViewModel.resultText
-        dismissPopup()
+        guard !resultText.isEmpty else {
+            return
+        }
+
+        popupViewModel.reset()
+        popupWindowController?.dismiss()
 
         do {
             switch mode {
@@ -444,6 +723,11 @@ final class AppCoordinator: NSObject, ObservableObject {
     }
 
     private func showPopup(for mode: PopupPresentationMode) {
+        if mode != .hidden {
+            selectionCaptureTask?.cancel()
+            selectionActionButtonController.dismiss()
+        }
+
         switch mode {
         case .hidden:
             popupWindowController?.dismiss()
@@ -454,7 +738,11 @@ final class AppCoordinator: NSObject, ObservableObject {
     }
 
     private func popupSize(for mode: PopupPresentationMode) -> NSSize {
-        PopupSizing.dialogSize(for: mode, outputText: popupOutputText(for: mode))
+        PopupSizing.dialogSize(
+            for: mode,
+            outputText: popupOutputText(for: mode),
+            hasNotice: popupViewModel.notice != nil
+        )
     }
 
     private func popupOutputText(for mode: PopupPresentationMode) -> String {

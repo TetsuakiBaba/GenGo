@@ -22,6 +22,11 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources/GenGoSwift"
+        ),
+        .testTarget(
+            name: "GenGoSwiftTests",
+            dependencies: ["GenGoSwift"],
+            path: "Tests/GenGoSwiftTests"
         )
     ]
 )

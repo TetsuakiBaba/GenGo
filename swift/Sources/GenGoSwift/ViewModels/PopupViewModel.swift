@@ -5,6 +5,7 @@ final class PopupViewModel: ObservableObject {
     @Published var presentationMode: PopupPresentationMode = .hidden
     @Published var sourceText: String = ""
     @Published var promptText: String = ""
+    @Published var followUpPromptText: String = ""
     @Published var streamingText: String = ""
     @Published var resultText: String = ""
     @Published var notice: InlineNotice?
@@ -16,6 +17,7 @@ final class PopupViewModel: ObservableObject {
         presentationMode = .onDemandInput
         sourceText = selectedText
         promptText = ""
+        followUpPromptText = ""
         streamingText = ""
         resultText = ""
         notice = nil
@@ -27,6 +29,7 @@ final class PopupViewModel: ObservableObject {
         presentationMode = .textGenerationInput
         sourceText = ""
         promptText = ""
+        followUpPromptText = ""
         streamingText = ""
         resultText = ""
         notice = nil
@@ -38,6 +41,7 @@ final class PopupViewModel: ObservableObject {
         presentationMode = .processing
         self.sourceText = sourceText
         self.promptText = promptText
+        self.followUpPromptText = ""
         self.streamingText = ""
         self.resultText = ""
         self.notice = nil
@@ -50,6 +54,7 @@ final class PopupViewModel: ObservableObject {
         sourceText = originalText
         self.resultText = resultText
         self.streamingText = ""
+        self.followUpPromptText = ""
         self.notice = nil
         self.llmProvider = nil
         self.processingMode = mode
@@ -67,6 +72,7 @@ final class PopupViewModel: ObservableObject {
         presentationMode = .hidden
         sourceText = ""
         promptText = ""
+        followUpPromptText = ""
         streamingText = ""
         resultText = ""
         notice = nil

@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Japanese-English Translation",
+    "shortcutKey": "Ctrl+1",
+    "prompt": "Translate between Japanese and English.\n- If the input is Japanese, translate it into English.\n- If the input is English, translate it into Japanese.\n- Output ONLY the translation.\n- NEVER output any other language.",
+    "enabled": true
+  }
+]

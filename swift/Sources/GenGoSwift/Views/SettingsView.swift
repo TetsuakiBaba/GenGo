@@ -19,6 +19,7 @@ struct SettingsView: View {
                     heroCard
                     llmSection
                     shortcutSection
+                    selectionActionSection
                     behaviorSection
                 }
                 .padding(20)
@@ -220,18 +221,25 @@ struct SettingsView: View {
                 }
 
                 labeledField("Max Tokens") {
-                    HStack(spacing: 14) {
-                        Stepper(value: $viewModel.draft.maxTokens, in: 128...32768, step: 128) {
-                            Text(text.maxTokensStepperLabel)
-                                .font(AppTypography.body)
-                        }
-                        .controlSize(.large)
-
-                        Spacer()
+                    HStack(spacing: 10) {
+                        Text(text.maxTokensStepperLabel)
+                            .font(AppTypography.body)
 
                         Text("\(viewModel.draft.maxTokens)")
                             .font(AppTypography.monoBody)
                             .foregroundStyle(.secondary)
+                            .frame(minWidth: 58, alignment: .trailing)
+
+                        Stepper(
+                            "",
+                            value: $viewModel.draft.maxTokens,
+                            in: 128...32768,
+                            step: 128
+                        )
+                        .labelsHidden()
+                        .controlSize(.large)
+
+                        Spacer(minLength: 0)
                     }
                 }
             }
@@ -307,6 +315,55 @@ struct SettingsView: View {
 
                     Text(text.uiLanguageHelp)
                         .font(AppTypography.helper)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var selectionActionSection: some View {
+        settingsCard(
+            title: text.selectionActionsSectionTitle,
+            subtitle: text.selectionActionsSectionSubtitle,
+            systemImage: "cursorarrow.click"
+        ) {
+            VStack(alignment: .leading, spacing: 18) {
+                Toggle(text.selectionActionsEnabledLabel, isOn: $viewModel.draft.selectionActionsEnabled)
+                    .font(AppTypography.body)
+                    .toggleStyle(.switch)
+
+                if viewModel.draft.selectionActionsEnabled {
+                    labeledField(text.selectionActionModeLabel) {
+                        Picker(text.selectionActionModeLabel, selection: $viewModel.draft.selectionActionMode) {
+                            ForEach(SelectionActionMode.allCases) { mode in
+                                Text(text.selectionActionModeTitle(mode)).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .controlSize(.large)
+
+                        Text(text.selectionActionModeHelp)
+                            .font(AppTypography.helper)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    labeledField(text.selectionActionExcludedAppsLabel) {
+                        TextField(
+                            "com.apple.Terminal, com.example.app",
+                            text: $viewModel.draft.selectionActionExcludedBundleIdentifiers
+                        )
+                        .font(AppTypography.monoBody)
+                        .textFieldStyle(.roundedBorder)
+                        .controlSize(.large)
+
+                        Text(text.selectionActionExcludedAppsHelp)
+                            .font(AppTypography.helper)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Label(text.selectionActionPermissionHelp, systemImage: "hand.raised")
+                        .font(AppTypography.callout)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -397,6 +454,16 @@ struct SettingsView: View {
                 .controlSize(.regular)
             }
 
+            labeledField(text.presetNameLabel) {
+                TextField(text.presetNamePlaceholder, text: preset.name)
+                    .font(AppTypography.body)
+                    .textFieldStyle(.roundedBorder)
+
+                Text(text.presetNameHelp)
+                    .font(AppTypography.helper)
+                    .foregroundStyle(.secondary)
+            }
+
             labeledField(text.promptLabel) {
                 TextEditor(text: preset.prompt)
                     .font(AppTypography.monoBody)
@@ -414,7 +481,7 @@ struct SettingsView: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: 640, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
@@ -472,6 +539,7 @@ struct SettingsView: View {
             content()
         }
         .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
     }
 

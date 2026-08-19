@@ -390,28 +390,19 @@ final class AppCoordinator: NSObject, ObservableObject {
                 return
             }
             self.selectionCaptureTask = nil
-            await self.presentSelectionActionIfAvailable(at: location)
+            self.presentSelectionActionIfAvailable(at: location)
         }
     }
 
-    private func presentSelectionActionIfAvailable(at location: NSPoint) async {
+    private func presentSelectionActionIfAvailable(at location: NSPoint) {
         let sourceBundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         guard !isExcludedFromSelectionActions(sourceBundleIdentifier) else {
             return
         }
 
-        let capture: SelectionCaptureResult?
-        if let accessibleCapture = selectionService.captureAccessibleSelectedText() {
-            capture = accessibleCapture
-        } else if selectionService.focusedSelectionIsSecure() {
-            capture = nil
-        } else {
-            capture = try? await selectionService.captureSelectedText()
-        }
-
         guard
             !Task.isCancelled,
-            let capture,
+            let capture = selectionService.captureAccessibleSelectedText(),
             let selectedText = capture.selectedText,
             !isExcludedFromSelectionActions(capture.context.bundleIdentifier)
         else {

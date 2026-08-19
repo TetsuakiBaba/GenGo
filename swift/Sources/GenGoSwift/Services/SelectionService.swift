@@ -68,14 +68,6 @@ final class SelectionService {
         return SelectionCaptureResult(selectedText: selectedText, context: context)
     }
 
-    func focusedSelectionIsSecure() -> Bool {
-        let sourceApp = NSWorkspace.shared.frontmostApplication
-        guard let focusedElement = focusedElement(for: sourceApp) else {
-            return false
-        }
-        return isSecureTextElement(focusedElement)
-    }
-
     func captureSelectedText() async throws -> SelectionCaptureResult {
         guard ensureAccessibilityPermission(prompt: true) else {
             throw SelectionError.accessibilityPermissionDenied

@@ -193,8 +193,8 @@ struct AppStrings {
 
     var selectionActionsSectionSubtitle: String {
         text(
-            ja: "ドラッグまたはダブルクリックで選択したテキストを、マウス位置からすぐに処理します。",
-            en: "Process text selected by dragging or double-clicking directly from the pointer location."
+            ja: "ドラッグまたはダブルクリックで選択したテキストを、マウス位置からすぐに処理します。アプリケーションによっては、選択テキストを検出できず動作しない場合があります。",
+            en: "Process text selected by dragging or double-clicking directly from the pointer location. This feature may not work in applications where selected text cannot be detected."
         )
     }
 

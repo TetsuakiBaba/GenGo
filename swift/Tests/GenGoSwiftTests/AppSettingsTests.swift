@@ -33,6 +33,19 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.selectionActionMode, .bubble)
         XCTAssertEqual(settings.selectionActionExcludedBundleIdentifiers, "")
         XCTAssertEqual(settings.presetPrompts.first?.name, "")
+        XCTAssertFalse(settings.openAICompatibleStreamingEnabled)
+        XCTAssertFalse(settings.openAICompatibleReasoningDisabled)
+    }
+
+    func testOpenAICompatibleStreamingDefaultsToDisabledForLegacySettings() throws {
+        let data = try JSONEncoder().encode(AppSettings())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "openAICompatibleStreamingEnabled")
+
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: legacyData)
+
+        XCTAssertFalse(decoded.openAICompatibleStreamingEnabled)
     }
 
     func testNormalizingExcludedBundleIdentifiersTrimsAndDeduplicates() {

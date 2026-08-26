@@ -132,6 +132,28 @@ struct AppStrings {
         )
     }
 
+    var openAICompatibleStreamingLabel: String {
+        text(ja: "ストリーミング応答を使用", en: "Use streaming responses")
+    }
+
+    var openAICompatibleStreamingHelp: String {
+        text(
+            ja: "対応する API でのみ有効にしてください。NVIDIA Build を含む互換性重視の設定ではオフを推奨します。",
+            en: "Enable only when the API supports it. Keep this off for maximum compatibility, including NVIDIA Build."
+        )
+    }
+
+    var openAICompatibleReasoningDisabledLabel: String {
+        text(ja: "Thinking / Reasoning を無効化", en: "Disable thinking / reasoning")
+    }
+
+    var openAICompatibleReasoningDisabledHelp: String {
+        text(
+            ja: "対応 API に `reasoning_effort: none` を送り、返された思考過程も表示しません。NVIDIA Build の対応モデルで利用できます。",
+            en: "Sends `reasoning_effort: none` to supported APIs and hides returned reasoning. Available for supported NVIDIA Build models."
+        )
+    }
+
     var appleFoundationModelHelp: String {
         text(
             ja: "Apple Intelligence のオンデバイスモデルを使用します。macOS 26 以降、Apple Intelligence 対応 Mac、Apple Intelligence が有効な状態で利用できます。用途を固定した小さな処理に向いているため、プロンプトどおりに動作しない場合があります。必要に応じてプロンプトを具体的に調整してください。",

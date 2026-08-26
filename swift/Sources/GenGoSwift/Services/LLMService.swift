@@ -269,7 +269,7 @@ struct LLMService {
             && !omitLocalReasoning
             && !settings.localReasoningUnsupportedModels.contains(modelIdentifier)
 
-        let request = try makeStreamingRequest(
+        let request = try makeRequest(
             prompt: prompt,
             settings: settings,
             modelIdentifier: modelIdentifier,
@@ -303,16 +303,29 @@ struct LLMService {
         }
 
         if contentType.contains("text/event-stream") {
-            return try await parseEventStream(bytes: bytes, provider: settings.llmProvider, onUpdate: onUpdate)
+            return try await parseEventStream(
+                bytes: bytes,
+                provider: settings.llmProvider,
+                includeReasoning: !settings.openAICompatibleReasoningDisabled,
+                onUpdate: onUpdate
+            )
         }
 
         let data = try await consume(bytes: bytes)
         let responseText: String
 
         if let json = try? decodeJSON(data) {
-            responseText = extractResponseText(from: json, provider: settings.llmProvider)
+            responseText = extractResponseText(
+                from: json,
+                provider: settings.llmProvider,
+                includeReasoning: !settings.openAICompatibleReasoningDisabled
+            )
         } else {
-            responseText = extractFallbackResponseText(from: data, provider: settings.llmProvider)
+            responseText = extractFallbackResponseText(
+                from: data,
+                provider: settings.llmProvider,
+                includeReasoning: !settings.openAICompatibleReasoningDisabled
+            )
         }
 
         guard !responseText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty else {
@@ -326,6 +339,7 @@ struct LLMService {
     private func parseEventStream(
         bytes: URLSession.AsyncBytes,
         provider: LLMProvider,
+        includeReasoning: Bool,
         onUpdate: @escaping @MainActor (String) -> Void
     ) async throws -> String {
         var dataLines: [String] = []
@@ -349,7 +363,7 @@ struct LLMService {
                 return
             }
 
-            let chunk = extractStreamChunk(from: json, provider: provider)
+            let chunk = extractStreamChunk(from: json, provider: provider, includeReasoning: includeReasoning)
             if !chunk.reasoningChunk.isEmpty {
                 fullReasoning += chunk.reasoningChunk
             } else if !chunk.absoluteReasoning.isEmpty, fullReasoning.isEmpty {
@@ -458,7 +472,7 @@ struct LLMService {
         return result
     }
 
-    private func makeStreamingRequest(
+    func makeRequest(
         prompt: String,
         settings: AppSettings,
         modelIdentifier: String,
@@ -509,13 +523,17 @@ struct LLMService {
                         "content": prompt
                     ]
                 ],
-                "stream": true
+                "stream": settings.openAICompatibleStreamingEnabled
             ]
 
             if usesMaxCompletionTokens(modelIdentifier: modelIdentifier) {
                 body["max_completion_tokens"] = settings.maxTokens
             } else {
                 body["max_tokens"] = settings.maxTokens
+            }
+
+            if settings.openAICompatibleReasoningDisabled {
+                body["reasoning_effort"] = "none"
             }
         }
 
@@ -525,11 +543,19 @@ struct LLMService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 60
+        request.timeoutInterval = settings.llmProvider == .remote ? 180 : 60
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        if settings.llmProvider == .remote, !settings.apiKey.isEmpty {
-            request.setValue("Bearer \(settings.apiKey)", forHTTPHeaderField: "Authorization")
+        if settings.llmProvider == .remote {
+            request.setValue(
+                settings.openAICompatibleStreamingEnabled ? "text/event-stream" : "application/json",
+                forHTTPHeaderField: "Accept"
+            )
+
+            let apiKey = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !apiKey.isEmpty {
+                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            }
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -669,7 +695,11 @@ struct LLMService {
         }
     }
 
-    private func extractResponseText(from json: [String: Any], provider: LLMProvider) -> String {
+    private func extractResponseText(
+        from json: [String: Any],
+        provider: LLMProvider,
+        includeReasoning: Bool = true
+    ) -> String {
         switch provider {
         case .local:
             if let text = json["output_text"] as? String {
@@ -697,7 +727,7 @@ struct LLMService {
 
             let message = firstChoice["message"] as? [String: Any]
             let content = message?["content"] as? String ?? ""
-            let reasoning = message?["reasoning_content"] as? String ?? ""
+            let reasoning = includeReasoning ? (message?["reasoning_content"] as? String ?? "") : ""
 
             return combinedResponseText(reasoning: reasoning, content: content)
         }
@@ -737,7 +767,11 @@ struct LLMService {
         return chunks.joined(separator: "\n")
     }
 
-    private func extractFallbackResponseText(from data: Data, provider: LLMProvider) -> String {
+    private func extractFallbackResponseText(
+        from data: Data,
+        provider: LLMProvider,
+        includeReasoning: Bool = true
+    ) -> String {
         guard let text = String(data: data, encoding: .utf8) else {
             return ""
         }
@@ -748,14 +782,22 @@ struct LLMService {
         }
 
         if trimmed.contains("data:") {
-            let streamText = extractResponseTextFromBufferedEventStream(trimmed, provider: provider)
+            let streamText = extractResponseTextFromBufferedEventStream(
+                trimmed,
+                provider: provider,
+                includeReasoning: includeReasoning
+            )
             if !streamText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 return streamText
             }
         }
 
         if trimmed.contains("\"chat.completion.chunk\"") || trimmed.split(whereSeparator: \.isNewline).contains(where: { String($0).trimmingCharacters(in: .whitespaces).hasPrefix("{") }) {
-            let streamText = extractResponseTextFromBufferedStreamLines(trimmed, provider: provider)
+            let streamText = extractResponseTextFromBufferedStreamLines(
+                trimmed,
+                provider: provider,
+                includeReasoning: includeReasoning
+            )
             if !streamText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 return streamText
             }
@@ -764,7 +806,11 @@ struct LLMService {
         return trimmed
     }
 
-    private func extractResponseTextFromBufferedStreamLines(_ text: String, provider: LLMProvider) -> String {
+    private func extractResponseTextFromBufferedStreamLines(
+        _ text: String,
+        provider: LLMProvider,
+        includeReasoning: Bool
+    ) -> String {
         var fullText = ""
         var fullReasoning = ""
 
@@ -788,7 +834,7 @@ struct LLMService {
                 continue
             }
 
-            let chunk = extractStreamChunk(from: json, provider: provider)
+            let chunk = extractStreamChunk(from: json, provider: provider, includeReasoning: includeReasoning)
             if !chunk.reasoningChunk.isEmpty {
                 fullReasoning += chunk.reasoningChunk
             } else if !chunk.absoluteReasoning.isEmpty, fullReasoning.isEmpty {
@@ -805,7 +851,11 @@ struct LLMService {
         return combinedResponseText(reasoning: fullReasoning, content: fullText)
     }
 
-    private func extractResponseTextFromBufferedEventStream(_ text: String, provider: LLMProvider) -> String {
+    private func extractResponseTextFromBufferedEventStream(
+        _ text: String,
+        provider: LLMProvider,
+        includeReasoning: Bool
+    ) -> String {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         let events = normalized.components(separatedBy: "\n\n")
         var fullText = ""
@@ -835,7 +885,7 @@ struct LLMService {
                 continue
             }
 
-            let chunk = extractStreamChunk(from: json, provider: provider)
+            let chunk = extractStreamChunk(from: json, provider: provider, includeReasoning: includeReasoning)
             if !chunk.reasoningChunk.isEmpty {
                 fullReasoning += chunk.reasoningChunk
             } else if !chunk.absoluteReasoning.isEmpty, fullReasoning.isEmpty {
@@ -852,7 +902,11 @@ struct LLMService {
         return combinedResponseText(reasoning: fullReasoning, content: fullText)
     }
 
-    private func extractStreamChunk(from json: [String: Any], provider: LLMProvider) -> StreamChunk {
+    private func extractStreamChunk(
+        from json: [String: Any],
+        provider: LLMProvider,
+        includeReasoning: Bool = true
+    ) -> StreamChunk {
         switch provider {
         case .remote:
             let choice = (json["choices"] as? [[String: Any]])?.first
@@ -861,9 +915,9 @@ struct LLMService {
 
             return StreamChunk(
                 contentChunk: delta?["content"] as? String ?? "",
-                reasoningChunk: delta?["reasoning_content"] as? String ?? "",
+                reasoningChunk: includeReasoning ? (delta?["reasoning_content"] as? String ?? "") : "",
                 absoluteContent: message?["content"] as? String ?? "",
-                absoluteReasoning: message?["reasoning_content"] as? String ?? ""
+                absoluteReasoning: includeReasoning ? (message?["reasoning_content"] as? String ?? "") : ""
             )
         case .ollama:
             let message = json["message"] as? [String: Any]

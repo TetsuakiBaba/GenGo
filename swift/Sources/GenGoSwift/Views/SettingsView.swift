@@ -207,6 +207,28 @@ struct SettingsView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .controlSize(.large)
                         }
+
+                        Toggle(
+                            text.openAICompatibleStreamingLabel,
+                            isOn: $viewModel.draft.openAICompatibleStreamingEnabled
+                        )
+                        .font(AppTypography.body)
+                        .toggleStyle(.switch)
+
+                        Text(text.openAICompatibleStreamingHelp)
+                            .font(AppTypography.helper)
+                            .foregroundStyle(.secondary)
+
+                        Toggle(
+                            text.openAICompatibleReasoningDisabledLabel,
+                            isOn: $viewModel.draft.openAICompatibleReasoningDisabled
+                        )
+                        .font(AppTypography.body)
+                        .toggleStyle(.switch)
+
+                        Text(text.openAICompatibleReasoningDisabledHelp)
+                            .font(AppTypography.helper)
+                            .foregroundStyle(.secondary)
                     }
                 } else {
                     Label(text.appleFoundationModelHelp, systemImage: viewModel.draft.llmProvider.systemImage)

@@ -121,6 +121,8 @@ struct AppSettings: Codable, Equatable {
     var llmEndpoint: String
     var apiKey: String
     var modelName: String
+    var openAICompatibleStreamingEnabled: Bool
+    var openAICompatibleReasoningDisabled: Bool
     var localModelInstanceId: String
     var localReasoningUnsupportedModels: [String]
     var maxTokens: Int
@@ -137,6 +139,8 @@ struct AppSettings: Codable, Equatable {
         llmEndpoint: String = "http://127.0.0.1:1234",
         apiKey: String = "",
         modelName: String = "gpt-4o-mini",
+        openAICompatibleStreamingEnabled: Bool = false,
+        openAICompatibleReasoningDisabled: Bool = false,
         localModelInstanceId: String = "",
         localReasoningUnsupportedModels: [String] = [],
         maxTokens: Int = 4096,
@@ -152,6 +156,8 @@ struct AppSettings: Codable, Equatable {
         self.llmEndpoint = llmEndpoint
         self.apiKey = apiKey
         self.modelName = modelName
+        self.openAICompatibleStreamingEnabled = openAICompatibleStreamingEnabled
+        self.openAICompatibleReasoningDisabled = openAICompatibleReasoningDisabled
         self.localModelInstanceId = localModelInstanceId
         self.localReasoningUnsupportedModels = localReasoningUnsupportedModels
         self.maxTokens = maxTokens
@@ -170,6 +176,14 @@ struct AppSettings: Codable, Equatable {
         llmEndpoint = try container.decodeIfPresent(String.self, forKey: .llmEndpoint) ?? llmProvider.defaultEndpoint
         apiKey = try container.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
         modelName = try container.decodeIfPresent(String.self, forKey: .modelName) ?? "gpt-4o-mini"
+        openAICompatibleStreamingEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .openAICompatibleStreamingEnabled
+        ) ?? false
+        openAICompatibleReasoningDisabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .openAICompatibleReasoningDisabled
+        ) ?? false
         localModelInstanceId = try container.decodeIfPresent(String.self, forKey: .localModelInstanceId) ?? ""
         localReasoningUnsupportedModels = try container.decodeIfPresent(
             [String].self,
